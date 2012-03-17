@@ -1,0 +1,124 @@
+       PROCESS ARITH(EXTEND)
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTUV64.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST UNSIGNED INTEGER 64 BITS <> VARIABLE INTEGER             *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  W-PB-VARINT                       PIC X(10).
+       01  W-ZOS-UINT64                      PIC 9(18) COMP-5.
+       01  W-BYTES-USED                      PIC 9(8) COMP-5.
+
+       01  W-EXPECTED-PB-VARINT              PIC X(10).
+       01  W-EXPECTED-ZOS-UINT64             PIC 9(18) COMP-5.
+
+       01  W-PB-VARINT-ARRAY-LEN             PIC 9(4) COMP-5 VALUE 10.
+       01  W-PB-VARINT-HEX-STRING            PIC X(20).
+
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO ZOS Unsigned Int 64
+      * ---------------------------------------------------------------
+           DISPLAY "TO-ZOSUINT64 ======= 0 =============="
+           MOVE X'00000000000000000000' TO W-PB-VARINT.
+           MOVE 0 to W-EXPECTED-ZOS-UINT64.
+           PERFORM TEST-PBVI2U64 THRU END-TEST-PBVI2U64.
+           
+           DISPLAY "TO-ZOSUINT64 ======= 1 =============="
+           MOVE X'01000000000000000000' TO W-PB-VARINT.
+           MOVE 1 to W-EXPECTED-ZOS-UINT64.
+           PERFORM TEST-PBVI2U64 THRU END-TEST-PBVI2U64.
+
+           DISPLAY "TO-ZOSUINT64 ======= 300 =============="
+           MOVE X'AC020000000000000000' TO W-PB-VARINT.
+           MOVE 300 to W-EXPECTED-ZOS-UINT64.
+           PERFORM TEST-PBVI2U64 THRU END-TEST-PBVI2U64.
+
+           DISPLAY "TO-ZOSUINT64 ======= 45483 =============="
+           MOVE X'ABE30200000000000000' TO W-PB-VARINT.
+           MOVE 45483 to W-EXPECTED-ZOS-UINT64.
+           PERFORM TEST-PBVI2U64 THRU END-TEST-PBVI2U64.
+
+           DISPLAY "TO-ZOSUINT64 == 9223372036854775807 ====="
+           MOVE X'FFFFFFFFFFFFFFFF7F00' TO W-PB-VARINT.
+           MOVE 9223372036854775807 to W-EXPECTED-ZOS-UINT64.
+           PERFORM TEST-PBVI2U64 THRU END-TEST-PBVI2U64.
+
+      * ---------------------------------------------------------------
+      * TEST TO PROTOBUF Unsigned Int 64
+      * ---------------------------------------------------------------
+           DISPLAY "TO-PB-VARINT ========== 0 =========="
+           COMPUTE W-ZOS-UINT64 = 0.
+           MOVE X'00000000000000000000' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBU642VI THRU END-TEST-PBU642VI.
+
+           DISPLAY "TO-PB-VARINT ========== 1 =========="
+           COMPUTE W-ZOS-UINT64 = 1.
+           MOVE X'01000000000000000000' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBU642VI THRU END-TEST-PBU642VI.
+
+           DISPLAY "TO-PB-VARINT ========== 300 =========="
+           COMPUTE W-ZOS-UINT64 = 300.
+           MOVE X'AC020000000000000000' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBU642VI THRU END-TEST-PBU642VI.
+
+           DISPLAY "TO-PB-VARINT ========== 45483 =========="
+           COMPUTE W-ZOS-UINT64 = 45483.
+           MOVE X'ABE30200000000000000' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBU642VI THRU END-TEST-PBU642VI.
+
+           DISPLAY "TO-PB-VARINT == 9223372036854775807 ====="
+           COMPUTE W-ZOS-UINT64 = 9223372036854775807.
+           MOVE X'FFFFFFFFFFFFFFFF7F00' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBU642VI THRU END-TEST-PBU642VI.
+
+           MOVE W-RETURN-CODE to RETURN-CODE.
+           GOBACK.
+
+       TEST-PBVI2U64.
+           CALL 'PBVI2U64' USING W-PB-VARINT W-ZOS-UINT64 W-BYTES-USED.
+           IF W-ZOS-UINT64 NOT = W-EXPECTED-ZOS-UINT64
+              DISPLAY 'ERROR: ZOS-UINT64'
+              DISPLAY '    RESULT  : ' W-ZOS-UINT64
+              DISPLAY '    EXPECTED: ' W-EXPECTED-ZOS-UINT64
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBVI2U64. EXIT.
+
+       TEST-PBU642VI.
+           MOVE LOW-VALUES TO W-PB-VARINT.
+           CALL 'PBU642VI' USING W-ZOS-UINT64 W-PB-VARINT W-BYTES-USED.
+           IF W-PB-VARINT NOT = W-EXPECTED-PB-VARINT
+              DISPLAY 'ERROR: PB-VARINT'
+              CALL 'PBBA2HEX' USING W-PB-VARINT-ARRAY-LEN
+                              W-PB-VARINT
+                              W-PB-VARINT-HEX-STRING
+              DISPLAY '    RESULT  : ' W-PB-VARINT-HEX-STRING
+              CALL 'PBBA2HEX' USING W-PB-VARINT-ARRAY-LEN
+                              W-EXPECTED-PB-VARINT
+                              W-PB-VARINT-HEX-STRING
+              DISPLAY '    EXPECTED: ' W-PB-VARINT-HEX-STRING
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBU642VI. EXIT.
+
+       END PROGRAM PBCTUV64.
+

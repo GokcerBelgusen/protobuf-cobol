@@ -1,0 +1,1414 @@
+       PROCESS NOSEQ LIB OPTIMIZE(FULL) ARITH(EXTEND)
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PB4CBLIB.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * A LIBRARY FOR PROTOCOL-BUFFER TO COBOL CONVERSION.            *
+      *                                                               *
+      * SEE:                                                          *
+      *    http://code.google.com/apis/                               *
+      *         protocolbuffers/docs/encoding.html                    *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+
+      *    // constants
+       77  VARINT-MAX-BYTES                PIC 9(4) COMP VALUE 10.
+
+      *    // buffers
+       01  W-ZOS-UINT64                    PIC 9(18) COMP-5.
+       01  W-ZOS-UINT32                    PIC 9(8) COMP-5.
+       01  W-ZOS-SINT64                    PIC S9(18) COMP-5.
+
+      *    // byte to numeric conversions
+       01  FILLER.
+           05 W-HWORD                      PIC 9(4) COMP-5 VALUE ZERO.
+           05 W-HWORD-BYTES REDEFINES W-HWORD.
+              10 W-HWORD-BYTE-1            PIC X.
+              10 W-HWORD-BYTE-2            PIC X.
+           05 W-HWORD2                     PIC 9(4) COMP-5 VALUE ZERO.
+           05 W-HWORD2-BYTES REDEFINES W-HWORD2.
+              10 W-HWORD2-BYTE-1           PIC X.
+              10 W-HWORD2-BYTE-2           PIC X.
+
+      *    // conditions
+       01  FILLER                          PIC 9(4) COMP.
+           88 VARINT-INCOMPLETE VALUE 0.
+           88 VARINT-COMPLETE VALUE 1.
+
+      *    // sign: 1 negative, 0 positive
+       01  W-SIGN                          PIC 9(4) COMP-5.
+
+      *    // exponent (relative to base)
+       01  W-EXPONENT                      PIC S9(4) COMP-5.
+
+      *    // Counters
+       01  W-I                             PIC 9(4) COMP-5.
+       01  W-J                             PIC 9(4) COMP-5.
+       01  W-Q                             PIC 9(4) COMP-5.
+       01  W-R                             PIC 9(4) COMP-5.
+       01  W-L                             PIC 9(4) COMP-5.
+
+      *    // Multiplier
+       01  W-M                             PIC 9(18) COMP-5.
+
+      *    // Debugging
+       01  FILLER.
+           05  W-HEX-CHARS PIC X(16) VALUE '0123456789ABCDEF'.
+           05  W-HEX-CHAR REDEFINES W-HEX-CHARS OCCURS 16 PIC X.
+       01  W-PB-VARINT-DISPLAY             PIC X(20).
+       01  W-PB-FIXED64-DISPLAY            PIC X(16).
+       01  W-PB-FIXED32-DISPLAY            PIC X(8).
+       01  W-IEEE-FLOAT-DISPLAY            PIC X(8).
+       01  W-IEEE-DOUBLE-DISPLAY           PIC X(16).
+
+      *****************************************************************
+      *        L I N K A G E    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       LINKAGE SECTION.
+       01  PB-VARINT                       PIC X(10).
+       01  PB-VARINT-BYTES REDEFINES PB-VARINT.
+           05 PB-VARINT-BYTE OCCURS 10 PIC X.
+       01  PB-FIXED64                      PIC X(8).
+       01  PB-FIXED64-BYTES REDEFINES PB-FIXED64.
+           05 PB-FIXED64-BYTE OCCURS 8 PIC X.
+       01  PB-FIXED32                      PIC X(4).
+       01  PB-FIXED32-BYTES REDEFINES PB-FIXED32.
+           05 PB-FIXED32-BYTE OCCURS 4 PIC X.
+
+       01  ZOS-UINT64                      PIC 9(18) COMP-5.
+       01  ZOS-UINT64-BYTES REDEFINES ZOS-UINT64.
+           05 ZOS-UINT64-BYTE OCCURS 8 PIC X.
+       01  ZOS-UINT32                      PIC 9(8) COMP-5.
+       01  ZOS-UINT32-BYTES REDEFINES ZOS-UINT32.
+           05 ZOS-UINT32-BYTE OCCURS 4 PIC X.
+       01  ZOS-SINT64                      PIC S9(18) COMP-5.
+       01  ZOS-SINT64-BYTES REDEFINES ZOS-SINT64.
+           05 ZOS-SINT64-BYTE OCCURS 8 PIC X.
+       01  ZOS-SINT32                      PIC S9(8) COMP-5.
+       01  ZOS-SINT32-BYTES REDEFINES ZOS-SINT32.
+           05 ZOS-SINT32-BYTE OCCURS 4 PIC X.
+
+       01  IEEE-FLOAT                      PIC X(4).
+       01  IEEE-FLOAT-BYTES REDEFINES IEEE-FLOAT.
+           05 IEEE-FLOAT-BYTE-1            PIC X.
+           05 IEEE-FLOAT-BYTE-2            PIC X.
+           05 IEEE-FLOAT-BYTE-3            PIC X.
+           05 IEEE-FLOAT-BYTE-4            PIC X.
+       01  IEEE-FLOAT-COMP REDEFINES IEEE-FLOAT PIC 9(9) COMP-5.
+
+       01  ZOS-FLOAT                       COMP-1.
+       01  ZOS-FLOAT-BYTES REDEFINES ZOS-FLOAT.
+           05 ZOS-FLOAT-BYTE-1             PIC X.
+           05 ZOS-FLOAT-BYTE-2             PIC X.
+           05 ZOS-FLOAT-BYTE-3             PIC X.
+           05 ZOS-FLOAT-BYTE-4             PIC X.
+       01  ZOS-FLOAT-COMP REDEFINES ZOS-FLOAT PIC 9(9) COMP-5.
+
+       01  IEEE-DOUBLE                     PIC X(8).
+       01  IEEE-DOUBLE-BYTES REDEFINES IEEE-DOUBLE.
+           05 IEEE-DOUBLE-BYTE-1           PIC X.
+           05 IEEE-DOUBLE-BYTE-2           PIC X.
+           05 IEEE-DOUBLE-BYTE-3           PIC X.
+           05 IEEE-DOUBLE-BYTE-4           PIC X.
+           05 IEEE-DOUBLE-BYTE-5           PIC X.
+           05 IEEE-DOUBLE-BYTE-6           PIC X.
+           05 IEEE-DOUBLE-BYTE-7           PIC X.
+           05 IEEE-DOUBLE-BYTE-8           PIC X.
+       01  IEEE-DOUBLE-COMP REDEFINES IEEE-DOUBLE PIC 9(18) COMP-5.
+
+       01  ZOS-DOUBLE                      COMP-2.
+       01  ZOS-DOUBLE-BYTES REDEFINES ZOS-DOUBLE.
+           05 ZOS-DOUBLE-BYTE-1            PIC X.
+           05 ZOS-DOUBLE-BYTE-2            PIC X.
+           05 ZOS-DOUBLE-BYTE-3            PIC X.
+           05 ZOS-DOUBLE-BYTE-4            PIC X.
+           05 ZOS-DOUBLE-BYTE-5            PIC X.
+           05 ZOS-DOUBLE-BYTE-6            PIC X.
+           05 ZOS-DOUBLE-BYTE-7            PIC X.
+           05 ZOS-DOUBLE-BYTE-8            PIC X.
+       01  ZOS-DOUBLE-COMP REDEFINES ZOS-DOUBLE PIC 9(18) COMP-5.
+
+       01  BYTES-USED                      PIC 9(8) COMP-5.
+
+      *    // Debugging
+       01  BYTE-ARRAY-LEN                  PIC 9(4) COMP-5.
+       01  BYTE-ARRAY.
+           05 BYTE OCCURS 0 TO 1000 DEPENDING ON BYTE-ARRAY-LEN
+                                           PIC X.
+       01  HEX-STRING                      PIC X(2000).
+
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+      * ---------------------------------------------------------------
+      * Main entry point is a NOOP
+      * ---------------------------------------------------------------
+       PROCEDURE DIVISION.
+           EXIT PROGRAM.
+
+      * ===============================================================
+      * PROTOCOL BUFFER TO COBOL ENTRY POINTS
+      * ===============================================================
+      * ---------------------------------------------------------------
+      * PBVI2U64 Entry point: Variable Integer to Unsigned 64b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBVI2U64' USING PB-VARINT ZOS-UINT64 BYTES-USED.
+           PERFORM PBVI2U64 THRU END-PBVI2U64.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBVI2S64 Entry point: Variable Integer to Signed 64b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBVI2S64' USING PB-VARINT ZOS-SINT64 BYTES-USED.
+           PERFORM PBVI2S64 THRU END-PBVI2S64.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBVZ2S64 Entry point: Variable ZigZag to Signed 64b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBVZ2S64' USING PB-VARINT ZOS-SINT64 BYTES-USED.
+           PERFORM PBVZ2S64 THRU END-PBVZ2S64.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBFI2U64 Entry point: Fixed Integer to Unsigned 64b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBFI2U64' USING PB-FIXED64 ZOS-UINT64 BYTES-USED.
+           PERFORM PBFI2U64 THRU END-PBFI2U64.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBFI2S64 Entry point: Fixed Integer to Signed 64b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBFI2S64' USING PB-FIXED64 ZOS-SINT64 BYTES-USED.
+           PERFORM PBFI2S64 THRU END-PBFI2S64.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBVI2U32 Entry point: Variable Integer to Unsigned 32b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBVI2U32' USING PB-VARINT ZOS-UINT32 BYTES-USED.
+           PERFORM PBVI2U32 THRU END-PBVI2U32.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBVI2S32 Entry point: Variable Integer to Signed 32b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBVI2S32' USING PB-VARINT ZOS-SINT32 BYTES-USED.
+           PERFORM PBVI2S32 THRU END-PBVI2S32.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBVZ2S32 Entry point: Variable ZigZag to Signed 32b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBVZ2S32' USING PB-VARINT ZOS-SINT32 BYTES-USED.
+           PERFORM PBVZ2S32 THRU END-PBVZ2S32.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBFI2U32 Entry point: Fixed Integer to Unsigned 32b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBFI2U32' USING PB-FIXED32 ZOS-UINT32 BYTES-USED.
+           PERFORM PBFI2U32 THRU END-PBFI2U32.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBFI2S32 Entry point: Fixed Integer to Signed 32b Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBFI2S32' USING PB-FIXED32 ZOS-SINT32 BYTES-USED.
+           PERFORM PBFI2S32 THRU END-PBFI2S32.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PB2ZFLOA Entry point: IEEE Float to COMP-1
+      * ---------------------------------------------------------------
+           ENTRY 'PB2ZFLOA' USING IEEE-FLOAT ZOS-FLOAT BYTES-USED.
+           PERFORM PB2ZFLOA THRU END-PB2ZFLOA.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PB2ZDBLE Entry point: IEEE Double to COMP-2
+      * ---------------------------------------------------------------
+           ENTRY 'PB2ZDBLE' USING IEEE-DOUBLE ZOS-DOUBLE BYTES-USED.
+           PERFORM PB2ZDBLE THRU END-PB2ZDBLE.
+           GOBACK.
+
+      * ===============================================================
+      * COBOL TO PROTOCOL BUFFER ENTRY POINTS
+      * ===============================================================
+      * ---------------------------------------------------------------
+      * PBU642VI Entry point: Unsigned 64b Integer to Variable Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBU642VI' USING ZOS-UINT64 PB-VARINT BYTES-USED.
+           PERFORM PBU642VI THRU END-PBU642VI.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBS642VI Entry point: Signed 64b Integer to Variable Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBS642VI' USING ZOS-SINT64 PB-VARINT BYTES-USED.
+           PERFORM PBS642VI THRU END-PBS642VI.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBS642VZ Entry point: Signed 64b Integer to Variable ZigZag
+      * ---------------------------------------------------------------
+           ENTRY 'PBS642VZ' USING ZOS-SINT64 PB-VARINT BYTES-USED.
+           PERFORM PBS642VZ THRU END-PBS642VZ.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBU642FI Entry point: Unsigned 64b Integer to Fixed Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBU642FI' USING ZOS-UINT64 PB-FIXED64 BYTES-USED.
+           PERFORM PBU642FI THRU END-PBU642FI.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBS642FI Entry point: Signed 64b Integer to Fixed Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBS642FI' USING ZOS-SINT64 PB-FIXED64 BYTES-USED.
+           PERFORM PBS642FI THRU END-PBS642FI.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBU322VI Entry point: Unsigned 32b Integer to Variable Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBU322VI' USING ZOS-UINT32 PB-VARINT BYTES-USED.
+           PERFORM PBU322VI THRU END-PBU322VI.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBS322VI Entry point: Signed 32b Integer to Variable Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBS322VI' USING ZOS-SINT32 PB-VARINT BYTES-USED.
+           PERFORM PBS322VI THRU END-PBS322VI.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBS322VZ Entry point: Signed 32b Integer to Variable ZigZag
+      * ---------------------------------------------------------------
+           ENTRY 'PBS322VZ' USING ZOS-SINT32 PB-VARINT BYTES-USED.
+           PERFORM PBS322VZ THRU END-PBS322VZ.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBU322FI Entry point: Unsigned 32b Integer to Fixed Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBU322FI' USING ZOS-UINT32 PB-FIXED32 BYTES-USED.
+           PERFORM PBU322FI THRU END-PBU322FI.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PBS322FI Entry point: Signed 32b Integer to Fixed Integer
+      * ---------------------------------------------------------------
+           ENTRY 'PBS322FI' USING ZOS-SINT32 PB-FIXED32 BYTES-USED.
+           PERFORM PBS322FI THRU END-PBS322FI.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PB2PFLOA Entry point: COMP-1 to IEEE Float
+      * ---------------------------------------------------------------
+           ENTRY 'PB2PFLOA' USING ZOS-FLOAT IEEE-FLOAT BYTES-USED.
+           PERFORM PB2PFLOA THRU END-PB2PFLOA.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * PB2PDBLE Entry point: COMP-2 to IEEE Double
+      * ---------------------------------------------------------------
+           ENTRY 'PB2PDBLE' USING ZOS-DOUBLE IEEE-DOUBLE BYTES-USED.
+           PERFORM PB2PDBLE THRU END-PB2PDBLE.
+           GOBACK.
+
+      * ===============================================================
+      * UTILITIES ENTRY POINTS
+      * ===============================================================
+      * ---------------------------------------------------------------
+      * PBBA2HEX Entry point: Display bytes in hex
+      * ---------------------------------------------------------------
+           ENTRY 'PBBA2HEX' USING BYTE-ARRAY-LEN BYTE-ARRAY HEX-STRING.
+           PERFORM PBBA2HEX THRU END-PBBA2HEX.
+           GOBACK.
+
+      * ===============================================================
+      * PROTOCOL BUFFER TO COBOL IMPLEMENTATION
+      * ===============================================================
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Variable Int to z/OS unsigned 64 bits
+      * binary.
+      * Variable ints are stored in a sequence of bytes where the most
+      * significant bit indicates that there are more bytes. The
+      * remaining 7 bits in each byte are the actual integer bits
+      * except that bytes are ordered as least significant first.
+      *   param : PB-VARINT
+      *   return: ZOS-UINT64
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBVI2U64.
+
+      D    DISPLAY 'PBVI2U64 STARTED'.
+      D    PERFORM DISPLAY-PB-VARINT THRU END-DISPLAY-PB-VARINT.
+
+           SET VARINT-INCOMPLETE TO TRUE.
+           MOVE ZERO TO ZOS-UINT64 W-HWORD.
+           MOVE 1 TO W-M.
+
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL VARINT-COMPLETE
+                      OR BYTES-USED > VARINT-MAX-BYTES
+               MOVE PB-VARINT-BYTE(BYTES-USED) TO W-HWORD-BYTE-2
+
+               IF (W-HWORD < 128)
+                   SET VARINT-COMPLETE TO TRUE
+                   COMPUTE ZOS-UINT64 = ZOS-UINT64
+                           + W-HWORD * W-M
+               ELSE
+                   COMPUTE ZOS-UINT64 = ZOS-UINT64
+                           + (W-HWORD - 128) * W-M
+               END-IF
+      *        // prepare next iteration
+               COMPUTE W-M = W-M * 128
+
+           END-PERFORM.
+
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'ZOS UINT64=' ZOS-UINT64.
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    DISPLAY 'PBVI2U64 ENDED'.
+
+       END-PBVI2U64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Variable Int to z/OS signed 64 bits
+      * binary.
+      *   param : PB-VARINT
+      *   return: ZOS-SINT64
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBVI2S64.
+
+      D    DISPLAY 'PBVI2S64 STARTED'.
+ 
+           SET ADDRESS OF ZOS-UINT64 TO ADDRESS OF W-ZOS-UINT64.
+           PERFORM PBVI2U64 THRU END-PBVI2U64.
+           IF W-ZOS-UINT64 > 2 ** 63
+              COMPUTE ZOS-SINT64 = W-ZOS-UINT64 - 2 ** 64
+           ELSE
+              COMPUTE ZOS-SINT64 = W-ZOS-UINT64
+           END-IF.
+
+      D    DISPLAY 'ZOS SINT64=' ZOS-SINT64.
+      D    DISPLAY 'PBVI2S64 ENDED'.
+
+       END-PBVI2S64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Variable ZigZag to z/OS signed 64 bits
+      * binary.
+      * ZigZag is a protocol buffer technique that optimizes storage
+      * for negative numbers:
+      *     0  is stored as 0
+      *     -1 is stored as 1
+      *     +1 is stored as 2
+      *     -2 is stored as 3
+      *     +2 is stored as 4
+      *     ...
+      *   param : PB-VARINT
+      *   return: ZOS-SINT64
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBVZ2S64.
+
+      D    DISPLAY 'PBVZ2S64 STARTED'.
+
+           SET ADDRESS OF ZOS-UINT64 TO ADDRESS OF W-ZOS-UINT64.
+           PERFORM PBVI2U64 THRU END-PBVI2U64.
+           DIVIDE W-ZOS-UINT64 BY 2 GIVING ZOS-SINT64
+                  REMAINDER W-R.
+           IF W-R > 0
+              COMPUTE ZOS-SINT64 = -1 * (ZOS-SINT64 + 1)
+           END-IF.
+
+      D    DISPLAY 'ZOS SINT64=' ZOS-SINT64.
+      D    DISPLAY 'PBVZ2S64 ENDED'.
+
+       END-PBVZ2S64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Fixed Int to z/OS unsigned 64 bits
+      * binary.
+      *   param : PB-FIXED64
+      *   return: ZOS-UINT64
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBFI2U64.
+
+      D    DISPLAY 'PBFI2U64 STARTED'.
+      D    PERFORM DISPLAY-PB-FIXED64 THRU END-DISPLAY-PB-FIXED64.
+
+           MOVE LENGTH OF PB-FIXED64 TO W-L W-J.
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL BYTES-USED > W-L
+               MOVE PB-FIXED64-BYTE(BYTES-USED) TO ZOS-UINT64-BYTE(W-J)
+               SUBTRACT 1 FROM W-J
+           END-PERFORM.
+           
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'ZOS UINT64=' ZOS-UINT64.
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    DISPLAY 'PBFI2U64 ENDED'.
+
+       END-PBFI2U64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Fixed Int to z/OS Signed 64 bits
+      * binary.
+      *   param : PB-FIXED64
+      *   return: ZOS-SINT64
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBFI2S64.
+
+      D    DISPLAY 'PBFI2S64 STARTED'.
+      D    PERFORM DISPLAY-PB-FIXED64 THRU END-DISPLAY-PB-FIXED64.
+
+           MOVE LENGTH OF PB-FIXED64 TO W-L W-J.
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL BYTES-USED > W-L
+               MOVE PB-FIXED64-BYTE(BYTES-USED) TO ZOS-SINT64-BYTE(W-J)
+               SUBTRACT 1 FROM W-J
+           END-PERFORM.
+           
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'ZOS SINT64=' ZOS-SINT64.
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    DISPLAY 'PBFI2S64 ENDED'.
+
+       END-PBFI2S64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Variable Int to z/OS unsigned 32 bits
+      * binary.
+      *   param : PB-VARINT
+      *   return: ZOS-UINT32
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBVI2U32.
+
+      D    DISPLAY 'PBVI2U32 STARTED'.
+
+           SET ADDRESS OF ZOS-UINT64 TO ADDRESS OF W-ZOS-UINT64.
+           PERFORM PBVI2U64 THRU END-PBVI2U64.
+           COMPUTE ZOS-UINT32 = W-ZOS-UINT64.
+
+      D    DISPLAY 'ZOS UINT32=' ZOS-UINT32.
+      D    DISPLAY 'PBVI2U32 ENDED'.
+
+       END-PBVI2U32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Variable Int to z/OS signed 32 bits
+      * binary.
+      *   param : PB-VARINT
+      *   return: ZOS-SINT32
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBVI2S32.
+
+      D    DISPLAY 'PBVI2S32 STARTED'.
+
+           SET ADDRESS OF ZOS-SINT64 TO ADDRESS OF W-ZOS-SINT64.
+           PERFORM PBVI2S64 THRU END-PBVI2S64.
+           COMPUTE ZOS-SINT32 = W-ZOS-SINT64.
+
+      D    DISPLAY 'ZOS SINT32=' ZOS-SINT32.
+      D    DISPLAY 'PBVI2S32 ENDED'.
+
+       END-PBVI2S32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Variable ZigZag to z/OS signed 32 bits
+      * binary.
+      *   param : PB-VARINT
+      *   return: ZOS-SINT32
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBVZ2S32.
+
+      D    DISPLAY 'PBVZ2S32 STARTED'.
+
+           SET ADDRESS OF ZOS-SINT64 TO ADDRESS OF W-ZOS-SINT64.
+           PERFORM PBVZ2S64 THRU END-PBVZ2S64.
+           COMPUTE ZOS-SINT32 = W-ZOS-SINT64.
+
+      D    DISPLAY 'ZOS SINT32=' ZOS-SINT32.
+      D    DISPLAY 'PBVZ2S32 ENDED'.
+
+       END-PBVZ2S32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Fixed Int to z/OS unsigned 32 bits
+      * binary.
+      *   param : PB-FIXED32
+      *   return: ZOS-UINT32
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBFI2U32.
+
+      D    DISPLAY 'PBFI2U32 STARTED'.
+      D    PERFORM DISPLAY-PB-FIXED32 THRU END-DISPLAY-PB-FIXED32.
+
+           MOVE LENGTH OF PB-FIXED32 TO W-L W-J.
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL BYTES-USED > W-L
+               MOVE PB-FIXED32-BYTE(BYTES-USED) TO ZOS-UINT32-BYTE(W-J)
+               SUBTRACT 1 FROM W-J
+           END-PERFORM.
+           
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'ZOS UINT32=' ZOS-UINT32.
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    DISPLAY 'PBFI2U32 ENDED'.
+
+       END-PBFI2U32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer Fixed Int to z/OS Signed 32 bits
+      * binary.
+      *   param : PB-FIXED32
+      *   return: ZOS-SINT32
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBFI2S32.
+
+      D    DISPLAY 'PBFI2S32 STARTED'.
+      D    PERFORM DISPLAY-PB-FIXED32 THRU END-DISPLAY-PB-FIXED32.
+
+           MOVE LENGTH OF PB-FIXED32 TO W-L W-J.
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL BYTES-USED > W-L
+               MOVE PB-FIXED32-BYTE(BYTES-USED) TO ZOS-SINT32-BYTE(W-J)
+               SUBTRACT 1 FROM W-J
+           END-PERFORM.
+           
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'ZOS SINT32=' ZOS-SINT32.
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    DISPLAY 'PBFI2S32 ENDED'.
+
+       END-PBFI2S32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer IEEE Float to z/OS Float
+      *   param : IEEE-FLOAT
+      *   return: ZOS-FLOAT
+      * ---------------------------------------------------------------
+       PB2ZFLOA.
+
+      D    DISPLAY 'PB2ZFLOA STARTED'.
+      D    PERFORM DISPLAY-IEEE-FLOAT THRU END-DISPLAY-IEEE-FLOAT.
+
+      *    // check for 0 and -0
+           IF IEEE-FLOAT-COMP = ZERO OR
+              IEEE-FLOAT-COMP = 2147483648
+              COMPUTE ZOS-FLOAT = ZERO
+              GO TO END-PB2ZFLOA
+           END-IF.
+
+      *    // first bit is the sign
+           MOVE ZERO TO W-HWORD.
+           MOVE IEEE-FLOAT-BYTE-1 TO W-HWORD-BYTE-2.
+           DIVIDE W-HWORD BY 128
+                  GIVING W-SIGN
+                  REMAINDER W-EXPONENT
+
+      *    // exponent is 8 bits so recover first bit of second byte
+           MOVE ZERO TO W-HWORD.
+           MOVE IEEE-FLOAT-BYTE-2 TO W-HWORD-BYTE-2.
+           DIVIDE W-HWORD BY 128
+                  GIVING W-HWORD
+                  REMAINDER W-HWORD2
+           COMPUTE W-EXPONENT = 2 * W-EXPONENT + W-HWORD
+
+      *    // Zero exponent, denormalized float
+           IF W-EXPONENT = ZERO
+      *        // this is a denormal number
+               COMPUTE W-EXPONENT = - 126
+           ELSE
+      *        // normal number, exponent is biased by 127
+               COMPUTE W-EXPONENT = W-EXPONENT - 127
+      *        // add implied most significant bit to mantissa
+               COMPUTE W-HWORD2 = W-HWORD2 + 128
+           END-IF.
+
+      D    DISPLAY 'IEEE EXPONENT=' W-EXPONENT.
+
+      *    // construct mantissa
+           MOVE ZERO TO ZOS-FLOAT-COMP.
+           MOVE W-HWORD2-BYTE-2     TO ZOS-FLOAT-BYTE-2.
+           MOVE IEEE-FLOAT-BYTE-3   TO ZOS-FLOAT-BYTE-3.
+           MOVE IEEE-FLOAT-BYTE-4   TO ZOS-FLOAT-BYTE-4.
+      D    DISPLAY 'IEEE MANTISSA=' ZOS-FLOAT-COMP.
+
+      *    // Determine hex exponent. Add 1 bit first
+      *    // because IEEE starts fractional part after first bit
+           ADD 1 TO W-EXPONENT.
+
+           IF W-EXPONENT < 0
+               COMPUTE W-HWORD = -1 * W-EXPONENT
+           ELSE
+               COMPUTE W-HWORD = W-EXPONENT
+           END-IF.
+           DIVIDE W-HWORD BY 4 GIVING W-HWORD
+                  REMAINDER W-HWORD2.
+
+      *    // shift mantissa so that exponent corresponds to a
+      *    // hexadecimal boundary
+           IF W-HWORD2 > 0
+               IF W-EXPONENT < 0
+                   IF ZOS-FLOAT-COMP > 8388608
+                       COMPUTE ZOS-FLOAT-COMP =
+                               ZOS-FLOAT-COMP / (2 ** W-HWORD2)
+                   ELSE
+      *                // avoid loss of precision for denormal numbers
+                       ADD 1 TO W-HWORD
+                       COMPUTE ZOS-FLOAT-COMP =
+                               ZOS-FLOAT-COMP * (2 ** (4 - W-HWORD2))
+                   END-IF
+               ELSE
+                   ADD 1 TO W-HWORD
+                   COMPUTE ZOS-FLOAT-COMP =
+                           ZOS-FLOAT-COMP / (2 ** (4 - W-HWORD2))
+               END-IF
+           END-IF.
+           IF W-EXPONENT < 0
+               COMPUTE W-EXPONENT = -1 * W-HWORD
+           ELSE
+               COMPUTE W-EXPONENT = W-HWORD
+           END-IF.
+
+      *    // bias final exponent by x'40'
+           ADD 64 TO W-EXPONENT.
+
+      *    // z/OS cannot store an exponent > 127 OR negative
+           IF W-EXPONENT > 127 OR W-EXPONENT < 0
+      D        DISPLAY 'ZOS EXPONENT ' W-EXPONENT ' IS OUT OF RANGE'
+               MOVE 8 TO RETURN-CODE
+               MOVE ZERO TO ZOS-FLOAT-COMP
+               GO TO END-PB2ZFLOA
+           END-IF.
+
+      D    DISPLAY 'ZOS EXPONENT=' W-EXPONENT.
+      D    DISPLAY 'ZOS MANTISSA=' ZOS-FLOAT-COMP.
+
+      *    // insert sign if left byte
+           COMPUTE W-HWORD = W-EXPONENT.
+           IF W-SIGN = 1
+               ADD 128 TO W-HWORD
+           END-IF.
+           MOVE W-HWORD-BYTE-2 TO ZOS-FLOAT-BYTE-1.
+
+      D    DISPLAY 'ZOS FLOAT=' ZOS-FLOAT.
+      D    DISPLAY 'PB2ZFLOA ENDED'.
+
+       END-PB2ZFLOA. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert Protocol Buffer IEEE double to z/OS double
+      *   param : IEEE-DOUBLE
+      *   return: ZOS-DOUBLE
+      * ---------------------------------------------------------------
+       PB2ZDBLE.
+
+      D    DISPLAY 'PB2ZDBLE STARTED'.
+      D    PERFORM DISPLAY-IEEE-DOUBLE THRU END-DISPLAY-IEEE-DOUBLE.
+
+      *    // check for 0 and -0
+           IF IEEE-DOUBLE-COMP = ZERO OR
+              IEEE-DOUBLE-COMP = 9223372036854775808
+              COMPUTE ZOS-DOUBLE = ZERO
+              GO TO END-PB2ZDBLE
+           END-IF.
+
+      *    // first bit is the sign, 7 next bits are part of exponent
+           MOVE ZERO TO W-HWORD.
+           MOVE IEEE-DOUBLE-BYTE-1 TO W-HWORD-BYTE-2.
+           DIVIDE W-HWORD BY 128
+                  GIVING W-SIGN
+                  REMAINDER W-EXPONENT
+
+      *    // exponent is 11 bits so recover 4 bits of second byte
+           MOVE ZERO TO W-HWORD.
+           MOVE IEEE-DOUBLE-BYTE-2 TO W-HWORD-BYTE-2.
+           DIVIDE W-HWORD BY 16
+                  GIVING W-HWORD
+                  REMAINDER W-HWORD2
+           COMPUTE W-EXPONENT = 16 * W-EXPONENT + W-HWORD
+
+      *    // Zero exponent is a denormalized double
+           IF W-EXPONENT = ZERO
+      *        // this is a denormal number
+               COMPUTE W-EXPONENT = - 1022
+           ELSE
+      *        // normal number, exponent is biased by 1023
+               COMPUTE W-EXPONENT = W-EXPONENT - 1023
+      *        // add implied most significant bit to mantissa
+               COMPUTE W-HWORD2 = W-HWORD2 + 16
+           END-IF.
+
+      D    DISPLAY 'IEEE EXPONENT=' W-EXPONENT.
+
+      *    // construct mantissa
+           MOVE ZERO TO ZOS-DOUBLE-COMP.
+           MOVE W-HWORD2-BYTE-2      TO ZOS-DOUBLE-BYTE-2.
+           MOVE IEEE-DOUBLE-BYTE-3   TO ZOS-DOUBLE-BYTE-3.
+           MOVE IEEE-DOUBLE-BYTE-4   TO ZOS-DOUBLE-BYTE-4.
+           MOVE IEEE-DOUBLE-BYTE-5   TO ZOS-DOUBLE-BYTE-5.
+           MOVE IEEE-DOUBLE-BYTE-6   TO ZOS-DOUBLE-BYTE-6.
+           MOVE IEEE-DOUBLE-BYTE-7   TO ZOS-DOUBLE-BYTE-7.
+           MOVE IEEE-DOUBLE-BYTE-8   TO ZOS-DOUBLE-BYTE-8.
+      D    DISPLAY 'IEEE MANTISSA=' ZOS-DOUBLE-COMP.
+
+      *    // Determine hex exponent. Add 4 bits first
+      *    // because IEEE starts fractional part after first bit
+      *    // and IEEE mantissa starts in middle of byte 2
+           ADD 4 TO W-EXPONENT.
+
+      *    // remove all leading binary zeroes from mantissa
+           PERFORM UNTIL ZOS-DOUBLE-COMP NOT < 36028797018963968
+               SUBTRACT 1 FROM W-EXPONENT
+               COMPUTE ZOS-DOUBLE-COMP = ZOS-DOUBLE-COMP * 2
+           END-PERFORM.
+
+      *    // Determine hex exponent
+           IF W-EXPONENT < 0
+               COMPUTE W-HWORD = -1 * W-EXPONENT
+           ELSE
+               COMPUTE W-HWORD = W-EXPONENT
+           END-IF.
+           DIVIDE W-HWORD BY 4 GIVING W-HWORD
+                  REMAINDER W-HWORD2.
+
+      *    // shift mantissa so that exponent corresponds to a
+      *    // hexadecimal boundary
+           IF W-HWORD2 > 0
+               IF W-EXPONENT < 0
+                   IF ZOS-DOUBLE-COMP > 4503599627370496
+                       COMPUTE ZOS-DOUBLE-COMP =
+                               ZOS-DOUBLE-COMP / (2 ** W-HWORD2)
+                   ELSE
+      *                // avoid loss of precision for denormal numbers
+                       ADD 1 TO W-HWORD
+                       COMPUTE ZOS-DOUBLE-COMP =
+                               ZOS-DOUBLE-COMP * (2 ** (4 - W-HWORD2))
+                   END-IF
+               ELSE
+                   ADD 1 TO W-HWORD
+                   COMPUTE ZOS-DOUBLE-COMP =
+                           ZOS-DOUBLE-COMP / (2 ** (4 - W-HWORD2))
+               END-IF
+           END-IF.
+           IF W-EXPONENT < 0
+               COMPUTE W-EXPONENT = -1 * W-HWORD
+           ELSE
+               COMPUTE W-EXPONENT = W-HWORD
+           END-IF.
+
+      *    // bias final exponent by x'40'
+           ADD 64 TO W-EXPONENT.
+
+      *    // z/OS cannot store an exponent > 127 OR negative
+           IF W-EXPONENT > 127 OR W-EXPONENT < 0
+      D        DISPLAY 'ZOS EXPONENT ' W-EXPONENT ' IS OUT OF RANGE'
+               MOVE 8 TO RETURN-CODE
+               MOVE ZERO TO ZOS-DOUBLE-COMP
+               GO TO END-PB2ZDBLE
+           END-IF.
+
+      D    DISPLAY 'ZOS EXPONENT=' W-EXPONENT.
+      D    DISPLAY 'ZOS MANTISSA=' ZOS-DOUBLE-COMP.
+
+      *    // insert sign if left byte
+           COMPUTE W-HWORD = W-EXPONENT.
+           IF W-SIGN = 1
+               ADD 128 TO W-HWORD
+           END-IF.
+           MOVE W-HWORD-BYTE-2 TO ZOS-DOUBLE-BYTE-1.
+
+      D    DISPLAY 'ZOS DOUBLE=' ZOS-DOUBLE.
+      D    DISPLAY 'PB2ZDBLE ENDED'.
+
+       END-PB2ZDBLE. EXIT.
+
+      * ===============================================================
+      * COBOL TO PROTOCOL BUFFER IMPLEMENTATION
+      * ===============================================================
+      * ---------------------------------------------------------------
+      * Convert z/OS unsigned 64 bits binary to Variable Integer
+      *   param : ZOS-UINT64
+      *   return: PB-VARINT
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBU642VI.
+
+      D    DISPLAY 'PBU642VI STARTED'.
+      D    DISPLAY 'ZOS UINT64=' ZOS-UINT64.
+
+           SET VARINT-INCOMPLETE TO TRUE.
+           MOVE ZOS-UINT64 TO W-ZOS-UINT64.
+
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL VARINT-COMPLETE
+                      OR BYTES-USED > VARINT-MAX-BYTES
+
+               DIVIDE W-ZOS-UINT64 BY 128 GIVING W-ZOS-UINT64
+                      REMAINDER W-R
+               IF W-ZOS-UINT64 = ZERO
+                   SET VARINT-COMPLETE TO TRUE
+                   MOVE W-R TO W-HWORD
+               ELSE
+      *            // turn msb on to signal continuation
+                   COMPUTE W-HWORD = W-R + 128
+               END-IF
+               MOVE W-HWORD-BYTE-2 TO PB-VARINT-BYTE(BYTES-USED)
+
+           END-PERFORM.
+
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    PERFORM DISPLAY-PB-VARINT THRU END-DISPLAY-PB-VARINT.
+      D    DISPLAY 'PBU642VI ENDED'.
+
+       END-PBU642VI. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS signed 64 bits binary to Variable Integer
+      *   param : ZOS-SINT64
+      *   return: PB-VARINT
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBS642VI.
+
+      D    DISPLAY 'PBS642VI STARTED'.
+      D    DISPLAY 'ZOS SINT64=' ZOS-SINT64.
+
+           SET ADDRESS OF ZOS-UINT64 TO ADDRESS OF W-ZOS-UINT64.
+           IF ZOS-SINT64 < 0
+              COMPUTE W-ZOS-UINT64 = 2 ** 64 + ZOS-SINT64
+           ELSE
+              COMPUTE W-ZOS-UINT64 = ZOS-SINT64
+           END-IF.
+           PERFORM PBU642VI THRU END-PBU642VI.
+
+      D    DISPLAY 'PBS642VI ENDED'.
+
+       END-PBS642VI. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS signed 64 bits binary to Variable ZigZag
+      *   param : ZOS-SINT64
+      *   return: PB-VARINT
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBS642VZ.
+
+      D    DISPLAY 'PBS642VZ STARTED'.
+      D    DISPLAY 'ZOS SINT64=' ZOS-SINT64.
+
+           IF ZOS-SINT64 < 0
+               COMPUTE W-ZOS-UINT64 = 2 *( -1 * ZOS-SINT64) - 1
+           ELSE
+               COMPUTE W-ZOS-UINT64 = 2 * ZOS-SINT64
+           END-IF.
+           
+           SET ADDRESS OF ZOS-UINT64 TO ADDRESS OF W-ZOS-UINT64.
+           PERFORM PBU642VI THRU END-PBU642VI.
+
+      D    DISPLAY 'PBS642VZ ENDED'.
+
+       END-PBS642VZ. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS unsigned 64 bits binary to Fixed Integer
+      *   param : ZOS-UINT64
+      *   return: PB-FIXED64
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBU642FI.
+
+      D    DISPLAY 'PBU642FI STARTED'.
+      D    DISPLAY 'ZOS UINT64=' ZOS-UINT64.
+
+           MOVE LENGTH OF PB-FIXED64 TO W-L W-J.
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL BYTES-USED > W-L
+               MOVE ZOS-UINT64-BYTE(BYTES-USED) TO PB-FIXED64-BYTE(W-J)
+               SUBTRACT 1 FROM W-J
+           END-PERFORM.
+
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    PERFORM DISPLAY-PB-FIXED64 THRU END-DISPLAY-PB-FIXED64.
+      D    DISPLAY 'PBU642FI ENDED'.
+
+       END-PBU642FI. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS unsigned 64 bits binary to Fixed Integer
+      *   param : ZOS-SINT64
+      *   return: PB-FIXED64
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBS642FI.
+
+      D    DISPLAY 'PBS642FI STARTED'.
+      D    DISPLAY 'ZOS SINT64=' ZOS-SINT64.
+
+           MOVE LENGTH OF PB-FIXED64 TO W-L W-J.
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL BYTES-USED > W-L
+               MOVE ZOS-SINT64-BYTE(BYTES-USED) TO PB-FIXED64-BYTE(W-J)
+               SUBTRACT 1 FROM W-J
+           END-PERFORM.
+
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    PERFORM DISPLAY-PB-FIXED64 THRU END-DISPLAY-PB-FIXED64.
+      D    DISPLAY 'PBS642FI ENDED'.
+
+       END-PBS642FI. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS unsigned 32 bits binary to Variable integer
+      *   param : ZOS-UINT32
+      *   return: PB-VARINT
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBU322VI.
+
+      D    DISPLAY 'PBU322VI STARTED'.
+      D    DISPLAY 'ZOS UINT32=' ZOS-UINT32.
+      
+           COMPUTE W-ZOS-UINT64 = ZOS-UINT32.
+           SET ADDRESS OF ZOS-UINT64 TO ADDRESS OF W-ZOS-UINT64.
+           PERFORM PBU642VI THRU END-PBU642VI.
+
+      D    DISPLAY 'PBU322VI ENDED'.
+
+       END-PBU322VI. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS signed 32 bits binary to Variable integer
+      *   param : ZOS-SINT32
+      *   return: PB-VARINT
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBS322VI.
+
+      D    DISPLAY 'PBS322VI STARTED'.
+      D    DISPLAY 'ZOS SINT32=' ZOS-SINT32.
+
+           COMPUTE W-ZOS-SINT64 = ZOS-SINT32.
+           SET ADDRESS OF ZOS-SINT64 TO ADDRESS OF W-ZOS-SINT64.
+           PERFORM PBS642VI THRU END-PBS642VI.
+
+      D    DISPLAY 'PBS322VI ENDED'.
+
+       END-PBS322VI. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS signed 32 bits binary to Variable ZigZag
+      *   param : ZOS-SINT32
+      *   return: PB-VARINT
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBS322VZ.
+
+      D    DISPLAY 'PBS322VZ STARTED'.
+      D    DISPLAY 'ZOS SINT32=' ZOS-SINT32.
+
+           COMPUTE W-ZOS-SINT64 = ZOS-SINT32.
+           SET ADDRESS OF ZOS-SINT64 TO ADDRESS OF W-ZOS-SINT64.
+           PERFORM PBS642VZ THRU END-PBS642VZ.
+
+      D    DISPLAY 'PBS322VZ ENDED'.
+
+       END-PBS322VZ. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS unsigned 32 bits binary to Fixed Integer
+      *   param : ZOS-UINT32
+      *   return: PB-FIXED32
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBU322FI.
+
+      D    DISPLAY 'PBU322FI STARTED'.
+      D    DISPLAY 'ZOS UINT32=' ZOS-UINT32.
+
+           MOVE LENGTH OF PB-FIXED32 TO W-L W-J.
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL BYTES-USED > W-L
+               MOVE ZOS-UINT32-BYTE(BYTES-USED) TO PB-FIXED32-BYTE(W-J)
+               SUBTRACT 1 FROM W-J
+           END-PERFORM.
+
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    PERFORM DISPLAY-PB-FIXED32 THRU END-DISPLAY-PB-FIXED32.
+      D    DISPLAY 'PBU322FI ENDED'.
+
+       END-PBU322FI. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS unsigned 32 bits binary to Fixed Integer
+      *   param : ZOS-SINT32
+      *   return: PB-FIXED32
+      *           BYTES-USED
+      * ---------------------------------------------------------------
+       PBS322FI.
+
+      D    DISPLAY 'PBS322FI STARTED'.
+      D    DISPLAY 'ZOS SINT32=' ZOS-SINT32.
+
+           MOVE LENGTH OF PB-FIXED32 TO W-L W-J.
+           PERFORM VARYING BYTES-USED FROM 1 BY 1
+                   UNTIL BYTES-USED > W-L
+               MOVE ZOS-SINT32-BYTE(BYTES-USED) TO PB-FIXED32-BYTE(W-J)
+               SUBTRACT 1 FROM W-J
+           END-PERFORM.
+
+           SUBTRACT 1 FROM BYTES-USED.
+
+      D    DISPLAY 'BYTES-USED=' BYTES-USED.
+      D    PERFORM DISPLAY-PB-FIXED32 THRU END-DISPLAY-PB-FIXED32.
+      D    DISPLAY 'PBS322FI ENDED'.
+
+       END-PBS322FI. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS Float to Protocol Buffer IEEE Float
+      *   param : ZOS-FLOAT
+      *   return: IEEE-FLOAT
+      * ---------------------------------------------------------------
+       PB2PFLOA.
+
+      D    DISPLAY 'PB2PFLOA STARTED'.
+      D    DISPLAY 'ZOS-FLOAT=' ZOS-FLOAT.
+
+      *    // first bit is the sign
+           MOVE ZERO TO W-HWORD.
+           MOVE ZOS-FLOAT-BYTE-1 TO W-HWORD-BYTE-2.
+           DIVIDE W-HWORD BY 128
+                  GIVING W-SIGN
+                  REMAINDER W-EXPONENT
+
+      *    // exponent is biased by 64
+           COMPUTE W-EXPONENT = W-EXPONENT - 64.
+      D    DISPLAY 'ZOS EXPONENT=' W-EXPONENT.
+
+      *    // transform exponent to a binary exponent
+           COMPUTE W-EXPONENT = W-EXPONENT * 4.
+
+      *    // compute mantissa
+           MOVE ZOS-FLOAT-BYTES TO IEEE-FLOAT-BYTES.
+           MOVE LOW-VALUES TO IEEE-FLOAT-BYTE-1.
+      D    DISPLAY 'ZOS MANTISSA=' IEEE-FLOAT-COMP.
+
+      *    // IEEE zero is all zeroes
+           IF IEEE-FLOAT-COMP = ZERO
+              MOVE LOW-VALUES TO IEEE-FLOAT
+              IF W-SIGN = 1
+                 MOVE X'80' TO IEEE-FLOAT-BYTE-1
+              END-IF
+              GO TO END-PB2PFLOA
+           END-IF.
+
+      *    // remove all leading binary zeroes from mantissa
+           PERFORM UNTIL IEEE-FLOAT-COMP NOT < 8388608
+               SUBTRACT 1 FROM W-EXPONENT
+               COMPUTE IEEE-FLOAT-COMP = IEEE-FLOAT-COMP * 2
+           END-PERFORM.
+
+      D    DISPLAY 'SHIFTED BINARY EXPONENT=' W-EXPONENT.
+      D    DISPLAY 'SHIFTED MANTISSA=' IEEE-FLOAT-COMP.
+
+      *    // smallest normalized exponent is -126, below, denormalize
+           IF W-EXPONENT > -126
+               PERFORM PB2PFLOA-NORMALIZED THRU
+                   END-PB2PFLOA-NORMALIZED
+           ELSE
+               PERFORM PB2PFLOA-DENORMALIZED THRU
+                   END-PB2PFLOA-DENORMALIZED
+           END-IF.
+
+      D    PERFORM DISPLAY-IEEE-FLOAT THRU END-DISPLAY-IEEE-FLOAT.
+      D    DISPLAY 'PB2PFLOA ENDED'.
+
+       END-PB2PFLOA. EXIT.
+
+       PB2PFLOA-NORMALIZED.
+
+      D    DISPLAY 'PB2PFLOA-NORMALIZED'.
+
+      *    // exponent is right after the msb and must be biased by 127
+           SUBTRACT 1 FROM W-EXPONENT.
+           ADD 127 TO W-EXPONENT.
+
+      *    // make the msb disappear, replacing it with 8th bit
+      *    // of exponent
+           DIVIDE W-EXPONENT BY 2 GIVING W-HWORD
+                  REMAINDER W-HWORD2.
+           COMPUTE IEEE-FLOAT-COMP = IEEE-FLOAT-COMP
+                   + ((W-HWORD2 - 1) * 8388608)
+
+      *    // store 7 bits of exponent and sign
+           IF W-SIGN = 1
+              ADD 128 TO W-HWORD
+           END-IF.
+           MOVE W-HWORD-BYTE-2 TO IEEE-FLOAT-BYTE-1.
+
+       END-PB2PFLOA-NORMALIZED. EXIT.
+
+       PB2PFLOA-DENORMALIZED.
+
+      D    DISPLAY 'PB2PFLOA-DENORMALIZED'.
+
+      *    // exponent is right after the msb in ieee (not before)
+           SUBTRACT 1 FROM W-EXPONENT.
+           COMPUTE IEEE-FLOAT-COMP = IEEE-FLOAT-COMP / 2.
+
+      *    // denormalized numbers assume -127 as the exponent
+      *    // (although it is stored as zero)
+      *    // if our binary exponent is smaller than -127,
+      *    // we need to shift the mantissa
+           COMPUTE W-EXPONENT = 127 + W-EXPONENT.
+      D    DISPLAY 'DENORMALIZED SHIFT=' W-EXPONENT.
+
+           COMPUTE W-HWORD = -1 * W-EXPONENT.
+           COMPUTE IEEE-FLOAT-COMP =
+                   IEEE-FLOAT-COMP / (2 ** (W-HWORD)).
+           IF W-SIGN = 1
+               MOVE X'80' TO IEEE-FLOAT-BYTE-1
+           END-IF.
+
+       END-PB2PFLOA-DENORMALIZED. EXIT.
+
+      * ---------------------------------------------------------------
+      * Convert z/OS double to Protocol Buffer IEEE double
+      *   param : ZOS-DOUBLE
+      *   return: IEEE-DOUBLE
+      * ---------------------------------------------------------------
+       PB2PDBLE.
+
+      D    DISPLAY 'PB2PDBLE STARTED'.
+      D    DISPLAY 'ZOS-DOUBLE=' ZOS-DOUBLE.
+
+      *    // first bit is the sign
+           MOVE ZERO TO W-HWORD.
+           MOVE ZOS-DOUBLE-BYTE-1 TO W-HWORD-BYTE-2.
+           DIVIDE W-HWORD BY 128
+                  GIVING W-SIGN
+                  REMAINDER W-EXPONENT
+
+      *    // exponent is biased by 64
+           COMPUTE W-EXPONENT = W-EXPONENT - 64.
+      D    DISPLAY 'ZOS EXPONENT=' W-EXPONENT.
+
+      *    // transform exponent to a binary exponent
+           COMPUTE W-EXPONENT = W-EXPONENT * 4.
+
+      *    // compute mantissa
+           MOVE ZOS-DOUBLE-BYTES TO IEEE-DOUBLE-BYTES.
+           MOVE LOW-VALUES TO IEEE-DOUBLE-BYTE-1.
+      D    DISPLAY 'ZOS MANTISSA=' IEEE-DOUBLE-COMP.
+
+      *    // IEEE zero is all zeroes
+           IF IEEE-DOUBLE-COMP = ZERO
+              MOVE LOW-VALUES TO IEEE-DOUBLE
+              IF W-SIGN = 1
+                 MOVE X'80' TO IEEE-DOUBLE-BYTE-1
+              END-IF
+              GO TO END-PB2PDBLE
+           END-IF.
+
+      *    // free up bits 53-56 that IEEE needs for the exponent
+      *    // bit 54 is on if comp >= 2 ** 53
+           PERFORM UNTIL IEEE-DOUBLE-COMP < 9007199254740992
+               ADD 1 TO W-EXPONENT
+               COMPUTE IEEE-DOUBLE-COMP = IEEE-DOUBLE-COMP / 2
+           END-PERFORM.
+      *    // remove all leading binary zeroes from mantissa
+      *    // bit 53 is on if comp >= 2 ** 52
+           PERFORM UNTIL IEEE-DOUBLE-COMP NOT < 4503599627370496
+               SUBTRACT 1 FROM W-EXPONENT
+               COMPUTE IEEE-DOUBLE-COMP = IEEE-DOUBLE-COMP * 2
+           END-PERFORM.
+
+      D    DISPLAY 'SHIFTED BINARY EXPONENT=' W-EXPONENT.
+      D    DISPLAY 'SHIFTED MANTISSA=' IEEE-DOUBLE-COMP.
+
+      *    // smallest normalized exponent is -1022, below, denormalize
+           IF W-EXPONENT > -1022
+               PERFORM PB2PDBLE-NORMALIZED THRU
+                   END-PB2PDBLE-NORMALIZED
+           ELSE
+               PERFORM PB2PDBLE-DENORMALIZED THRU
+                   END-PB2PDBLE-DENORMALIZED
+           END-IF.
+
+      D    PERFORM DISPLAY-IEEE-DOUBLE THRU END-DISPLAY-IEEE-DOUBLE.
+      D    DISPLAY 'PB2PDBLE ENDED'.
+
+       END-PB2PDBLE. EXIT.
+
+       PB2PDBLE-NORMALIZED.
+
+      D    DISPLAY 'PB2PDBLE-NORMALIZED'.
+
+      *    // exponent is right after the msb and the mantissa
+      *    // starts in the middle of byte 2. Also exponent and must
+      *    // be biased by 1023
+           SUBTRACT 4 FROM W-EXPONENT.
+           ADD 1023 TO W-EXPONENT.
+      D    DISPLAY 'IEEE EXPONENT=' W-EXPONENT.
+
+      *    // make the msb disappear, replacing it with last 4 bits
+      *    // of exponent
+           DIVIDE W-EXPONENT BY 16 GIVING W-HWORD
+                  REMAINDER W-HWORD2.
+           COMPUTE IEEE-DOUBLE-COMP = IEEE-DOUBLE-COMP
+                   + ((W-HWORD2 - 1) * 4503599627370496)
+
+      *    // store top 7 bits of exponent and sign in byte 1
+           IF W-SIGN = 1
+              ADD 128 TO W-HWORD
+           END-IF.
+           MOVE W-HWORD-BYTE-2 TO IEEE-DOUBLE-BYTE-1.
+
+       END-PB2PDBLE-NORMALIZED. EXIT.
+
+       PB2PDBLE-DENORMALIZED.
+
+      D    DISPLAY 'PB2PDBLE-DENORMALIZED'.
+
+      *    // exponent is right after the msb in ieee (not before)
+           SUBTRACT 1 FROM W-EXPONENT.
+           COMPUTE IEEE-DOUBLE-COMP = IEEE-DOUBLE-COMP / 2.
+
+      *    // denormalized numbers assume -1023 as the exponent
+      *    // (although it is stored as zero)
+      *    // if our binary exponent is smaller than -1023,
+      *    // we need to shift the mantissa
+           COMPUTE W-EXPONENT = 1023 + W-EXPONENT.
+      D    DISPLAY 'DENORMALIZED SHIFT=' W-EXPONENT.
+
+           COMPUTE W-HWORD = -1 * W-EXPONENT.
+           COMPUTE IEEE-DOUBLE-COMP =
+                   IEEE-DOUBLE-COMP / (2 ** (W-HWORD)).
+           IF W-SIGN = 1
+               MOVE X'80' TO IEEE-DOUBLE-BYTE-1
+           END-IF.
+
+       END-PB2PDBLE-DENORMALIZED. EXIT.
+
+      * ===============================================================
+      * UTILITIES IMPLEMENTATION
+      * ===============================================================
+      * ---------------------------------------------------------------
+      * Display a PB Variable int in hexadecimal
+      * ---------------------------------------------------------------
+       DISPLAY-PB-VARINT.
+           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF PB-VARINT.
+           SET ADDRESS OF BYTE-ARRAY-LEN TO ADDRESS OF W-L.
+           COMPUTE W-L = LENGTH OF W-PB-VARINT-DISPLAY.
+           MOVE LOW-VALUES TO W-PB-VARINT-DISPLAY.
+           SET ADDRESS OF HEX-STRING TO ADDRESS OF W-PB-VARINT-DISPLAY.
+           PERFORM PBBA2HEX THRU END-PBBA2HEX.
+           DISPLAY 'PB-VARINT=0x''' W-PB-VARINT-DISPLAY ''''.
+       END-DISPLAY-PB-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Display a PB Fixed int 64 in hexadecimal
+      * ---------------------------------------------------------------
+       DISPLAY-PB-FIXED64.
+           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF PB-FIXED64.
+           SET ADDRESS OF BYTE-ARRAY-LEN TO ADDRESS OF W-L.
+           COMPUTE W-L = LENGTH OF W-PB-FIXED64-DISPLAY.
+           MOVE LOW-VALUES TO W-PB-FIXED64-DISPLAY.
+           SET ADDRESS OF HEX-STRING TO ADDRESS OF W-PB-FIXED64-DISPLAY.
+           PERFORM PBBA2HEX THRU END-PBBA2HEX.
+           DISPLAY 'PB-FIXED64=0x''' W-PB-FIXED64-DISPLAY ''''.
+       END-DISPLAY-PB-FIXED64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Display a PB Fixed int 32 in hexadecimal
+      * ---------------------------------------------------------------
+       DISPLAY-PB-FIXED32.
+           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF PB-FIXED32.
+           SET ADDRESS OF BYTE-ARRAY-LEN TO ADDRESS OF W-L.
+           COMPUTE W-L = LENGTH OF W-PB-FIXED32-DISPLAY.
+           MOVE LOW-VALUES TO W-PB-FIXED32-DISPLAY.
+           SET ADDRESS OF HEX-STRING TO ADDRESS OF W-PB-FIXED32-DISPLAY.
+           PERFORM PBBA2HEX THRU END-PBBA2HEX.
+           DISPLAY 'PB-FIXED32=0x''' W-PB-FIXED32-DISPLAY ''''.
+       END-DISPLAY-PB-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Display the IEEE float in hexadecimal
+      * ---------------------------------------------------------------
+       DISPLAY-IEEE-FLOAT.
+           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF IEEE-FLOAT.
+           SET ADDRESS OF BYTE-ARRAY-LEN TO ADDRESS OF W-L.
+           MOVE LENGTH OF IEEE-FLOAT TO W-L.
+           SET ADDRESS OF HEX-STRING TO ADDRESS OF W-IEEE-FLOAT-DISPLAY.
+           PERFORM PBBA2HEX THRU END-PBBA2HEX.
+           DISPLAY 'IEEE FLOAT=0x''' W-IEEE-FLOAT-DISPLAY ''''.
+       END-DISPLAY-IEEE-FLOAT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Display the IEEE double in hexadecimal
+      * ---------------------------------------------------------------
+       DISPLAY-IEEE-DOUBLE.
+           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF IEEE-DOUBLE.
+           SET ADDRESS OF BYTE-ARRAY-LEN TO ADDRESS OF W-L.
+           MOVE LENGTH OF IEEE-DOUBLE TO W-L.
+           SET ADDRESS OF HEX-STRING TO ADDRESS OF W-IEEE-DOUBLE-DISPLAY.
+           PERFORM PBBA2HEX THRU END-PBBA2HEX.
+           DISPLAY 'IEEE DOUBLE=0x''' W-IEEE-DOUBLE-DISPLAY ''''.
+       END-DISPLAY-IEEE-DOUBLE. EXIT.
+
+      * ---------------------------------------------------------------
+      * Format a byte array in hexadecimal
+      *   param : BYTE-ARRAY
+      *   param : BYTE-ARRAY-LEN
+      *   param : HEX-STRING
+      * ---------------------------------------------------------------
+       PBBA2HEX.
+           MOVE ZERO TO W-HWORD.
+           PERFORM VARYING W-I FROM 1 BY 1 UNTIL W-I > BYTE-ARRAY-LEN
+               MOVE BYTE(W-I) TO W-HWORD-BYTE-2
+               DIVIDE W-HWORD BY 16 GIVING W-Q REMAINDER W-R
+               MOVE W-HEX-CHAR(W-Q + 1) TO HEX-STRING(2 * W-I - 1:1)
+               MOVE W-HEX-CHAR(W-R + 1) TO HEX-STRING(2 * W-I:1)
+           END-PERFORM.
+       END-PBBA2HEX. EXIT.
+
+       END PROGRAM PB4CBLIB.

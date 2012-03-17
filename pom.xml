@@ -1,0 +1,290 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.legsem.legstar</groupId>
+    <artifactId>protobuf-cobol</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    
+    <name>protobuf-cobol</name>
+    <url>http://maven.apache.org</url>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <legstarCoreVersion>1.5.7</legstarCoreVersion>
+    </properties>
+
+    <dependencies>
+    
+        <!-- LegStar binding API -->
+        <dependency>
+            <groupId>com.legsem.legstar</groupId>
+            <artifactId>legstar-coxbapi</artifactId>
+            <version>${legstarCoreVersion}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jackson-core-asl</artifactId>
+                    <groupId>org.codehaus.jackson</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jackson-xc</artifactId>
+                    <groupId>org.codehaus.jackson</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jackson-mapper-asl</artifactId>
+                    <groupId>org.codehaus.jackson</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+      
+        <!-- LegStar COBOL copybook generator -->
+        <dependency>
+            <groupId>com.legsem.legstar</groupId>
+            <artifactId>legstar-cobcgen</artifactId>
+            <version>${legstarCoreVersion}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.legsem.legstar</groupId>
+                    <artifactId>legstar-coxbrt</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.legsem.legstar</groupId>
+                    <artifactId>legstar-codegen</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+      
+        <!-- Google/Apache protocol buffer for Java -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>2.4.1</version>
+        </dependency>
+      
+        <!-- Apache Logging API -->
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>logkit</groupId>
+                    <artifactId>logkit</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>avalon-framework</groupId>
+                    <artifactId>avalon-framework</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+      
+        <!-- Apache commons lang -->
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
+        </dependency>
+      
+        <!-- Apache commons IO -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.1</version>
+        </dependency>
+      
+        <!-- JUnit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    
+    </dependencies>
+
+    <build>
+  
+        <plugins>
+    
+            <!-- Protocol buffer for java requires Java 6. -->
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+    
+            <!-- Put the generated java test classes on the test classpath. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>add-test-source-folder</id>
+                        <phase>generate-test-sources</phase>
+                        <configuration>
+                            <sources>
+                                <source>target/generated-test-sources</source>
+                            </sources>
+                        </configuration>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+    
+        </plugins>
+  
+    </build>
+
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                   <family>windows</family>
+                </os>
+            </activation>
+
+            <build>
+                <plugins>
+                    <!-- Protoc compile test samples (protoc.exe must be on the path). -->
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.7</version>
+                        <executions>
+                            <execution>
+                                <id>generate-test-sources</id>
+                                <phase>generate-test-sources</phase>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="target/generated-test-sources" />
+                                        <exec executable="cmd">
+                                            <arg value="/c" />
+                                            <arg value="protoc.exe" />
+                                            <arg value="--java_out=target/generated-test-sources" />
+                                            <arg value="--proto_path=src/test/resources/proto" />
+                                            <arg value="src/test/resources/proto/*.proto" />
+                                        </exec>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>unix</id>
+            <activation>
+                <os>
+                   <family>unix</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- Protoc compile test samples (protoc.exe must be on the path). TODO test -->
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.7</version>
+                        <executions>
+                            <execution>
+                                <id>generate-test-sources</id>
+                                <phase>generate-test-sources</phase>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="target/generated-test-sources" />
+                                        <exec executable="protoc.exe">
+                                            <arg value="--java_out=target/generated-test-sources" />
+                                            <arg value="--proto_path=src/test/resources/proto" />
+                                            <arg value="src/test/resources/proto/*.proto" />
+                                        </exec>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <!-- A configured mainframe is needed for these goals. -->
+            <id>legstar-development</id>
+            <build>
+                <plugins>
+
+                    <!-- Upload and compile the COBOL library. -->
+                    <plugin>
+                        <groupId>com.legsem.legstar</groupId>
+                        <artifactId>zosupload-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>compile-zos-library</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>upload</goal>
+                                </goals>
+                                <configuration>
+                                    <hostName>${legstar-dev-zos-host}</hostName>
+                                    <hostUserId>${legstar-dev-zos-userid}</hostUserId>
+                                    <hostPassword>${legstar-dev-zos-password}</hostPassword>
+                                    <inputFolder>src/main/zos</inputFolder>
+                                    <remoteFilesPrefix>P390.DEV</remoteFilesPrefix>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Upload and compile the test programs. -->
+                    <plugin>
+                        <groupId>com.legsem.legstar</groupId>
+                        <artifactId>zosupload-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>compile-zos-test-programs</id>
+                                <phase>test-compile</phase>
+                                <goals>
+                                    <goal>upload</goal>
+                                </goals>
+                                <configuration>
+                                    <hostName>${legstar-dev-zos-host}</hostName>
+                                    <hostUserId>${legstar-dev-zos-userid}</hostUserId>
+                                    <hostPassword>${legstar-dev-zos-password}</hostPassword>
+                                    <inputFolder>src/test/zos</inputFolder>
+                                    <remoteFilesPrefix>P390.DEV</remoteFilesPrefix>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+
+    </profiles>
+
+
+</project>

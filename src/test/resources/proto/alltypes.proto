@@ -1,0 +1,65 @@
+package alltypes;
+option java_package = "com.example.alltypes";
+option java_outer_classname = "AllTypesProtos";
+
+message AllTypes {
+  enum Aenum {
+    UNIVERSAL = 0;
+    WEB = 1;
+    IMAGES = 2;
+    LOCAL = 3;
+    NEWS = 4;
+    PRODUCTS = 5;
+    VIDEO = 6;
+  }
+  required bool abool = 1;
+  required string astring = 2;
+  required double adouble = 3;
+  required Aenum aenum = 4;
+  required float afloat = 5;
+  required int32 aint32 = 6;
+  required int64 aint64 = 7;
+  required uint32 auint32 = 8;
+  required uint64 auint64 = 9;
+}
+
+message Uint64 {
+  required uint64 auint64 = 1;
+}
+
+message Sint64 {
+  required int64 aint64 = 1;
+}
+
+message Sint64ZigZag {
+  required sint64 aint64 = 1;
+}
+
+message Uint32 {
+  required uint32 auint32 = 1;
+}
+
+message Sint32 {
+  required int32 aint32 = 1;
+}
+
+message Sint32ZigZag {
+  required sint32 aint32 = 1;
+}
+
+message Fixedint64 {
+  required fixed64 auint64 = 1;
+}
+
+message SFixedint64 {
+  required sfixed64 aint64 = 1;
+}
+
+message Fixedint32 {
+  required fixed32 auint32 = 1;
+}
+
+message SFixedint32 {
+  required sfixed32 aint32 = 1;
+}
+

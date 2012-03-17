@@ -1,0 +1,164 @@
+       PROCESS ARITH(EXTEND)
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTSF32.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST SIGNED INTEGER 32 BITS <> FIXED INTEGER                  *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  W-PB-FIXED32                       PIC X(4).
+       01  W-ZOS-SINT32                       PIC S9(8) COMP-5.
+       01  W-BYTES-USED                       PIC 9(8) COMP-5.
+
+       01  W-EXPECTED-PB-FIXED32              PIC X(4).
+       01  W-EXPECTED-ZOS-SINT32              PIC S9(8) COMP-5.
+
+       01  W-PB-FIXED32-ARRAY-LEN             PIC 9(4) COMP-5 VALUE 4.
+       01  W-PB-FIXED32-HEX-STRING            PIC X(8).
+
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO ZOS Signed Int 32
+      * ---------------------------------------------------------------
+           DISPLAY "TO-ZOSSINT32 ======= 0 =============="
+           MOVE X'00000000' TO W-PB-FIXED32.
+           MOVE 0 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+           
+           DISPLAY "TO-ZOSSINT32 ======= 1 =============="
+           MOVE X'01000000' TO W-PB-FIXED32.
+           MOVE 1 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+
+           DISPLAY "TO-ZOSSINT32 ======= -1 =============="
+           MOVE X'FFFFFFFF' TO W-PB-FIXED32.
+           MOVE -1 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+
+           DISPLAY "TO-ZOSSINT32 ======= 300 =============="
+           MOVE X'2C010000' TO W-PB-FIXED32.
+           MOVE 300 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+
+           DISPLAY "TO-ZOSSINT32 ======= -300 =============="
+           MOVE X'D4FEFFFF' TO W-PB-FIXED32.
+           MOVE -300 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+
+           DISPLAY "TO-ZOSSINT32 ======= 45483 =============="
+           MOVE X'ABB10000' TO W-PB-FIXED32.
+           MOVE 45483 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+
+           DISPLAY "TO-ZOSSINT32 ======= -45483 =============="
+           MOVE X'554EFFFF' TO W-PB-FIXED32.
+           MOVE -45483 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+
+           DISPLAY "TO-ZOSSINT32 == 2147483647 ====="
+           MOVE X'FFFFFF7F' TO W-PB-FIXED32.
+           MOVE 2147483647 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+
+           DISPLAY "TO-ZOSSINT32 == -2147483648 ====="
+           MOVE X'00000080' TO W-PB-FIXED32.
+           MOVE -2147483648 to W-EXPECTED-ZOS-SINT32.
+           PERFORM TEST-PBFI2S32 THRU END-TEST-PBFI2S32.
+
+      * ---------------------------------------------------------------
+      * TEST TO PROTOBUF Signed Int 32
+      * ---------------------------------------------------------------
+           DISPLAY "TO-PB-FIXED32 ========== 0 =========="
+           COMPUTE W-ZOS-SINT32 = 0.
+           MOVE X'00000000' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== 1 =========="
+           COMPUTE W-ZOS-SINT32 = 1.
+           MOVE X'01000000' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== -1 =========="
+           COMPUTE W-ZOS-SINT32 = -1.
+           MOVE X'FFFFFFFF' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== 300 =========="
+           COMPUTE W-ZOS-SINT32 = 300.
+           MOVE X'2C010000' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== -300 =========="
+           COMPUTE W-ZOS-SINT32 = -300.
+           MOVE X'D4FEFFFF' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== 45483 =========="
+           COMPUTE W-ZOS-SINT32 = 45483.
+           MOVE X'ABB10000' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== -45483 =========="
+           COMPUTE W-ZOS-SINT32 = -45483.
+           MOVE X'554EFFFF' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           DISPLAY "TO-PB-FIXED32 == 2147483647 ====="
+           COMPUTE W-ZOS-SINT32 = 2147483647.
+           MOVE X'FFFFFF7F' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           DISPLAY "TO-PB-FIXED32 == -2147483648 ====="
+           COMPUTE W-ZOS-SINT32 = -2147483648.
+           MOVE X'00000080' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBS322FI THRU END-TEST-PBS322FI.
+
+           MOVE W-RETURN-CODE to RETURN-CODE.
+           GOBACK.
+
+       TEST-PBFI2S32.
+           CALL 'PBFI2S32' USING W-PB-FIXED32 W-ZOS-SINT32 W-BYTES-USED.
+           IF W-ZOS-SINT32 NOT = W-EXPECTED-ZOS-SINT32
+              DISPLAY 'ERROR: ZOS-SINT32'
+              DISPLAY '    RESULT  : ' W-ZOS-SINT32
+              DISPLAY '    EXPECTED: ' W-EXPECTED-ZOS-SINT32
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBFI2S32. EXIT.
+
+       TEST-PBS322FI.
+           MOVE LOW-VALUES TO W-PB-FIXED32.
+           CALL 'PBS322FI' USING W-ZOS-SINT32 W-PB-FIXED32 W-BYTES-USED.
+           IF W-PB-FIXED32 NOT = W-EXPECTED-PB-FIXED32
+              DISPLAY 'ERROR: PB-FIXED32'
+              CALL 'PBBA2HEX' USING W-PB-FIXED32-ARRAY-LEN
+                              W-PB-FIXED32
+                              W-PB-FIXED32-HEX-STRING
+              DISPLAY '    RESULT  : ' W-PB-FIXED32-HEX-STRING
+              CALL 'PBBA2HEX' USING W-PB-FIXED32-ARRAY-LEN
+                              W-EXPECTED-PB-FIXED32
+                              W-PB-FIXED32-HEX-STRING
+              DISPLAY '    EXPECTED: ' W-PB-FIXED32-HEX-STRING
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBS322FI. EXIT.
+
+       END PROGRAM PBCTSF32.
+

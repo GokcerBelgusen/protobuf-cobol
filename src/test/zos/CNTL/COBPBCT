@@ -1,0 +1,93 @@
+//P390FXMD   JOB  (ACCT#),'FADY',
+//           MSGCLASS=X,NOTIFY=&SYSUID,PRTY=14,REGION=0M
+//COMPLINK  PROC
+//*--------------------------------------------------------------------
+//COB  EXEC PGM=IGYCRCTL,REGION=1024K,
+// PARM=('DYNAM,NODLL,LIB,OBJECT,RENT,LIST,APOST,TRUNC(BIN),NOSEQ,',
+//      'OPTIMIZE',MAP)
+//SYSLIB   DD DSN=P390.DEV.COBOL,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD DSN=P390.DEV.COBOL(&PGMNAME),DISP=SHR
+//SYSLIN   DD DSN=&&LOADSET,DISP=(MOD,PASS),
+//         UNIT=SYSDA,SPACE=(80,(250,100))
+//SYSUT1   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT2   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT3   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT4   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT5   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT6   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT7   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//*--------------------------------------------------------------------
+//LKED   EXEC PGM=IEWL,REGION=1024K,
+//       PARM='LIST,MAP,XREF,AMODE(31),RMODE(ANY)'
+//SYSLIB   DD DSN=P390.DEV.LOAD,DISP=SHR
+//         DD DSN=CEE.SCEELKED,DISP=SHR    <=LE
+//SYSLMOD  DD DSN=P390.DEV.LOAD,DISP=SHR
+//SYSUT1   DD UNIT=SYSDA,DCB=BLKSIZE=1024,
+//       SPACE=(1024,(200,20))
+//SYSPRINT DD SYSOUT=*
+//SYSLIN   DD DSN=&&LOADSET,DISP=(OLD,DELETE)
+//         DD DDNAME=SYSIN
+//            PEND
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTDBLE
+//LKED.SYSIN DD *
+  NAME PBCTDBLE(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTFLOA
+//LKED.SYSIN DD *
+  NAME PBCTFLOA(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTSF32
+//LKED.SYSIN DD *
+  NAME PBCTSF32(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTSF64
+//LKED.SYSIN DD *
+  NAME PBCTSF64(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTSV32
+//LKED.SYSIN DD *
+  NAME PBCTSV32(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTSV64
+//LKED.SYSIN DD *
+  NAME PBCTSV64(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTSZ32
+//LKED.SYSIN DD *
+  NAME PBCTSZ32(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTSZ64
+//LKED.SYSIN DD *
+  NAME PBCTSZ64(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTUF32
+//LKED.SYSIN DD *
+  NAME PBCTUF32(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTUF64
+//LKED.SYSIN DD *
+  NAME PBCTUF64(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTUV32
+//LKED.SYSIN DD *
+  NAME PBCTUV32(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=PBCTUV64
+//LKED.SYSIN DD *
+  NAME PBCTUV64(R)
+/*
+//*--------------------------------------------------------------------
+

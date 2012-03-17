@@ -1,0 +1,124 @@
+       PROCESS ARITH(EXTEND)
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTUF32.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST UNSIGNED INTEGER 32 BITS <> FIXED INTEGER                *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  W-PB-FIXED32                       PIC X(4).
+       01  W-ZOS-UINT32                       PIC 9(8) COMP-5.
+       01  W-BYTES-USED                       PIC 9(8) COMP-5.
+
+       01  W-EXPECTED-PB-FIXED32              PIC X(4).
+       01  W-EXPECTED-ZOS-UINT32              PIC 9(8) COMP-5.
+
+       01  W-PB-FIXED32-ARRAY-LEN             PIC 9(4) COMP-5 VALUE 4.
+       01  W-PB-FIXED32-HEX-STRING            PIC X(8).
+
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO ZOS Unsigned Int 32
+      * ---------------------------------------------------------------
+           DISPLAY "TO-ZOSUINT32 ======= 0 =============="
+           MOVE X'00000000' TO W-PB-FIXED32.
+           MOVE 0 to W-EXPECTED-ZOS-UINT32.
+           PERFORM TEST-PBFI2U32 THRU END-TEST-PBFI2U32.
+           
+           DISPLAY "TO-ZOSUINT32 ======= 1 =============="
+           MOVE X'01000000' TO W-PB-FIXED32.
+           MOVE 1 to W-EXPECTED-ZOS-UINT32.
+           PERFORM TEST-PBFI2U32 THRU END-TEST-PBFI2U32.
+
+           DISPLAY "TO-ZOSUINT32 ======= 300 =============="
+           MOVE X'2C010000' TO W-PB-FIXED32.
+           MOVE 300 to W-EXPECTED-ZOS-UINT32.
+           PERFORM TEST-PBFI2U32 THRU END-TEST-PBFI2U32.
+
+           DISPLAY "TO-ZOSUINT32 ======= 45483 =============="
+           MOVE X'ABB10000' TO W-PB-FIXED32.
+           MOVE 45483 to W-EXPECTED-ZOS-UINT32.
+           PERFORM TEST-PBFI2U32 THRU END-TEST-PBFI2U32.
+
+           DISPLAY "TO-ZOSUINT32 == 2147483647 ====="
+           MOVE X'FFFFFF7F' TO W-PB-FIXED32.
+           MOVE 2147483647 to W-EXPECTED-ZOS-UINT32.
+           PERFORM TEST-PBFI2U32 THRU END-TEST-PBFI2U32.
+
+      * ---------------------------------------------------------------
+      * TEST TO PROTOBUF Unsigned Int 32
+      * ---------------------------------------------------------------
+           DISPLAY "TO-PB-FIXED32 ========== 0 =========="
+           COMPUTE W-ZOS-UINT32 = 0.
+           MOVE X'00000000' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBU322FI THRU END-TEST-PBU322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== 1 =========="
+           COMPUTE W-ZOS-UINT32 = 1.
+           MOVE X'01000000' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBU322FI THRU END-TEST-PBU322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== 300 =========="
+           COMPUTE W-ZOS-UINT32 = 300.
+           MOVE X'2C010000' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBU322FI THRU END-TEST-PBU322FI.
+
+           DISPLAY "TO-PB-FIXED32 ========== 45483 =========="
+           COMPUTE W-ZOS-UINT32 = 45483.
+           MOVE X'ABB10000' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBU322FI THRU END-TEST-PBU322FI.
+
+           DISPLAY "TO-PB-FIXED32 == 2147483647 ====="
+           COMPUTE W-ZOS-UINT32 = 2147483647.
+           MOVE X'FFFFFF7F' to W-EXPECTED-PB-FIXED32.
+           PERFORM TEST-PBU322FI THRU END-TEST-PBU322FI.
+
+           MOVE W-RETURN-CODE to RETURN-CODE.
+           GOBACK.
+
+       TEST-PBFI2U32.
+           CALL 'PBFI2U32' USING W-PB-FIXED32 W-ZOS-UINT32 W-BYTES-USED.
+           IF W-ZOS-UINT32 NOT = W-EXPECTED-ZOS-UINT32
+              DISPLAY 'ERROR: ZOS-UINT32'
+              DISPLAY '    RESULT  : ' W-ZOS-UINT32
+              DISPLAY '    EXPECTED: ' W-EXPECTED-ZOS-UINT32
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBFI2U32. EXIT.
+
+       TEST-PBU322FI.
+           MOVE LOW-VALUES TO W-PB-FIXED32.
+           CALL 'PBU322FI' USING W-ZOS-UINT32 W-PB-FIXED32 W-BYTES-USED.
+           IF W-PB-FIXED32 NOT = W-EXPECTED-PB-FIXED32
+              DISPLAY 'ERROR: PB-FIXED32'
+              CALL 'PBBA2HEX' USING W-PB-FIXED32-ARRAY-LEN
+                              W-PB-FIXED32
+                              W-PB-FIXED32-HEX-STRING
+              DISPLAY '    RESULT  : ' W-PB-FIXED32-HEX-STRING
+              CALL 'PBBA2HEX' USING W-PB-FIXED32-ARRAY-LEN
+                              W-EXPECTED-PB-FIXED32
+                              W-PB-FIXED32-HEX-STRING
+              DISPLAY '    EXPECTED: ' W-PB-FIXED32-HEX-STRING
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBU322FI. EXIT.
+
+       END PROGRAM PBCTUF32.
+

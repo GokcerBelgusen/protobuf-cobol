@@ -1,0 +1,164 @@
+       PROCESS ARITH(EXTEND)
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTSV64.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST SIGNED INTEGER 64 BITS <> VARIABLE INTEGER               *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  W-PB-VARINT                       PIC X(10).
+       01  W-ZOS-SINT64                      PIC S9(18) COMP-5.
+       01  W-BYTES-USED                      PIC 9(8) COMP-5.
+
+       01  W-EXPECTED-PB-VARINT              PIC X(10).
+       01  W-EXPECTED-ZOS-SINT64             PIC S9(18) COMP-5.
+
+       01  W-PB-VARINT-ARRAY-LEN             PIC 9(4) COMP-5 VALUE 10.
+       01  W-PB-VARINT-HEX-STRING            PIC X(20).
+
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO ZOS Signed Int 64
+      * ---------------------------------------------------------------
+           DISPLAY "TO-ZOSSINT64 ======= 0 =============="
+           MOVE X'00000000000000000000' TO W-PB-VARINT.
+           MOVE 0 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+           
+           DISPLAY "TO-ZOSSINT64 ======= 1 =============="
+           MOVE X'01000000000000000000' TO W-PB-VARINT.
+           MOVE 1 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= -1 =============="
+           MOVE X'FFFFFFFFFFFFFFFFFF01' TO W-PB-VARINT.
+           MOVE -1 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= 300 =============="
+           MOVE X'AC020000000000000000' TO W-PB-VARINT.
+           MOVE 300 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= -300 =============="
+           MOVE X'D4FDFFFFFFFFFFFFFF01' TO W-PB-VARINT.
+           MOVE -300 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= 45483 =============="
+           MOVE X'ABE30200000000000000' TO W-PB-VARINT.
+           MOVE 45483 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= -45483 =============="
+           MOVE X'D59CFDFFFFFFFFFFFF01' TO W-PB-VARINT.
+           MOVE -45483 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+
+           DISPLAY "TO-ZOSSINT64 == 9223372036854775807 ====="
+           MOVE X'FFFFFFFFFFFFFFFF7F00' TO W-PB-VARINT.
+           MOVE 9223372036854775807 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+
+           DISPLAY "TO-ZOSSINT64 == -9223372036854775808 ====="
+           MOVE X'80808080808080808001' TO W-PB-VARINT.
+           MOVE -9223372036854775808 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBVI2S64 THRU END-TEST-PBVI2S64.
+
+      * ---------------------------------------------------------------
+      * TEST TO PROTOBUF Signed Int 64
+      * ---------------------------------------------------------------
+           DISPLAY "TO-PB-VARINT ========== 0 =========="
+           COMPUTE W-ZOS-SINT64 = 0.
+           MOVE X'00000000000000000000' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           DISPLAY "TO-PB-VARINT ========== 1 =========="
+           COMPUTE W-ZOS-SINT64 = 1.
+           MOVE X'01000000000000000000' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           DISPLAY "TO-PB-VARINT ========== -1 =========="
+           COMPUTE W-ZOS-SINT64 = -1.
+           MOVE X'FFFFFFFFFFFFFFFFFF01' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           DISPLAY "TO-PB-VARINT ========== 300 =========="
+           COMPUTE W-ZOS-SINT64 = 300.
+           MOVE X'AC020000000000000000' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           DISPLAY "TO-PB-VARINT ========== -300 =========="
+           COMPUTE W-ZOS-SINT64 = -300.
+           MOVE X'D4FDFFFFFFFFFFFFFF01' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           DISPLAY "TO-PB-VARINT ========== 45483 =========="
+           COMPUTE W-ZOS-SINT64 = 45483.
+           MOVE X'ABE30200000000000000' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           DISPLAY "TO-PB-VARINT ========== -45483 =========="
+           COMPUTE W-ZOS-SINT64 = -45483.
+           MOVE X'D59CFDFFFFFFFFFFFF01' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           DISPLAY "TO-PB-VARINT == 9223372036854775807 ====="
+           COMPUTE W-ZOS-SINT64 = 9223372036854775807.
+           MOVE X'FFFFFFFFFFFFFFFF7F00' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           DISPLAY "TO-PB-VARINT == -9223372036854775808 ====="
+           COMPUTE W-ZOS-SINT64 = -9223372036854775808.
+           MOVE X'80808080808080808001' to W-EXPECTED-PB-VARINT.
+           PERFORM TEST-PBS642VI THRU END-TEST-PBS642VI.
+
+           MOVE W-RETURN-CODE to RETURN-CODE.
+           GOBACK.
+
+       TEST-PBVI2S64.
+           CALL 'PBVI2S64' USING W-PB-VARINT W-ZOS-SINT64 W-BYTES-USED.
+           IF W-ZOS-SINT64 NOT = W-EXPECTED-ZOS-SINT64
+              DISPLAY 'ERROR: ZOS-SINT64'
+              DISPLAY '    RESULT  : ' W-ZOS-SINT64
+              DISPLAY '    EXPECTED: ' W-EXPECTED-ZOS-SINT64
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBVI2S64. EXIT.
+
+       TEST-PBS642VI.
+           MOVE LOW-VALUES TO W-PB-VARINT.
+           CALL 'PBS642VI' USING W-ZOS-SINT64 W-PB-VARINT W-BYTES-USED.
+           IF W-PB-VARINT NOT = W-EXPECTED-PB-VARINT
+              DISPLAY 'ERROR: PB-VARINT'
+              CALL 'PBBA2HEX' USING W-PB-VARINT-ARRAY-LEN
+                              W-PB-VARINT
+                              W-PB-VARINT-HEX-STRING
+              DISPLAY '    RESULT  : ' W-PB-VARINT-HEX-STRING
+              CALL 'PBBA2HEX' USING W-PB-VARINT-ARRAY-LEN
+                              W-EXPECTED-PB-VARINT
+                              W-PB-VARINT-HEX-STRING
+              DISPLAY '    EXPECTED: ' W-PB-VARINT-HEX-STRING
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBS642VI. EXIT.
+
+       END PROGRAM PBCTSV64.
+

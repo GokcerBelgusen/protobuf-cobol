@@ -1,0 +1,201 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTDBLE.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST DOUBLE CONVERSIONS                                        *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  W-IEEE-DOUBLE                    PIC X(8).
+       01  W-ZOS-DOUBLE                     USAGE COMP-2.
+
+       01  W-EXPECTED-IEEE-DOUBLE           PIC X(8).
+       01  W-EXPECTED-ZOS-DOUBLE            USAGE COMP-2.
+
+       01  W-DOUBLE-ARRAY-LEN                PIC 9(4) COMP-5 VALUE 8.
+       01  W-DOUBLE-HEX-STRING               PIC X(16).
+
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO ZOS Double
+      * ---------------------------------------------------------------
+           DISPLAY "TO-ZOSDOUBLE ======= -375.256 =============="
+           MOVE X'C07774189374BC6A' TO W-IEEE-DOUBLE.
+           MOVE -375.256 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE ======= 0.0 =============="
+           MOVE X'0000000000000000' TO W-IEEE-DOUBLE.
+           MOVE 0.0 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE ======= -0.0 =============="
+           MOVE X'8000000000000000' TO W-IEEE-DOUBLE.
+           MOVE -0.0 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE ======= 3.40282347E38 =============="
+           MOVE X'47EFFFFFE091FF3D' TO W-IEEE-DOUBLE.
+           MOVE 3.40282347E38 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE ======= 1.40239846E-45 =============="
+           MOVE X'36A003371D4EF338' TO W-IEEE-DOUBLE.
+           MOVE 1.40239846E-45 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE ===0.140239846======="
+           MOVE X'3FC1F361181541FE' TO W-IEEE-DOUBLE.
+           MOVE 0.140239846 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE =====1.1754949E-38=========="
+           MOVE X'381000007D68F70D' TO W-IEEE-DOUBLE.
+           MOVE 1.1754949E-38 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE =====2.3509886E-38=========="
+           MOVE X'381FFFFFE8C9D9FB' TO W-IEEE-DOUBLE.
+           MOVE 2.3509886E-38 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE =====5.88E-39=========="
+           MOVE X'380001C30DDC0BB1' TO W-IEEE-DOUBLE.
+           MOVE 5.88E-39 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE =====1234.0=========="
+           MOVE X'4093480000000000' TO W-IEEE-DOUBLE.
+           MOVE 1234.0 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE =====-1234.0=========="
+           MOVE X'C093480000000000' TO W-IEEE-DOUBLE.
+           MOVE -1234.0 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE =====2.23E-308=========="
+           MOVE X'0010091177587F83' TO W-IEEE-DOUBLE.
+           MOVE 22.3E-30 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+           DISPLAY "TO-ZOSDOUBLE =====1.8E307=========="
+           MOVE X'7FB9A2028368022E' TO W-IEEE-DOUBLE.
+           MOVE 18.0E30 to W-EXPECTED-ZOS-DOUBLE.
+           PERFORM TEST-PB2ZDBLE THRU END-TEST-PB2ZDBLE.
+
+      * ---------------------------------------------------------------
+      * TEST TO IEEE Double
+      * ---------------------------------------------------------------
+           DISPLAY "TO-IEEEDOUBLE ======= -375.256 =============="
+           MOVE X'C07774189374BC6A' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE -375.256 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE ======= 0.0 =============="
+           MOVE X'0000000000000000' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 0.0 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE ======= -0.0 =============="
+           MOVE X'8000000000000000' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE -0.0 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE ======= 3.40282347E38 =============="
+           MOVE X'47EFFFFFE091FF3D' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 3.40282347E38 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE ======= 1.40239846E-45 =============="
+           MOVE X'36A003371D4EF338' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 1.40239846E-45 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE ===0.140239846======="
+           MOVE X'3FC1F361181541FE' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 0.140239846 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE =====1.1754949E-38=========="
+           MOVE X'381000007D68F70D' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 1.1754949E-38 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE =====2.3509886E-38=========="
+           MOVE X'381FFFFFE8C9D9FB' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 2.3509886E-38 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE =====5.88E-39=========="
+           MOVE X'380001C30DDC0BB1' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 5.88E-39 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE =====1234.0=========="
+           MOVE X'4093480000000000' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 1234.0 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE =====-1234.0=========="
+           MOVE X'C093480000000000' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE -1234.0 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE =====2.23E-308=========="
+           MOVE X'0010091177587F83' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 22.3E-30 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           DISPLAY "TO-IEEEDOUBLE =====1.8E307=========="
+           MOVE X'7FB9A2028368022E' TO W-EXPECTED-IEEE-DOUBLE.
+           MOVE 18.0E30 to W-ZOS-DOUBLE.
+           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
+
+           MOVE W-RETURN-CODE to RETURN-CODE.
+           GOBACK.
+
+       TEST-PB2ZDBLE.
+           CALL 'PB2ZDBLE' USING W-IEEE-DOUBLE W-ZOS-DOUBLE.
+           IF W-ZOS-DOUBLE NOT = W-EXPECTED-ZOS-DOUBLE
+              DISPLAY 'ERROR: ZOS-DOUBLE'
+              DISPLAY '    RESULT  : ' W-ZOS-DOUBLE
+              DISPLAY '    EXPECTED: ' W-EXPECTED-ZOS-DOUBLE
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PB2ZDBLE. EXIT.
+
+       TEST-PB2PDBLE.
+           CALL 'PB2PDBLE' USING W-ZOS-DOUBLE W-IEEE-DOUBLE.
+           IF W-IEEE-DOUBLE NOT = W-EXPECTED-IEEE-DOUBLE
+              DISPLAY 'ERROR: IEEE-DOUBLE'
+              CALL 'PBBA2HEX' USING W-DOUBLE-ARRAY-LEN
+                              W-IEEE-DOUBLE
+                              W-DOUBLE-HEX-STRING
+              DISPLAY '    RESULT  : ' W-DOUBLE-HEX-STRING
+              CALL 'PBBA2HEX' USING W-DOUBLE-ARRAY-LEN
+                              W-EXPECTED-IEEE-DOUBLE
+                              W-DOUBLE-HEX-STRING
+              DISPLAY '    EXPECTED: ' W-DOUBLE-HEX-STRING
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PB2PDBLE. EXIT.
+
+       END PROGRAM PBCTDBLE.
+

@@ -1,0 +1,12 @@
+package nontranslated;
+option java_package = "com.example.nontranslated";
+
+message SearchResponse {
+  repeated Result result = 1;
+}
+
+message Result {
+  required string url = 1;
+  optional string title = 2;
+  repeated string snippets = 3;
+}

@@ -1,0 +1,164 @@
+       PROCESS ARITH(EXTEND)
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTSF64.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST SIGNED INTEGER 64 BITS <> FIXED INTEGER                  *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  W-PB-FIXED64                       PIC X(8).
+       01  W-ZOS-SINT64                       PIC S9(18) COMP-5.
+       01  W-BYTES-USED                       PIC 9(8) COMP-5.
+
+       01  W-EXPECTED-PB-FIXED64              PIC X(8).
+       01  W-EXPECTED-ZOS-SINT64              PIC S9(18) COMP-5.
+
+       01  W-PB-FIXED64-ARRAY-LEN             PIC 9(4) COMP-5 VALUE 8.
+       01  W-PB-FIXED64-HEX-STRING            PIC X(16).
+
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO ZOS Signed Int 64
+      * ---------------------------------------------------------------
+           DISPLAY "TO-ZOSSINT64 ======= 0 =============="
+           MOVE X'0000000000000000' TO W-PB-FIXED64.
+           MOVE 0 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+           
+           DISPLAY "TO-ZOSSINT64 ======= 1 =============="
+           MOVE X'0100000000000000' TO W-PB-FIXED64.
+           MOVE 1 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= -1 =============="
+           MOVE X'FFFFFFFFFFFFFFFF' TO W-PB-FIXED64.
+           MOVE -1 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= 300 =============="
+           MOVE X'2C01000000000000' TO W-PB-FIXED64.
+           MOVE 300 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= -300 =============="
+           MOVE X'D4FEFFFFFFFFFFFF' TO W-PB-FIXED64.
+           MOVE -300 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= 45483 =============="
+           MOVE X'ABB1000000000000' TO W-PB-FIXED64.
+           MOVE 45483 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+
+           DISPLAY "TO-ZOSSINT64 ======= -45483 =============="
+           MOVE X'554EFFFFFFFFFFFF' TO W-PB-FIXED64.
+           MOVE -45483 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+
+           DISPLAY "TO-ZOSSINT64 == 9223372036854775807 ====="
+           MOVE X'FFFFFFFFFFFFFF7F' TO W-PB-FIXED64.
+           MOVE 9223372036854775807 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+
+           DISPLAY "TO-ZOSSINT64 == -9223372036854775808 ====="
+           MOVE X'0000000000000080' TO W-PB-FIXED64.
+           MOVE -9223372036854775808 to W-EXPECTED-ZOS-SINT64.
+           PERFORM TEST-PBFI2S64 THRU END-TEST-PBFI2S64.
+
+      * ---------------------------------------------------------------
+      * TEST TO PROTOBUF Signed Int 64
+      * ---------------------------------------------------------------
+           DISPLAY "TO-PB-FIXED64 ========== 0 =========="
+           COMPUTE W-ZOS-SINT64 = 0.
+           MOVE X'0000000000000000' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           DISPLAY "TO-PB-FIXED64 ========== 1 =========="
+           COMPUTE W-ZOS-SINT64 = 1.
+           MOVE X'0100000000000000' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           DISPLAY "TO-PB-FIXED64 ========== -1 =========="
+           COMPUTE W-ZOS-SINT64 = -1.
+           MOVE X'FFFFFFFFFFFFFFFF' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           DISPLAY "TO-PB-FIXED64 ========== 300 =========="
+           COMPUTE W-ZOS-SINT64 = 300.
+           MOVE X'2C01000000000000' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           DISPLAY "TO-PB-FIXED64 ========== -300 =========="
+           COMPUTE W-ZOS-SINT64 = -300.
+           MOVE X'D4FEFFFFFFFFFFFF' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           DISPLAY "TO-PB-FIXED64 ========== 45483 =========="
+           COMPUTE W-ZOS-SINT64 = 45483.
+           MOVE X'ABB1000000000000' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           DISPLAY "TO-PB-FIXED64 ========== -45483 =========="
+           COMPUTE W-ZOS-SINT64 = -45483.
+           MOVE X'554EFFFFFFFFFFFF' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           DISPLAY "TO-PB-FIXED64 == 9223372036854775807 ====="
+           COMPUTE W-ZOS-SINT64 = 9223372036854775807.
+           MOVE X'FFFFFFFFFFFFFF7F' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           DISPLAY "TO-PB-FIXED64 == -9223372036854775808 ====="
+           COMPUTE W-ZOS-SINT64 = -9223372036854775808.
+           MOVE X'0000000000000080' to W-EXPECTED-PB-FIXED64.
+           PERFORM TEST-PBS642FI THRU END-TEST-PBS642FI.
+
+           MOVE W-RETURN-CODE to RETURN-CODE.
+           GOBACK.
+
+       TEST-PBFI2S64.
+           CALL 'PBFI2S64' USING W-PB-FIXED64 W-ZOS-SINT64 W-BYTES-USED.
+           IF W-ZOS-SINT64 NOT = W-EXPECTED-ZOS-SINT64
+              DISPLAY 'ERROR: ZOS-SINT64'
+              DISPLAY '    RESULT  : ' W-ZOS-SINT64
+              DISPLAY '    EXPECTED: ' W-EXPECTED-ZOS-SINT64
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBFI2S64. EXIT.
+
+       TEST-PBS642FI.
+           MOVE LOW-VALUES TO W-PB-FIXED64.
+           CALL 'PBS642FI' USING W-ZOS-SINT64 W-PB-FIXED64 W-BYTES-USED.
+           IF W-PB-FIXED64 NOT = W-EXPECTED-PB-FIXED64
+              DISPLAY 'ERROR: PB-FIXED64'
+              CALL 'PBBA2HEX' USING W-PB-FIXED64-ARRAY-LEN
+                              W-PB-FIXED64
+                              W-PB-FIXED64-HEX-STRING
+              DISPLAY '    RESULT  : ' W-PB-FIXED64-HEX-STRING
+              CALL 'PBBA2HEX' USING W-PB-FIXED64-ARRAY-LEN
+                              W-EXPECTED-PB-FIXED64
+                              W-PB-FIXED64-HEX-STRING
+              DISPLAY '    EXPECTED: ' W-PB-FIXED64-HEX-STRING
+              MOVE 8 TO W-RETURN-CODE
+           ELSE
+              DISPLAY 'OK'
+           END-IF.
+       END-TEST-PBS642FI. EXIT.
+
+       END PROGRAM PBCTSF64.
+

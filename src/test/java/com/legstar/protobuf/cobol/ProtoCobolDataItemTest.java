@@ -1,0 +1,157 @@
+package com.legstar.protobuf.cobol;
+
+import com.legstar.cobol.model.CobolDataItem;
+
+public class ProtoCobolDataItemTest extends AbstractTest {
+
+    /** True when references should be created. */
+    private static final boolean CREATE_REFERENCES = false;
+
+    public boolean isCreateReferences() {
+        return CREATE_REFERENCES;
+    }
+
+    public void testMaxStringSizeOnEmptyGroup() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals(0, protoCobolDataItem.getMaxStringSize());
+    }
+
+    public void testMaxStringSizeOnGroupWithSingleChild() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        CobolDataItem childDataDataItem = new CobolDataItem(5, "CUSTOMER-NAME");
+        childDataDataItem.setPicture("X");
+        cobolDataItem.getChildren().add(childDataDataItem);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals(1, protoCobolDataItem.getMaxStringSize());
+    }
+
+    public void testMaxStringSizeOnShortStringValue() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        cobolDataItem.setPicture("X(11)");
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals(11, protoCobolDataItem.getMaxStringSize());
+    }
+
+    public void tesMaxStringSizeOnHierarchy() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+        CobolDataItem childDataItem3 = new CobolDataItem(10, "CHILD3");
+        childDataItem3.setPicture("X(72)");
+        childDataItem1.getChildren().add(childDataItem3);
+        cobolDataItem.getChildren().add(childDataItem1);
+        CobolDataItem childDataItem2 = new CobolDataItem(5, "CHILD2");
+        childDataItem2.setPicture("X(11)");
+        cobolDataItem.getChildren().add(childDataItem2);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals(72, protoCobolDataItem.getMaxStringSize());
+    }
+
+    public void testSubStructuresCobolNameOnEmptyGroup() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[]", protoCobolDataItem.getSubStructuresCobolName().toString());
+    }
+
+    public void testSubStructuresCobolNameOnGroupWithSingleChild() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        CobolDataItem childDataDataItem = new CobolDataItem(5, "CUSTOMER-NAME");
+        childDataDataItem.setPicture("X");
+        cobolDataItem.getChildren().add(childDataDataItem);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[]", protoCobolDataItem.getSubStructuresCobolName().toString());
+    }
+
+    public void testSubStructuresCobolNameOnHierarchy() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+        CobolDataItem childDataItem3 = new CobolDataItem(10, "CHILD3");
+        childDataItem3.setPicture("X(72)");
+        childDataItem1.getChildren().add(childDataItem3);
+        cobolDataItem.getChildren().add(childDataItem1);
+        CobolDataItem childDataItem2 = new CobolDataItem(5, "CHILD2");
+        childDataItem2.setPicture("X(11)");
+        cobolDataItem.getChildren().add(childDataItem2);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[CHILD1]", protoCobolDataItem.getSubStructuresCobolName().toString());
+    }
+
+    public void testIndexedCobolNamesOnEmptyGroup() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[]", protoCobolDataItem.getIndexedCobolNames().toString());
+    }
+
+    public void testIndexedCobolNamesOnChildArray() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+        childDataItem1.setMinOccurs(10);
+        childDataItem1.setMaxOccurs(10);
+        childDataItem1.setPicture("X(72)");
+        cobolDataItem.getChildren().add(childDataItem1);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[CHILD1]", protoCobolDataItem.getIndexedCobolNames().toString());
+    }
+
+    public void testIndexedCobolNamesOnChildOfGroupArray() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        cobolDataItem.setMinOccurs(10);
+        cobolDataItem.setMaxOccurs(10);
+        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+        childDataItem1.setPicture("X(72)");
+        cobolDataItem.getChildren().add(childDataItem1);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[CHILD1]", protoCobolDataItem.getIndexedCobolNames().toString());
+    }
+
+    public void testIndexedCobolNamesOnAncestry() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        cobolDataItem.setMinOccurs(10);
+        cobolDataItem.setMaxOccurs(10);
+        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+        cobolDataItem.getChildren().add(childDataItem1);
+        CobolDataItem childDataItem2 = new CobolDataItem(10, "CHILD2");
+        childDataItem2.setPicture("X(72)");
+        childDataItem1.getChildren().add(childDataItem2);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[CHILD2]", protoCobolDataItem.getIndexedCobolNames().toString());
+    }
+
+    public void testListDependingOnsOnEmptyGroup() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[]", protoCobolDataItem.getDependingOns().toString());
+    }
+
+    public void testListDependingOnsOnChildArray() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+        childDataItem1.setMinOccurs(0);
+        childDataItem1.setMaxOccurs(10);
+        childDataItem1.setDependingOn("SOME-CHILD");
+        childDataItem1.setPicture("X(72)");
+        cobolDataItem.getChildren().add(childDataItem1);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[SOME-CHILD]", protoCobolDataItem.getDependingOns().toString());
+    }
+
+    public void testListDependingOnsOnAncestry() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+        childDataItem1.setMinOccurs(0);
+        childDataItem1.setMaxOccurs(10);
+        childDataItem1.setDependingOn("SOME-CHILD");
+        cobolDataItem.getChildren().add(childDataItem1);
+        CobolDataItem childDataItem2 = new CobolDataItem(10, "CHILD2");
+        childDataItem2.setPicture("X(72)");
+        childDataItem1.getChildren().add(childDataItem2);
+        CobolDataItem childDataItem3 = new CobolDataItem(5, "CHILD3");
+        childDataItem3.setMinOccurs(0);
+        childDataItem3.setMaxOccurs(10);
+        childDataItem3.setDependingOn("SOME-OTHER-CHILD");
+        cobolDataItem.getChildren().add(childDataItem3);
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(cobolDataItem);
+        assertEquals("[SOME-CHILD, SOME-OTHER-CHILD]", protoCobolDataItem.getDependingOns().toString());
+    }
+
+}
