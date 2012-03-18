@@ -8,11 +8,12 @@ import org.apache.commons.lang.StringUtils;
 import com.google.protobuf.Descriptors.FieldDescriptor.Type;
 import com.legstar.cobol.gen.CopybookGenerator;
 import com.legstar.cobol.model.CobolDataItem;
+import com.legstar.coxb.util.NameUtil;
 import com.legstar.coxb.util.PictureUtil;
 
 /**
- * Root data items decorates regular data item to provide additional methods
- * made available to templates.
+ * Root data items decorates regular LegStar COBOL data item to provide
+ * additional methods made available to templates.
  */
 public class ProtoCobolDataItem {
 
@@ -26,15 +27,21 @@ public class ProtoCobolDataItem {
      */
     private static final String COBOL_MEMBER_WRITER_SUFFIX = "W";
 
+    /**
+     * A prefix that can be used for generated program names.
+     */
+    private String programNamePrefix;
+
     /** The COBOL deta item we are decorating. */
     private final CobolDataItem cobolDataItem;
 
     /** Children are also decorated data items. */
     private List < ProtoCobolDataItem > children;
-    
+
     public ProtoCobolDataItem(final CobolDataItem cobolDataItem) {
         this.cobolDataItem = cobolDataItem;
         decorateChildren(this);
+        programNamePrefix = createProgramNamePrefix();
     }
 
     /**
@@ -75,20 +82,55 @@ public class ProtoCobolDataItem {
      * Create a valid COBOL program name prefix (an additional 1 character
      * suffix will be added later).
      * <p/>
-     * Assuming PGMNAME(COMPAT) compiler option. From IBM Enterprise COBOL for
-     * z/OSLanguage Reference Version 3 Release 3:
+     * Assuming PGMNAME(COMPAT) compiler option, the name will be:
      * <ul>
-     * <li>The name can be up to 30 characters in length</li>
-     * <li>Only the hyphen, digits 0-9, and alphabetic characters are allowed.</li>
-     * <li>At least one character must be alphabetic</li>
-     * <li>The hyphen cannot be used as the first or last character</li>
+     * <li>Folded to uppercase</li>
+     * <li>Truncated to eight characters.</li>
      * </ul>
+     * What we do here is that we try to construct a 7 characters prefix by
+     * taken characters from each of the words forming the data item name. See
+     * NameUtil.toWordList for a definition of words.
      * 
      * @return a valid COBOL program name prefix
      */
-    protected String getProgramNamePrefix() {
-        return StringUtils.substring(cobolDataItem.getCobolName(), 0, 29)
-                .replace('_', '-');
+    protected String createProgramNamePrefix() {
+        String cobolName = cobolDataItem.getCobolName();
+        if (StringUtils.isBlank(cobolName)) {
+            return cobolName;
+        }
+        List < String > words = NameUtil.toWordList(cobolName);
+        StringBuilder sb = new StringBuilder();
+        if (words.size() >= 7) {
+            for (int i = 0; i < 7; i++) {
+                sb.append(words.get(i).charAt(0));
+            }
+        } else {
+            int q = 7 / words.size();
+            int r = 7 % words.size();
+            for (String word : words) {
+                if (word.length() < q) {
+                    r += q - word.length();
+                }
+            }
+            for (String word : words) {
+                if (sb.length() == 7) {
+                    break;
+                } else {
+                    if (q < word.length()) {
+                        if (r > 0) {
+                            int l = Math.min(r, word.length() - q);
+                            sb.append(word.substring(0, q + l));
+                            r -= l;
+                        } else {
+                            sb.append(word.substring(0, q));
+                        }
+                    } else {
+                        sb.append(word);
+                    }
+                }
+            }
+        }
+        return sb.toString().toUpperCase();
     }
 
     /**
@@ -108,6 +150,14 @@ public class ProtoCobolDataItem {
      */
     public int getMaxStringSize() {
         return getMaxStringSize(cobolDataItem);
+    }
+
+    /**
+     * @return true if this data item or one of this childre contains an
+     *         alphanumeric item
+     */
+    public boolean isHasAlphanumItems() {
+        return getMaxStringSize() > 0;
     }
 
     /**
@@ -147,6 +197,14 @@ public class ProtoCobolDataItem {
     }
 
     /**
+     * @return true if this data item (or one of its children) contains a sub
+     *         structure.
+     */
+    public boolean isHasSubStructures() {
+        return getSubStructuresCobolName().size() > 0;
+    }
+
+    /**
      * Recursively retrieves all sub structures names whatever their depth in
      * the hierarchy.
      * <p/>
@@ -176,6 +234,13 @@ public class ProtoCobolDataItem {
      */
     public List < String > getIndexedCobolNames() {
         return getIndexedCobolNames(cobolDataItem, cobolDataItem.isArray());
+    }
+
+    /**
+     * @return true if there is an indexed child or grand child.
+     */
+    public boolean isHasIndexedItems() {
+        return getIndexedCobolNames().size() > 0;
     }
 
     /**
@@ -348,5 +413,20 @@ public class ProtoCobolDataItem {
     public boolean isMappedToUint64() {
         return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
                 cobolDataItem.getUsage()).equals(Type.UINT64);
+    }
+
+    /**
+     * @return a prefix that can be used for generated program names
+     */
+    public String getProgramNamePrefix() {
+        return programNamePrefix;
+    }
+
+    /**
+     * @param programNamePrefix a prefix that can be used for generated program
+     *            names to set
+     */
+    public void setProgramNamePrefix(String programNamePrefix) {
+        this.programNamePrefix = programNamePrefix;
     }
 }

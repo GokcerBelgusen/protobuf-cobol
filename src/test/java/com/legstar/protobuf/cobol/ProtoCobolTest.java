@@ -4,10 +4,6 @@ import java.io.File;
 
 import org.apache.commons.io.FileUtils;
 
-import com.legstar.protobuf.cobol.ProtoCobol;
-import com.legstar.protobuf.cobol.ProtoCobolException;
-
-
 /**
  * Unit test for Proto Cobol. The pom.xml has an antrun plugin bound to
  * generate-test-sources which invokes protoc.exe for java. It will compile the
@@ -22,31 +18,36 @@ public class ProtoCobolTest extends AbstractTest {
     public void testSearchRequestProtos() throws Exception {
         run("com.example.simple.Simple");
         check(FileUtils.readFileToString(new File(getOutputFolder(),
-                "SearchrC.cpy")));
+                "SearchRequestC.cpy")));
     }
 
     public void testAddressBookProtos() throws Exception {
         run("com.example.tutorial.AddressBookProtos");
-        check(FileUtils.readFileToString(new File(getOutputFolder(), "PersonC.cpy")));
+        check(FileUtils.readFileToString(new File(getOutputFolder(),
+                "PersonC.cpy")));
     }
 
     public void testNonTranslatedProtos() throws Exception {
         run(new File("src/test/resources/nontranslated.proto"));
-        check(FileUtils.readFileToString(new File(getOutputFolder(), "SearchRC.cpy")));
+        check(FileUtils.readFileToString(new File(getOutputFolder(),
+                "SearchResponseC.cpy")));
     }
 
     public void testEnumSample() throws Exception {
         run("com.example.enumsample.Enumsample");
-        check(FileUtils.readFileToString(new File(getOutputFolder(), "SearchRC.cpy")));
+        check(FileUtils.readFileToString(new File(getOutputFolder(),
+                "SearchRequestC.cpy")));
     }
 
     public void testAllTypes() throws Exception {
-        run("com.example.alltypes.Alltypes");
-        check(FileUtils.readFileToString(new File(getOutputFolder(), "AllTypesC.cpy")));
+        run("com.example.alltypes.AllTypesProtos");
+        check(FileUtils.readFileToString(new File(getOutputFolder(),
+                "AllTypesC.cpy")));
     }
 
     /**
-     * Invoke the ProtoCobol generator knowing a protoc-generated java class name.
+     * Invoke the ProtoCobol generator knowing a protoc-generated java class
+     * name.
      * 
      * @param javaClassName the protobuf-java generated Java class name
      * @throws ProtoCobolException if generation fails
@@ -74,6 +75,5 @@ public class ProtoCobolTest extends AbstractTest {
     public boolean isCreateReferences() {
         return CREATE_REFERENCES;
     }
-    
-    
+
 }

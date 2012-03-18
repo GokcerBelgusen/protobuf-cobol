@@ -1,0 +1,215 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CUSTDATP.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * Subprogram that parses a protobuf byte stream and populates   *
+      * a cobol structure.                                            *
+      *                                                               *
+      * This is generated code produced by protobuf-cobol.            *
+      * It uses the PB4CBLIB protobuf-cobol library.                  *
+      *                                                               *
+      * Limits:                                                       *
+      *    256 fields per message                                     *
+      *    16777215 message byte length                               *
+      *                                                               *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+
+      *    // Protobuf field key and type
+       01  W-PB-KEYTYPE.
+           05  W-PB-KEY              PIC 9(8) COMP-5.
+           05  W-PB-TYPE             PIC 9(4) COMP-5.
+               88 VARINT             VALUE 0.
+               88 FIXED-64           VALUE 1.
+               88 LENGTH-DELIMITED   VALUE 2.
+               88 FIXED-32           VALUE 5.
+               88 VALID-WIRE-TYPE    VALUE 0, 1, 2, 5.
+
+      *    // Tracks the current location in protobuf byte stream
+       01  W-I                       PIC 9(8) COMP-5.
+
+      *    // A pointer to the current protobuf byte stream location 
+       01  W-STREAM                  POINTER.
+
+      *    // a double word binary to hold unsigned long integers
+       01  W-UINT64                  PIC 9(18) COMP-5.
+
+      *    // a single word binary to hold unsigned integers
+       01  W-UINT32                  PIC 9(8) COMP-5.
+
+      *    // a double word binary to hold signed long integers
+       01  W-INT64                   PIC S9(18) COMP-5.
+
+      *    // a single word binary to hold signed integers
+       01  W-INT32                   PIC S9(8) COMP-5.
+
+      *    // library calls return how many stream bytes were consumed 
+       01  W-BYTES-USED              PIC 9(8) COMP-5.
+
+
+      *    // Sub-messages maximum offset from input start
+       01  W-CHILD1-L     PIC 9(8) COMP-5.
+
+
+      *    // Conversion buffer for Strings
+       01  W-UTF16-BUFFER            PIC N(72).
+
+      *****************************************************************
+      *        L I N K A G E    S E C T I O N                         *
+      *****************************************************************
+       LINKAGE SECTION.
+
+      *    // The protobuf input byte stream
+       01  PROTOBUF-BYTES            PIC X(16777215).
+
+      *    // The protobuf input byte stream length
+       01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.
+
+      *    // The output COBOL structure
+       01  CUSTOMER-DATA.
+           05  CHILD1.
+             10  CHILD3 PIC X(72).
+           05  CHILD2 PIC X(11).
+
+       
+      *    // A protobuf variable integer
+       01  PB-VARINT                 PIC X(10).
+     
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION USING
+               PROTOBUF-BYTES,
+               PROTOBUF-BYTES-LEN,
+               CUSTOMER-DATA.
+      *    // Initialize counters
+      *    // Parse the root protobuf message
+           MOVE 1 TO W-I.
+           PERFORM PARSE-CUSTOMER-DATA THRU
+               END-PARSE-CUSTOMER-DATA
+                   UNTIL W-I > PROTOBUF-BYTES-LEN.
+           GOBACK.
+
+ 
+      * ---------------------------------------------------------------
+      * Parse the CUSTOMER-DATA message field
+      * ---------------------------------------------------------------
+       PARSE-CUSTOMER-DATA.
+      D    DISPLAY 'PARSE-CUSTOMER-DATA OFFSET=' W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           PERFORM GET-PB-KEYTYPE THRU END-GET-PB-KEYTYPE.
+           ADD W-BYTES-USED TO W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           EVALUATE W-PB-KEY
+               WHEN 1
+                 PERFORM GET-VARINT-AS-UINT32 THRU
+                     END-GET-VARINT-AS-UINT32
+                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE W-CHILD1-L = W-I + W-UINT32 - 1
+                 PERFORM PARSE-CHILD1 THRU
+                     END-PARSE-CHILD1
+                         UNTIL W-I > W-CHILD1-L
+               WHEN 2
+                 PERFORM GET-VARINT-AS-UINT32 THRU
+                     END-GET-VARINT-AS-UINT32
+                 COMPUTE W-I = W-I + W-BYTES-USED
+                 MOVE FUNCTION NATIONAL-OF(
+                    PROTOBUF-BYTES(W-I:W-UINT32), 01208)
+                    TO W-UTF16-BUFFER
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01147)
+                    TO CHILD2
+      D          DISPLAY 'CHILD2 =' CHILD2 ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-UINT32
+           END-EVALUATE.
+       END-PARSE-CUSTOMER-DATA. EXIT.
+
+ 
+      * ---------------------------------------------------------------
+      * Parse the CHILD1 message field
+      * ---------------------------------------------------------------
+       PARSE-CHILD1.
+      D    DISPLAY 'PARSE-CHILD1 OFFSET=' W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           PERFORM GET-PB-KEYTYPE THRU END-GET-PB-KEYTYPE.
+           ADD W-BYTES-USED TO W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           EVALUATE W-PB-KEY
+               WHEN 1
+                 PERFORM GET-VARINT-AS-UINT32 THRU
+                     END-GET-VARINT-AS-UINT32
+                 COMPUTE W-I = W-I + W-BYTES-USED
+                 MOVE FUNCTION NATIONAL-OF(
+                    PROTOBUF-BYTES(W-I:W-UINT32), 01208)
+                    TO W-UTF16-BUFFER
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01147)
+                    TO CHILD3
+      D          DISPLAY 'CHILD3 =' CHILD3 ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-UINT32
+           END-EVALUATE.
+       END-PARSE-CHILD1. EXIT.
+
+
+
+      * ---------------------------------------------------------------
+      * Get a field key (identifier) and type from the stream.
+      *
+      * Field and Type are both encoded in a single variable integer.
+      *
+      * Field type is 3 lower bits of header varint, higher bits are
+      * the field key (identifier)
+      * ---------------------------------------------------------------
+       GET-PB-KEYTYPE.
+           PERFORM GET-VARINT-AS-UINT64 THRU END-GET-VARINT-AS-UINT64.
+           DIVIDE W-UINT64 BY 8 GIVING W-PB-KEY REMAINDER W-PB-TYPE.
+       END-GET-PB-KEYTYPE. EXIT.
+       
+      * ---------------------------------------------------------------
+      * Get a variable integer from the stream as unsigned double word
+      * binary.
+      * ---------------------------------------------------------------
+       GET-VARINT-AS-UINT64.
+           SET ADDRESS OF PB-VARINT TO W-STREAM.
+           CALL 'PBVI2U64' USING PB-VARINT W-UINT64 W-BYTES-USED.
+       END-GET-VARINT-AS-UINT64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a variable integer from the stream as unsigned single word
+      * binary.
+      * ---------------------------------------------------------------
+       GET-VARINT-AS-UINT32.
+           SET ADDRESS OF PB-VARINT TO W-STREAM.
+           CALL 'PBVI2U32' USING PB-VARINT W-UINT32 W-BYTES-USED.
+       END-GET-VARINT-AS-UINT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a variable integer from the stream as signed double word
+      * binary.
+      * ---------------------------------------------------------------
+       GET-VARINT-AS-INT64.
+           SET ADDRESS OF PB-VARINT TO W-STREAM.
+           CALL 'PBVI2S64' USING PB-VARINT W-INT64 W-BYTES-USED.
+       END-GET-VARINT-AS-INT64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a variable integer from the stream as signed single word
+      * binary.
+      * ---------------------------------------------------------------
+       GET-VARINT-AS-INT32.
+           SET ADDRESS OF PB-VARINT TO W-STREAM.
+           CALL 'PBVI2S32' USING PB-VARINT W-INT32 W-BYTES-USED.
+       END-GET-VARINT-AS-INT32. EXIT.
+
+       END PROGRAM CUSTDATP.

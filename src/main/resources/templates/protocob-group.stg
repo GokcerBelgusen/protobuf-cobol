@@ -9,103 +9,87 @@ toProtocobParser(protoCobolDataItem) ::= <<
       *****************************************************************
       * OVERVIEW                                                      *
       * --------                                                      *
-      * SUBPROGRAM THAT PARSES A PROTOBUF BYTE STREAM AND POPÜLATES   *
-      * A COBOL STRUCTURE.                                            *
-      * NO SUPPORT:                                                   *
-      *    [packed=true]                                              *
-      *    signed int types (sint32 and sint64)                       *
-      *    fixed64, sfixed64, double (wire type 1)                    *
-      *    fixed32, sfixed32, float (wire type 5)                     *
-      * LIMITS:                                                       *
+      * Subprogram that parses a protobuf byte stream and populates   *
+      * a cobol structure.                                            *
+      *                                                               *
+      * This is generated code produced by protobuf-cobol.            *
+      * It uses the PB4CBLIB protobuf-cobol library.                  *
+      *                                                               *
+      * Limits:                                                       *
       *    256 fields per message                                     *
       *    16777215 message byte length                               *
-      * SEE:                                                          *
-      *    http://code.google.com/apis/                               *
-      *         protocolbuffers/docs/encoding.html                    *
+      *                                                               *
       *****************************************************************
 
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
        DATA DIVISION.
       *****************************************************************
       *        W O R K I N G    S T O R A G E    S E C T I O N        *
       *****************************************************************
        WORKING-STORAGE SECTION.
 
-      *
-      * Conversion buffer for Strings
-      *
-       01  UNICODE-BUFFER      PIC N($protoCobolDataItem.maxStringSize$).
+      *    // Protobuf field key and type
+       01  W-PB-KEYTYPE.
+           05  W-PB-KEY              PIC 9(8) COMP-5.
+           05  W-PB-TYPE             PIC 9(4) COMP-5.
+               88 VARINT             VALUE 0.
+               88 FIXED-64           VALUE 1.
+               88 LENGTH-DELIMITED   VALUE 2.
+               88 FIXED-32           VALUE 5.
+               88 VALID-WIRE-TYPE    VALUE 0, 1, 2, 5.
 
-      *
-      * Sub-messages maximum offset from input start
-      *
-$protoCobolDataItem.subStructuresCobolName:listSubMessageLength(); separator="\n"$
+      *    // Tracks the current location in protobuf byte stream
+       01  W-I                       PIC 9(8) COMP-5.
 
-      *
-      * Array indexes
-      *
-$protoCobolDataItem.indexedCobolNames:listIndexedFieldsIndexes(); separator="\n"$
+      *    // A pointer to the current protobuf byte stream location 
+       01  W-STREAM                  POINTER.
 
-      *
-      * Tracks the current location in protobuf byte stream
-      *
-       01  W-I                 PIC 9(8) COMP-5.
+      *    // a double word binary to hold unsigned long integers
+       01  W-UINT64                  PIC 9(18) COMP-5.
 
-      *
-      * Protobuf varint parsing variables
-      *
-       77  UINT64-MAX-BYTES    PIC 9(4) COMP VALUE 10.
-       01  STREAM              POINTER.
-       01  FILLER              PIC 9(4) COMP.
-           88 VARINT-INCOMPLETE VALUE 0.
-           88 VARINT-COMPLETE VALUE 1.
-       01  FILLER.
-           05 W-NUMBYTE        PIC 9(4) COMP-5 VALUE ZERO.
-           05 FILLER REDEFINES W-NUMBYTE.
-              10 W-BYTE-L      PIC X.
-              10 W-BYTE-R      PIC X.
-       01  UINT64              PIC 9(18) COMP-5.
-       01  INT64               PIC S9(18) COMP-5.
-       01  UINT32              PIC 9(8) COMP-5.
-       01  INT32               PIC S9(8) COMP-5.
-       01  BYTES-USED          PIC 9(8) COMP-5.
+      *    // a single word binary to hold unsigned integers
+       01  W-UINT32                  PIC 9(8) COMP-5.
 
-      *
-      * Protobuf field key and type
-      *
-       01  WIRE-KEY            PIC 9(8) COMP-5.
-       01  WIRE-TYPE           PIC 9(4) COMP-5.
-           88 VARINT             VALUE 0.
-           88 FIXED-64           VALUE 1.
-           88 LENGTH-DELIMITED   VALUE 2.
-           88 FIXED-32           VALUE 5.
-           88 VALID-WIRE-TYPE    VALUE 0, 1, 2, 5.
- 
+      *    // a double word binary to hold signed long integers
+       01  W-INT64                   PIC S9(18) COMP-5.
+
+      *    // a single word binary to hold signed integers
+       01  W-INT32                   PIC S9(8) COMP-5.
+
+      *    // library calls return how many stream bytes were consumed 
+       01  W-BYTES-USED              PIC 9(8) COMP-5.
+
+
+$if(protoCobolDataItem.hasSubStructures)$
+      *    // Sub-messages maximum offset from input start
+$protoCobolDataItem.subStructuresCobolName:listSubMessageLength(); separator="\n"$$endif$
+
+$if(protoCobolDataItem.hasIndexedItems)$
+      *    // Array indexes
+$protoCobolDataItem.indexedCobolNames:listIndexedFieldsIndexes(); separator="\n"$$endif$
+
+$if(protoCobolDataItem.hasAlphanumItems)$
+      *    // Conversion buffer for Strings
+       01  W-UTF16-BUFFER            PIC N($protoCobolDataItem.maxStringSize$).$endif$
+
       *****************************************************************
       *        L I N K A G E    S E C T I O N                         *
       *****************************************************************
        LINKAGE SECTION.
-      *
-      * The protobuf input byte stream
-      *
+
+      *    // The protobuf input byte stream
        01  PROTOBUF-BYTES            PIC X(16777215).
 
-      *
-      * The protobuf input byte stream length
-      *
+      *    // The protobuf input byte stream length
        01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.
 
-      *
-      * The output COBOL structure
-      *
+      *    // The output COBOL structure
 $protoCobolDataItem.copybook$
        
-      *
-      * Used to parse varints
-      *
-       01  L-VARINT-BYTES.
-           05 L-VARINT-BYTE OCCURS 10 PIC X.
+      *    // A protobuf variable integer
+       01  PB-VARINT                 PIC X(10).
      
       *****************************************************************
       *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
@@ -114,15 +98,10 @@ $protoCobolDataItem.copybook$
                PROTOBUF-BYTES,
                PROTOBUF-BYTES-LEN,
 $\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$protoCobolDataItem.cobolName$.
-      *
-      * Initialize counters
-      *
+      *    // Initialize counters
 $protoCobolDataItem.dependingOns:initDependingOns(); separator="\n"$
 $protoCobolDataItem.indexedCobolNames:initIndexedFieldsIndexes(); separator="\n"$
-
-      *
-      * Parse the root protobuf message
-      *
+      *    // Parse the root protobuf message
            MOVE 1 TO W-I.
            PERFORM PARSE-$protoCobolDataItem.cobolName$ THRU
                END-PARSE-$protoCobolDataItem.cobolName$
@@ -131,87 +110,56 @@ $protoCobolDataItem.indexedCobolNames:initIndexedFieldsIndexes(); separator="\n"
 
 $parseDataItem(protoCobolDataItem)$
 
-      * ----------------------------------------------------------------
-      * Get a field key (identifier) and type.
+      * ---------------------------------------------------------------
+      * Get a field key (identifier) and type from the stream.
+      *
+      * Field and Type are both encoded in a single variable integer.
       *
       * Field type is 3 lower bits of header varint, higher bits are
       * the field key (identifier)
-      * ----------------------------------------------------------------
-       TO-KEY-TYPE.
-           PERFORM TO-UINT64 THRU END-TO-UINT64.
-           DIVIDE UINT64 BY 8 GIVING WIRE-KEY 
-                  REMAINDER WIRE-TYPE.
-       END-TO-KEY-TYPE. EXIT.
+      * ---------------------------------------------------------------
+       GET-PB-KEYTYPE.
+           PERFORM GET-VARINT-AS-UINT64 THRU END-GET-VARINT-AS-UINT64.
+           DIVIDE W-UINT64 BY 8 GIVING W-PB-KEY REMAINDER W-PB-TYPE.
+       END-GET-PB-KEYTYPE. EXIT.
+       
+      * ---------------------------------------------------------------
+      * Get a variable integer from the stream as unsigned double word
+      * binary.
+      * ---------------------------------------------------------------
+       GET-VARINT-AS-UINT64.
+           SET ADDRESS OF PB-VARINT TO W-STREAM.
+           CALL 'PBVI2U64' USING PB-VARINT W-UINT64 W-BYTES-USED.
+       END-GET-VARINT-AS-UINT64. EXIT.
 
-      * ----------------------------------------------------------------
-      * Get an unsigned int 32 from the protobuf byte stream.
-      *
-      * Protobuf wire for unsigned int32 is same as unsigned int 64.
-      * ----------------------------------------------------------------
-       TO-UINT32.
-           PERFORM TO-UINT64 THRU END-TO-UINT64.
-           COMPUTE UINT32 = UINT64.
-       END-TO-UINT32. EXIT.
+      * ---------------------------------------------------------------
+      * Get a variable integer from the stream as unsigned single word
+      * binary.
+      * ---------------------------------------------------------------
+       GET-VARINT-AS-UINT32.
+           SET ADDRESS OF PB-VARINT TO W-STREAM.
+           CALL 'PBVI2U32' USING PB-VARINT W-UINT32 W-BYTES-USED.
+       END-GET-VARINT-AS-UINT32. EXIT.
 
-      * ----------------------------------------------------------------
-      * Get an int 32 from the protobuf byte stream.
-      *
-      * Protobuf wire for standrad int32 is same as standard int 64.
-      * ----------------------------------------------------------------
-       TO-INT32.
-           PERFORM TO-INT64 THRU END-TO-INT64.
-           COMPUTE INT32 = INT64.
-       END-TO-INT32. EXIT.
+      * ---------------------------------------------------------------
+      * Get a variable integer from the stream as signed double word
+      * binary.
+      * ---------------------------------------------------------------
+       GET-VARINT-AS-INT64.
+           SET ADDRESS OF PB-VARINT TO W-STREAM.
+           CALL 'PBVI2S64' USING PB-VARINT W-INT64 W-BYTES-USED.
+       END-GET-VARINT-AS-INT64. EXIT.
 
-      * ----------------------------------------------------------------
-      * Get an int 64 from the protobuf byte stream.
-      *
-      * Standard ints are stored as two's complement.
-      * ----------------------------------------------------------------
-       TO-INT64.
-           PERFORM TO-UINT64 THRU END-TO-UINT64.
-           IF UINT64 > 2 ** 63
-              COMPUTE INT64 = UINT64 - 2 ** 64
-           ELSE
-              COMPUTE INT64 = UINT64
-           END-IF.
-       END-TO-INT64. EXIT.
-
-      * ----------------------------------------------------------------
-      * Get an unsigned int 64 from the protobuf byte stream.
-      *
-      * Variable ints are stored in a sequence of bytes where the most
-      * significant bit indicates that there are more bytes. The
-      * remaining 7 bits in each byte are the actual integer bits
-      * except that bytes are ordered as least significant first.
-      * ----------------------------------------------------------------
-       TO-UINT64.
-           SET VARINT-INCOMPLETE TO TRUE.
-           SET ADDRESS OF L-VARINT-BYTES TO STREAM.
-           MOVE ZERO TO UINT64.
-
-           PERFORM VARYING BYTES-USED FROM 1 BY 1
-                   UNTIL VARINT-COMPLETE
-                      OR BYTES-USED > UINT64-MAX-BYTES
-               MOVE L-VARINT-BYTE(BYTES-USED) TO W-BYTE-R
-
-               IF (W-NUMBYTE < 128)
-                   SET VARINT-COMPLETE TO TRUE
-                   COMPUTE UINT64 = UINT64
-                           + W-NUMBYTE
-                           * (128 ** (BYTES-USED - 1))
-               ELSE
-                   COMPUTE UINT64 = UINT64
-                           + (W-NUMBYTE - 128)
-                           * (128 ** (BYTES-USED - 1))
-               END-IF
-               
-           END-PERFORM.
-           SUBTRACT 1 FROM BYTES-USED.
-       END-TO-UINT64. EXIT.
+      * ---------------------------------------------------------------
+      * Get a variable integer from the stream as signed single word
+      * binary.
+      * ---------------------------------------------------------------
+       GET-VARINT-AS-INT32.
+           SET ADDRESS OF PB-VARINT TO W-STREAM.
+           CALL 'PBVI2S32' USING PB-VARINT W-INT32 W-BYTES-USED.
+       END-GET-VARINT-AS-INT32. EXIT.
 
        END PROGRAM $protoCobolDataItem.parserProgramName$.
-
 >>
 
 listSubMessageLength() ::= <<
@@ -232,16 +180,18 @@ initDependingOns() ::= <<
 
 parseDataItem(protoCobolDataItem) ::= <<
 $if(protoCobolDataItem.structure)$ 
-      * ----------------------------------------------------------------
+      * ---------------------------------------------------------------
       * Parse the $protoCobolDataItem.cobolName$ message field
-      * ----------------------------------------------------------------
+      * ---------------------------------------------------------------
        PARSE-$protoCobolDataItem.cobolName$.
-           DISPLAY 'PARSE-$protoCobolDataItem.cobolName$ W-I=' W-I.
-           SET STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           PERFORM TO-KEY-TYPE THRU END-TO-KEY-TYPE.
-           ADD BYTES-USED TO W-I.
-           SET STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           EVALUATE WIRE-KEY
+      D    DISPLAY 'PARSE-$protoCobolDataItem.cobolName$ OFFSET=' W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           PERFORM GET-PB-KEYTYPE THRU END-GET-PB-KEYTYPE.
+           ADD W-BYTES-USED TO W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           EVALUATE W-PB-KEY
 $protoCobolDataItem.children:parseChild(protoCobolDataItem=it); separator="\n"$
            END-EVALUATE.
        END-PARSE-$protoCobolDataItem.cobolName$. EXIT.
@@ -263,61 +213,72 @@ $messageToGroup(protoCobolDataItem)$$endif$
 >>
 
 boolToNum(protoCobolDataItem) ::= <<
-                 PERFORM TO-UINT32 THRU END-TO-UINT32
-                 COMPUTE W-I = W-I + BYTES-USED
-                 COMPUTE $protoCobolDataItem.cobolName$ = UINT32
+                 PERFORM GET-VARINT-AS-UINT32 THRU
+                     END-GET-VARINT-AS-UINT32
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-UINT32
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
 stringToAlphanum(protoCobolDataItem) ::= <<
-                 PERFORM TO-UINT32 THRU END-TO-UINT32
-                 COMPUTE W-I = W-I + BYTES-USED
+                 PERFORM GET-VARINT-AS-UINT32 THRU
+                     END-GET-VARINT-AS-UINT32
+                 COMPUTE W-I = W-I + W-BYTES-USED
                  MOVE FUNCTION NATIONAL-OF(
-                    PROTOBUF-BYTES(W-I:UINT32), 01208)
-                    TO UNICODE-BUFFER
-                 MOVE FUNCTION DISPLAY-OF(
-                    UNICODE-BUFFER, 01147)
+                    PROTOBUF-BYTES(W-I:W-UINT32), 01208)
+                    TO W-UTF16-BUFFER
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01147)
                     TO $protoCobolDataItem.cobolName$
-                 COMPUTE W-I = W-I + UINT32
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-UINT32
 >>
 
 enumToNum(protoCobolDataItem) ::= <<
-                 PERFORM TO-UINT32 THRU END-TO-UINT32
-                 COMPUTE W-I = W-I + BYTES-USED
-                 COMPUTE $protoCobolDataItem.cobolName$ = UINT32
+                 PERFORM GET-VARINT-AS-UINT32 THRU
+                     END-GET-VARINT-AS-UINT32
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-UINT32
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
 int32ToNum(protoCobolDataItem) ::= <<
-                 PERFORM TO-INT32 THRU END-TO-INT32
-                 COMPUTE W-I = W-I + BYTES-USED
-                 COMPUTE $protoCobolDataItem.cobolName$ = INT32
+                 PERFORM GET-VARINT-AS-INT32 THRU
+                     END-GET-VARINT-AS-INT32
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-INT32
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
 int64ToNum(protoCobolDataItem) ::= <<
-                 PERFORM TO-INT64 THRU END-TO-INT64
-                 COMPUTE W-I = W-I + BYTES-USED
-                 COMPUTE $protoCobolDataItem.cobolName$ = INT64
+                 PERFORM GET-VARINT-AS-INT64 THRU
+                     END-GET-VARINT-AS-INT64
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-INT64
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
 uint32ToNum(protoCobolDataItem) ::= <<
-                 PERFORM TO-UINT32 THRU END-TO-UINT32
-                 COMPUTE W-I = W-I + BYTES-USED
-                 COMPUTE $protoCobolDataItem.cobolName$ = UINT32
+                 PERFORM GET-VARINT-AS-UINT32 THRU
+                     END-GET-VARINT-AS-UINT32
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-UINT32
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
 uint64ToNum(protoCobolDataItem) ::= <<
-                 PERFORM TO-UINT64 THRU END-TO-UINT64
-                 COMPUTE W-I = W-I + BYTES-USED
-                 COMPUTE $protoCobolDataItem.cobolName$ = UINT64
+                 PERFORM GET-VARINT-AS-UINT64 THRU
+                     END-GET-VARINT-AS-UINT64
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-UINT64
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
 messageToGroup(protoCobolDataItem) ::= <<
-                 PERFORM TO-UINT32 THRU END-TO-UINT32
-                 COMPUTE W-I = W-I + BYTES-USED
-                 COMPUTE W-$protoCobolDataItem.cobolName$-L = W-I + UINT32 - 1
+                 PERFORM GET-VARINT-AS-UINT32 THRU
+                     END-GET-VARINT-AS-UINT32
+                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE W-$protoCobolDataItem.cobolName$-L = W-I + W-UINT32 - 1
                  PERFORM PARSE-$protoCobolDataItem.cobolName$ THRU
                      END-PARSE-$protoCobolDataItem.cobolName$
                          UNTIL W-I > W-$protoCobolDataItem.cobolName$-L
 >>
-
-
-

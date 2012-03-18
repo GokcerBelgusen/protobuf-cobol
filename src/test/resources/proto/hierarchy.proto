@@ -1,0 +1,10 @@
+package hierarchy;
+option java_package = "com.example.hierarchy";
+
+message CustomerData {
+  required Child1 child1 = 1;
+  required string child3 = 2;
+  message Child1 {
+    required string child2 = 1;
+  }
+}

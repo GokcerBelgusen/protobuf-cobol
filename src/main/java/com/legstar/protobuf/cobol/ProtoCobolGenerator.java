@@ -10,13 +10,16 @@ import org.apache.commons.logging.LogFactory;
 
 import com.legstar.cobol.gen.Copybook72ColWriter;
 
+/**
+ * Generates a COBOL protocol buffer Parser (protobuf to COBOL) and a Writer
+ * (COBOL to protobuf) for a structure.
+ * <p/>
+ * 
+ */
 public class ProtoCobolGenerator {
 
     /** Location where string templates resources are found. */
     public static final String TEMPLATE_BASE = "templates";
-
-    /** The stringtemplate group for copybooktemplates. */
-    public static final String COPYBOOK_TEMPLATE_GROUP_NAME = "cobol-group";
 
     /** The stringtemplate group for protobuf-cobol templates. */
     public static final String PROTOCOB_TEMPLATE_GROUP_NAME = "protocob-group";
@@ -46,10 +49,10 @@ public class ProtoCobolGenerator {
             });
 
     /**
-     * Generates a COBOL copybook as a string.
+     * Generates a COBOL protocol buffer parser as a string.
      * 
      * @param protoCobolDataItem the COBOL data item
-     * @return the COBOL copybook content
+     * @return the COBOL protocol buffer parser content
      */
     public static String generateParser(ProtoCobolDataItem protoCobolDataItem) {
         return generate(protoCobolDataItem, PARSER_TEMPLATE_NAME);
@@ -80,8 +83,8 @@ public class ProtoCobolGenerator {
     public static StringTemplate getTemplate(final String templateGroupName,
             final String templateName) {
         StringTemplateGroup.registerGroupLoader(GROUP_LOADER);
-        StringTemplateGroup group = StringTemplateGroup.loadGroup(templateGroupName,
-                DefaultTemplateLexer.class, null);
+        StringTemplateGroup group = StringTemplateGroup.loadGroup(
+                templateGroupName, DefaultTemplateLexer.class, null);
         group.setStringTemplateWriter(Copybook72ColWriter.class);
         return group.getInstanceOf(templateName);
     }
