@@ -362,7 +362,7 @@ public class ProtoCobolDataItem {
     /**
      * @return true if this maps to a protobuf double
      */
-    public boolean isMappedToDounble() {
+    public boolean isMappedToDouble() {
         return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
                 cobolDataItem.getUsage()).equals(Type.DOUBLE);
     }

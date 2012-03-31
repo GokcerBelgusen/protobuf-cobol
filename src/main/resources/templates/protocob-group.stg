@@ -31,9 +31,9 @@ toProtocobParser(protoCobolDataItem) ::= <<
        WORKING-STORAGE SECTION.
 
       *    // Protobuf field key and type
-       01  W-PB-KEYTYPE.
-           05  W-PB-KEY              PIC 9(8) COMP-5.
-           05  W-PB-TYPE             PIC 9(4) COMP-5.
+       01  W-P-KEYTYPE.
+           05  W-P-KEY               PIC 9(8) COMP-5.
+           05  W-P-TYPE              PIC 9(4) COMP-5.
                88 VARINT             VALUE 0.
                88 FIXED-64           VALUE 1.
                88 LENGTH-DELIMITED   VALUE 2.
@@ -47,16 +47,22 @@ toProtocobParser(protoCobolDataItem) ::= <<
        01  W-STREAM                  POINTER.
 
       *    // a double word binary to hold unsigned long integers
-       01  W-UINT64                  PIC 9(18) COMP-5.
+       01  W-Z-UINT64                PIC 9(18) COMP-5.
 
       *    // a single word binary to hold unsigned integers
-       01  W-UINT32                  PIC 9(8) COMP-5.
+       01  W-Z-UINT32                PIC 9(8) COMP-5.
 
       *    // a double word binary to hold signed long integers
-       01  W-INT64                   PIC S9(18) COMP-5.
+       01  W-Z-INT64                 PIC S9(18) COMP-5.
 
       *    // a single word binary to hold signed integers
-       01  W-INT32                   PIC S9(8) COMP-5.
+       01  W-Z-INT32                 PIC S9(8) COMP-5.
+
+      *    // a simple floating point numeric
+       01  W-Z-COMP-1                COMP-1.
+
+      *    // a double floating point numeric
+       01  W-Z-COMP-2                COMP-2.
 
       *    // library calls return how many stream bytes were consumed 
        01  W-BYTES-USED              PIC 9(8) COMP-5.
@@ -89,8 +95,14 @@ $if(protoCobolDataItem.hasAlphanumItems)$
 $protoCobolDataItem.copybook$
        
       *    // A protobuf variable integer
-       01  PB-VARINT                 PIC X(10).
+       01  P-VARINT                  PIC X(10).
      
+      *    // A protobuf float (IEEE 754)
+       01  P-FLOAT                   PIC X(4).
+
+      *    // A protobuf double (IEEE 754)
+       01  P-DOUBLE                  PIC X(8).
+
       *****************************************************************
       *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
       *****************************************************************
@@ -118,46 +130,62 @@ $parseDataItem(protoCobolDataItem)$
       * Field type is 3 lower bits of header varint, higher bits are
       * the field key (identifier)
       * ---------------------------------------------------------------
-       GET-PB-KEYTYPE.
-           PERFORM GET-VARINT-AS-UINT64 THRU END-GET-VARINT-AS-UINT64.
-           DIVIDE W-UINT64 BY 8 GIVING W-PB-KEY REMAINDER W-PB-TYPE.
-       END-GET-PB-KEYTYPE. EXIT.
+       GET-P-KEYTYPE.
+           PERFORM P-VARINT-TO-Z-UINT64 THRU END-P-VARINT-TO-Z-UINT64.
+           DIVIDE W-Z-UINT64 BY 8 GIVING W-P-KEY REMAINDER W-P-TYPE.
+       END-GET-P-KEYTYPE. EXIT.
        
       * ---------------------------------------------------------------
       * Get a variable integer from the stream as unsigned double word
       * binary.
       * ---------------------------------------------------------------
-       GET-VARINT-AS-UINT64.
-           SET ADDRESS OF PB-VARINT TO W-STREAM.
-           CALL 'PBVI2U64' USING PB-VARINT W-UINT64 W-BYTES-USED.
-       END-GET-VARINT-AS-UINT64. EXIT.
+       P-VARINT-TO-Z-UINT64.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVI2U64' USING P-VARINT W-Z-UINT64 W-BYTES-USED.
+       END-P-VARINT-TO-Z-UINT64. EXIT.
 
       * ---------------------------------------------------------------
       * Get a variable integer from the stream as unsigned single word
       * binary.
       * ---------------------------------------------------------------
-       GET-VARINT-AS-UINT32.
-           SET ADDRESS OF PB-VARINT TO W-STREAM.
-           CALL 'PBVI2U32' USING PB-VARINT W-UINT32 W-BYTES-USED.
-       END-GET-VARINT-AS-UINT32. EXIT.
+       P-VARINT-TO-Z-UINT32.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVI2U32' USING P-VARINT W-Z-UINT32 W-BYTES-USED.
+       END-P-VARINT-TO-Z-UINT32. EXIT.
 
       * ---------------------------------------------------------------
       * Get a variable integer from the stream as signed double word
       * binary.
       * ---------------------------------------------------------------
-       GET-VARINT-AS-INT64.
-           SET ADDRESS OF PB-VARINT TO W-STREAM.
-           CALL 'PBVI2S64' USING PB-VARINT W-INT64 W-BYTES-USED.
-       END-GET-VARINT-AS-INT64. EXIT.
+       P-VARINT-TO-Z-INT64.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVI2S64' USING P-VARINT W-Z-INT64 W-BYTES-USED.
+       END-P-VARINT-TO-Z-INT64. EXIT.
 
       * ---------------------------------------------------------------
       * Get a variable integer from the stream as signed single word
       * binary.
       * ---------------------------------------------------------------
-       GET-VARINT-AS-INT32.
-           SET ADDRESS OF PB-VARINT TO W-STREAM.
-           CALL 'PBVI2S32' USING PB-VARINT W-INT32 W-BYTES-USED.
-       END-GET-VARINT-AS-INT32. EXIT.
+       P-VARINT-TO-Z-INT32.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVI2S32' USING P-VARINT W-Z-INT32 W-BYTES-USED.
+       END-P-VARINT-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a IEEE float from the stream as a COMP-1
+      * ---------------------------------------------------------------
+       P-FLOAT-TO-Z-COMP-1.
+           SET ADDRESS OF P-FLOAT TO W-STREAM.
+           CALL 'PB2ZFLOA' USING P-FLOAT W-Z-COMP-1 W-BYTES-USED.
+       END-P-FLOAT-TO-Z-COMP-1. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a IEEE double from the stream as a COMP-2
+      * ---------------------------------------------------------------
+       P-DOUBLE-TO-Z-COMP-2.
+           SET ADDRESS OF P-DOUBLE TO W-STREAM.
+           CALL 'PB2ZDBLE' USING P-DOUBLE W-Z-COMP-2 W-BYTES-USED.
+       END-P-DOUBLE-TO-Z-COMP-2. EXIT.
 
        END PROGRAM $protoCobolDataItem.parserProgramName$.
 >>
@@ -187,11 +215,11 @@ $if(protoCobolDataItem.structure)$
       D    DISPLAY 'PARSE-$protoCobolDataItem.cobolName$ OFFSET=' W-I.
 
            SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           PERFORM GET-PB-KEYTYPE THRU END-GET-PB-KEYTYPE.
+           PERFORM GET-P-KEYTYPE THRU END-GET-P-KEYTYPE.
            ADD W-BYTES-USED TO W-I.
 
            SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           EVALUATE W-PB-KEY
+           EVALUATE W-P-KEY
 $protoCobolDataItem.children:parseChild(protoCobolDataItem=it); separator="\n"$
            END-EVALUATE.
        END-PARSE-$protoCobolDataItem.cobolName$. EXIT.
@@ -202,82 +230,100 @@ $protoCobolDataItem.children:parseDataItem(protoCobolDataItem=it)$$endif$
 parseChild(protoCobolDataItem) ::= <<
                WHEN $i$
 $if(protoCobolDataItem.mappedToBool)$
-$boolToNum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToString)$
-$stringToAlphanum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToEnum)$
-$enumToNum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToInt32)$
-$int32ToNum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToInt64)$
-$int64ToNum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToUint32)$
-$uint32ToNum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToUint64)$
-$uint64ToNum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToMessage)$
+$pBoolToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToString)$
+$pStringToZAlphanum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToEnum)$
+$pEnumToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToInt32)$
+$pVarintToZInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToInt64)$
+$pVarintToZInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToUint32)$
+$pVarintToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToUint64)$
+$pVarintToZUInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToFloat)$
+$pFloatToZComp1(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToDouble)$
+$pDoubleToZComp2(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToMessage)$
 $messageToGroup(protoCobolDataItem)$$endif$
 >>
 
-boolToNum(protoCobolDataItem) ::= <<
-                 PERFORM GET-VARINT-AS-UINT32 THRU
-                     END-GET-VARINT-AS-UINT32
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-UINT32
+pBoolToZUInt32(protoCobolDataItem) ::= <<
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-UINT32
       D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
                  COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
-stringToAlphanum(protoCobolDataItem) ::= <<
-                 PERFORM GET-VARINT-AS-UINT32 THRU
-                     END-GET-VARINT-AS-UINT32
+pStringToZAlphanum(protoCobolDataItem) ::= <<
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
                  COMPUTE W-I = W-I + W-BYTES-USED
                  MOVE FUNCTION NATIONAL-OF(
-                    PROTOBUF-BYTES(W-I:W-UINT32), 01208)
+                    PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
                     TO W-UTF16-BUFFER
                  MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01147)
                     TO $protoCobolDataItem.cobolName$
       D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-UINT32
+                 COMPUTE W-I = W-I + W-Z-UINT32
 >>
 
-enumToNum(protoCobolDataItem) ::= <<
-                 PERFORM GET-VARINT-AS-UINT32 THRU
-                     END-GET-VARINT-AS-UINT32
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-UINT32
+pEnumToZUInt32(protoCobolDataItem) ::= <<
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-UINT32
       D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
                  COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
-int32ToNum(protoCobolDataItem) ::= <<
-                 PERFORM GET-VARINT-AS-INT32 THRU
-                     END-GET-VARINT-AS-INT32
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-INT32
+pVarintToZInt32(protoCobolDataItem) ::= <<
+                 PERFORM P-VARINT-TO-Z-INT32 THRU
+                     END-P-VARINT-TO-Z-INT32
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-INT32
       D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
                  COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
-int64ToNum(protoCobolDataItem) ::= <<
-                 PERFORM GET-VARINT-AS-INT64 THRU
-                     END-GET-VARINT-AS-INT64
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-INT64
+pVarintToZInt64(protoCobolDataItem) ::= <<
+                 PERFORM P-VARINT-TO-Z-INT64 THRU
+                     END-P-VARINT-TO-Z-INT64
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-INT64
       D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
                  COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
-uint32ToNum(protoCobolDataItem) ::= <<
-                 PERFORM GET-VARINT-AS-UINT32 THRU
-                     END-GET-VARINT-AS-UINT32
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-UINT32
+pVarintToZUInt32(protoCobolDataItem) ::= <<
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-UINT32
       D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
                  COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
-uint64ToNum(protoCobolDataItem) ::= <<
-                 PERFORM GET-VARINT-AS-UINT64 THRU
-                     END-GET-VARINT-AS-UINT64
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-UINT64
+pVarintToZUInt64(protoCobolDataItem) ::= <<
+                 PERFORM P-VARINT-TO-Z-UINT64 THRU
+                     END-P-VARINT-TO-Z-UINT64
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-UINT64
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-BYTES-USED
+>>
+
+pFloatToZComp1(protoCobolDataItem) ::= <<
+                 PERFORM P-FLOAT-TO-Z-COMP-1 THRU
+                     END-P-FLOAT-TO-Z-COMP-1
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-COMP-1
+      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
+                 COMPUTE W-I = W-I + W-BYTES-USED
+>>
+
+pDoubleToZComp2(protoCobolDataItem) ::= <<
+                 PERFORM P-DOUBLE-TO-Z-COMP-2 THRU
+                     END-P-DOUBLE-TO-Z-COMP-2
+                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-COMP-2
       D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
                  COMPUTE W-I = W-I + W-BYTES-USED
 >>
 
 messageToGroup(protoCobolDataItem) ::= <<
-                 PERFORM GET-VARINT-AS-UINT32 THRU
-                     END-GET-VARINT-AS-UINT32
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
                  COMPUTE W-I = W-I + W-BYTES-USED
-                 COMPUTE W-$protoCobolDataItem.cobolName$-L = W-I + W-UINT32 - 1
+                 COMPUTE W-$protoCobolDataItem.cobolName$-L = W-I + W-Z-UINT32 - 1
                  PERFORM PARSE-$protoCobolDataItem.cobolName$ THRU
                      END-PARSE-$protoCobolDataItem.cobolName$
                          UNTIL W-I > W-$protoCobolDataItem.cobolName$-L

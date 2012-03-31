@@ -9,8 +9,8 @@ import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Descriptors.FieldDescriptor.Type;
-import com.legstar.cobol.model.CobolDataItem;
 import com.legstar.cobol.gen.CobolNameResolver;
+import com.legstar.cobol.model.CobolDataItem;
 import com.legstar.coxb.CobolUsage.Usage;
 
 /**
@@ -195,6 +195,18 @@ public class ProtoCobolMapper {
             return "S9(9)";
         case INT64:
             return "S9(18)";
+        case SINT32:
+            return "S9(9)";
+        case SINT64:
+            return "S9(18)";
+        case FIXED32:
+            return "9(9)";
+        case FIXED64:
+            return "9(18)";
+        case SFIXED32:
+            return "S9(9)";
+        case SFIXED64:
+            return "S9(18)";
         case UINT32:
             return "9(9)";
         case UINT64:
@@ -227,11 +239,14 @@ public class ProtoCobolMapper {
         case FLOAT:
             return Usage.SINGLEFLOAT;
         case INT32:
-            return Usage.NATIVEBINARY;
         case INT64:
-            return Usage.NATIVEBINARY;
+        case SINT32:
+        case SINT64:
+        case FIXED32:
+        case FIXED64:
+        case SFIXED32:
+        case SFIXED64:
         case UINT32:
-            return Usage.NATIVEBINARY;
         case UINT64:
             return Usage.NATIVEBINARY;
         case MESSAGE:

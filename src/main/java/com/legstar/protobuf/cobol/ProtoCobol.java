@@ -154,17 +154,37 @@ public class ProtoCobol {
 
         try {
             for (Descriptor messageDescriptor : fd.getMessageTypes()) {
+
                 CobolDataItem cobolDataItem = cobolMapper
                         .toCobol(messageDescriptor);
-                FileUtils.writeStringToFile(
-                        getOutputFile(cobolDataItem,
-                                COBOL_MEMBER_COPYBOOK_SUFFIX,
-                                COPYBOOK_FILE_EXTENSION), CopybookGenerator
-                                .generate(cobolDataItem));
+
+                String copybookContent = CopybookGenerator
+                        .generate(cobolDataItem);
+                File copybookFile = writeCopybookFile(cobolDataItem,
+                        copybookContent);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Generated copy book in file: "
+                            + copybookFile.getPath());
+                    logger.debug(copybookContent);
+                }
+
+                ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
+                        cobolDataItem);
+
+                String parserContent = ProtoCobolGenerator
+                        .generateParser(protoCobolDataItem);
+                File parserFile = writeParserFile(protoCobolDataItem,
+                        parserContent);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Generated parser in file: "
+                            + parserFile.getPath());
+                    logger.debug(parserContent);
+                }
+
             }
         } catch (Exception e) {
-            exceptions.add(new ProtoCobolException(
-                    "Copybook generation failed", e));
+            exceptions
+                    .add(new ProtoCobolException("COBOL generation failed", e));
         }
 
         for (ProtoCobolException e : exceptions) {
@@ -176,21 +196,36 @@ public class ProtoCobol {
     }
 
     /**
-     * Determines a generated artifact name.
-     * <p/>
-     * The name is derived from the message name and a suffix is appended to
-     * uniquely identify the artifact.
+     * Write the COBOL copybook to a file.
      * 
-     * @param cobolDataItem the COBOL model
-     * @param suffix the suffix to append to the base name to distinguish this
-     *            generated artifact from others
-     * @param extension the file extension
-     * @return the file name for the artifact
+     * @param cobolDataItem the data item
+     * @param copybookContent the copybook content
+     * @return a file named after the protobuf message mapped to COBOL
+     * @throws IOException if writing fails
      */
-    protected File getOutputFile(CobolDataItem cobolDataItem, String suffix,
-            String extension) {
-        return new File(outputDir, cobolDataItem.getCobolName() + suffix + "."
-                + extension);
+    protected File writeCopybookFile(CobolDataItem cobolDataItem,
+            String copybookContent) throws IOException {
+        File copybookFile = new File(outputDir, cobolDataItem.getCobolName()
+                + COBOL_MEMBER_COPYBOOK_SUFFIX + "." + COPYBOOK_FILE_EXTENSION);
+        FileUtils.writeStringToFile(copybookFile, copybookContent);
+        return copybookFile;
+    }
+
+    /**
+     * Write the COBOL parser to a file.
+     * 
+     * @param protoCobolDataItem the decorated data item
+     * @param parserContent the parser content
+     * @return a file named after the generated parser program name
+     * @throws IOException if writing fails
+     */
+    protected File writeParserFile(ProtoCobolDataItem protoCobolDataItem,
+            String parserContent) throws IOException {
+        File parserFile = new File(outputDir,
+                protoCobolDataItem.getParserProgramName() + "."
+                        + PROGRAM_FILE_EXTENSION);
+        FileUtils.writeStringToFile(parserFile, parserContent);
+        return parserFile;
     }
 
     /**

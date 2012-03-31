@@ -67,10 +67,10 @@ public class ProtoCobolGenerator {
      */
     public static String generate(ProtoCobolDataItem protoCobolDataItem,
             final String templateName) {
-        StringTemplate copybookTemplate = getTemplate(
-                PROTOCOB_TEMPLATE_GROUP_NAME, templateName);
-        copybookTemplate.setAttribute("protoCobolDataItem", protoCobolDataItem);
-        return copybookTemplate.toString();
+        StringTemplate template = getTemplate(PROTOCOB_TEMPLATE_GROUP_NAME,
+                templateName);
+        template.setAttribute("protoCobolDataItem", protoCobolDataItem);
+        return template.toString();
     }
 
     /**
