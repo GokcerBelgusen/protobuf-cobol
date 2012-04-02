@@ -1,7 +1,0 @@
-      * ----------------------------------------------------------------
-      * Generated copybook for SearchRequest
-      * ----------------------------------------------------------------
-       01  SearchRequest.
-           03  query PIC X(32) DISPLAY.
-           03  page-number PIC S9(9) COMP-5.
-           03  result-per-page PIC S9(9) COMP-5.
