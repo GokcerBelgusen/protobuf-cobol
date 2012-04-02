@@ -66,7 +66,7 @@ public abstract class AbstractTest extends TestCase {
                     break;
                 }
             }
-            if (!found) {
+            if (!found && !dir.equals(".svn")) {
                 FileUtils.deleteDirectory(new File(getReferenceFolder(), dir));
             }
         }
