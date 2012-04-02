@@ -1,0 +1,69 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTARRA.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST GENERATED PROGRAMS FOR: nontranslated.proto              *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  PROTOBUF-BYTES                    PIC X(4096).
+       01  PROTOBUF-BYTES-LEN                PIC 9(8) COMP-5.
+       01  W-BYTES-USED                      PIC 9(8) COMP-5.
+
+      *    // The output COBOL structure
+       01  SearchResponse.
+           03  OCCURS-COUNTERS--C.
+             05  Result--C PIC 9(9) COMP-5.
+           03  Result OCCURS 0 TO 10 DEPENDING ON Result--C.
+             05  url PIC X(32) DISPLAY.
+             05  R-title PIC X(32) DISPLAY.
+             05  snippets OCCURS 5 PIC X(32) DISPLAY.
+
+
+       01  W-I                                PIC 9(4) COMP VALUE 0.
+       01  W-J                                PIC 9(4) COMP VALUE 0.
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO SearchRequest 
+      * ---------------------------------------------------------------
+           DISPLAY "TO-SearchResponse ======= 0 =============="
+           MOVE X'0a440a0b687474703a2f2f75726c311207726573756c74311a0d46
+      -    '6972737420736e69707065741a0e5365636f6e6420736e69707065741a0d
+      -    '546869726420736e69707065740a350a0b687474703a2f2f75726c321207
+      -    '726573756c74321a0e466f7572746820736e69707065741a0d4669667468
+      -    '20736e6970706574' TO PROTOBUF-BYTES.
+           MOVE 125 TO PROTOBUF-BYTES-LEN.
+           PERFORM TEST-SEARRESP THRU END-TEST-SEARRESP.
+           
+           GOBACK.
+
+       TEST-SEARRESP.
+           CALL 'SEARRESP' USING PROTOBUF-BYTES
+                                 PROTOBUF-BYTES-LEN
+                                 SearchResponse.
+           DISPLAY 'Result--C=' Result--C.
+           PERFORM VARYING W-I FROM 1 BY 1 UNTIL W-I > Result--C
+               DISPLAY 'url(' W-I ')=' url(W-I)
+               DISPLAY 'R-title(' W-I ')=' R-title(W-I)
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 5
+                   DISPLAY 'snippets(' W-I ',' W-J ')='
+                            snippets(W-I, W-J)
+               END-PERFORM
+           END-PERFORM.
+           
+       END-TEST-SEARRESP. EXIT.
+
+       END PROGRAM PBCTARRA.
+

@@ -1,0 +1,19 @@
+package complexarrays;
+option java_package = "com.example.complexarrays";
+
+message A {
+  repeated B b = 1;
+  repeated E e = 2;
+}
+
+message B {
+  required C c = 1;
+}
+
+message C {
+  repeated string d = 1;
+}
+
+message E {
+  required string f = 1;
+}

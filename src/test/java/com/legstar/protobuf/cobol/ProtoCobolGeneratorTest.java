@@ -34,7 +34,7 @@ public class ProtoCobolGeneratorTest extends AbstractTest {
         check(ProtoCobolGenerator.generateParser(protoCobolDataItem));
     }
 
-    public void testParserIndexedFields() {
+    public void testParserArrays() {
         CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
         cobolDataItem.setMinOccurs(10);
         cobolDataItem.setMaxOccurs(10);

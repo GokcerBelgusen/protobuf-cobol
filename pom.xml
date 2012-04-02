@@ -235,11 +235,13 @@
             <build>
                 <plugins>
 
-                    <!-- Upload and compile the COBOL library. -->
                     <plugin>
                         <groupId>com.legsem.legstar</groupId>
                         <artifactId>zosupload-maven-plugin</artifactId>
+                        <version>0.0.4</version>
                         <executions>
+
+                            <!-- Upload and compile the COBOL library. -->
                             <execution>
                                 <id>compile-zos-library</id>
                                 <phase>compile</phase>
@@ -254,14 +256,8 @@
                                     <remoteFilesPrefix>P390.DEV</remoteFilesPrefix>
                                 </configuration>
                             </execution>
-                        </executions>
-                    </plugin>
 
-                    <!-- Upload and compile the test programs. -->
-                    <plugin>
-                        <groupId>com.legsem.legstar</groupId>
-                        <artifactId>zosupload-maven-plugin</artifactId>
-                        <executions>
+                            <!-- Upload and compile the test programs. -->
                             <execution>
                                 <id>compile-zos-test-programs</id>
                                 <phase>test-compile</phase>
@@ -276,13 +272,16 @@
                                     <remoteFilesPrefix>P390.DEV</remoteFilesPrefix>
                                 </configuration>
                             </execution>
+
                         </executions>
                     </plugin>
 
-                </plugins>
-            </build>
-        </profile>
 
+                </plugins>
+
+            </build>
+
+        </profile>
 
     </profiles>
 

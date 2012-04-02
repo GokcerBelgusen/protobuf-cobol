@@ -2,6 +2,7 @@ package com.legstar.protobuf.cobol;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -12,8 +13,8 @@ import com.legstar.coxb.util.NameUtil;
 import com.legstar.coxb.util.PictureUtil;
 
 /**
- * Root data items decorates regular LegStar COBOL data item to provide
- * additional methods made available to templates.
+ * This decorates regular LegStar COBOL data item to provide additional methods
+ * made available to templates.
  */
 public class ProtoCobolDataItem {
 
@@ -27,6 +28,12 @@ public class ProtoCobolDataItem {
      */
     private static final String COBOL_MEMBER_WRITER_SUFFIX = "W";
 
+    /** Used to create names for working storage variables. */
+    public static final String WORKING_STORAGE_PREFIX = "W-";
+
+    /** Used to build COBOL counter variables. */
+    public static final String COBOL_COUNTERS_SUFFIX = "-I";
+
     /**
      * A prefix that can be used for generated program names.
      */
@@ -35,29 +42,98 @@ public class ProtoCobolDataItem {
     /** The COBOL deta item we are decorating. */
     private final CobolDataItem cobolDataItem;
 
+    /**
+     * Reflects the repeating parents which influence the way this data item can
+     * be referred to.
+     */
+    private final Stack < String > cobolCounters;
+
     /** Children are also decorated data items. */
     private List < ProtoCobolDataItem > children;
 
+    /**
+     * Decorate a COBOL data item.
+     * 
+     * @param cobolDataItem the decorated item
+     */
     public ProtoCobolDataItem(final CobolDataItem cobolDataItem) {
+        this(cobolDataItem, new Stack < String >());
+    }
+
+    /**
+     * Decorate a COBOL data item.
+     * 
+     * @param cobolDataItem the decorated item
+     * @param parentCobolCounters the parent's stack of array counters
+     */
+    public ProtoCobolDataItem(final CobolDataItem cobolDataItem,
+            Stack < String > parentCobolCounters) {
         this.cobolDataItem = cobolDataItem;
-        decorateChildren(this);
+        this.cobolCounters = new Stack < String >();
+        cobolCounters.addAll(parentCobolCounters);
+        if (cobolDataItem.isArray()) {
+            if (StringUtils.isBlank(cobolDataItem.getDependingOn())) {
+                cobolCounters.push(getCobolCounterName());
+            } else {
+                cobolCounters.push(cobolDataItem.getDependingOn());
+            }
+        }
+        decorateChildren(this, cobolCounters);
         programNamePrefix = createProgramNamePrefix();
     }
 
     /**
      * Recursively decorate children.
+     * <p/>
+     * Only keeps real children in particular, don't include the variable arrays
+     * counters.
      * 
      * @param protoCobolDataItem the item being decorated
      */
-    protected void decorateChildren(ProtoCobolDataItem protoCobolDataItem) {
+    protected void decorateChildren(ProtoCobolDataItem protoCobolDataItem,
+            Stack < String > parentCobolCounters) {
         List < ProtoCobolDataItem > decoratedChildren = new ArrayList < ProtoCobolDataItem >();
         for (CobolDataItem child : protoCobolDataItem.getCobolDataItem()
                 .getChildren()) {
-            ProtoCobolDataItem decoratedChild = new ProtoCobolDataItem(child);
+            ProtoCobolDataItem decoratedChild = new ProtoCobolDataItem(child,
+                    parentCobolCounters);
+            if (decoratedChild.isOccursCountersGroup()) {
+                continue;
+            }
             decoratedChildren.add(decoratedChild);
-            decorateChildren(decoratedChild);
         }
         protoCobolDataItem.setChildren(decoratedChildren);
+    }
+
+    /**
+     * @param cobolName the Cobol element name to set
+     */
+    public void setCobolName(final String cobolName) {
+        cobolDataItem.setCobolName(cobolName);
+        programNamePrefix = createProgramNamePrefix();
+    }
+
+    /**
+     * @return a COBOL counter variable name for this COBOL item (null if this
+     *         is not an array)
+     */
+    public String getCobolCounterName() {
+        if (StringUtils.isBlank(cobolDataItem.getDependingOn())) {
+            if (isArray()) {
+                return getCobolCounterName(cobolDataItem.getCobolName());
+            } else {
+                return null;
+            }
+        } else {
+            return cobolDataItem.getDependingOn();
+        }
+    }
+
+    /**
+     * @return a COBOL counter variable name for this COBOL item
+     */
+    protected static String getCobolCounterName(String cobolName) {
+        return WORKING_STORAGE_PREFIX + cobolName + COBOL_COUNTERS_SUFFIX;
     }
 
     /**
@@ -165,7 +241,7 @@ public class ProtoCobolDataItem {
      * 
      * @param cobolDataItem the current COBOL data item
      * @return the largest alphanumeric data item within this data item and
-     *         childern
+     *         children
      */
     protected int getMaxStringSize(CobolDataItem cobolDataItem) {
         if (cobolDataItem.getChildren().size() > 0) {
@@ -227,50 +303,65 @@ public class ProtoCobolDataItem {
     }
 
     /**
-     * Collect all elementary data items which must be referred to using an
-     * index.
+     * Collect all data items which are fixed size arrays. Ecah one will have a
+     * corresponding counter name.
      * 
-     * @return the list of elementary data items which need to be indexed
+     * @return the list of counter names for data items which are fixed size
+     *         arrays
      */
-    public List < String > getIndexedCobolNames() {
-        return getIndexedCobolNames(cobolDataItem, cobolDataItem.isArray());
+    public List < String > getAllCobolCounterNames() {
+        return getAllCobolCounterNames(cobolDataItem);
     }
 
     /**
-     * @return true if there is an indexed child or grand child.
+     * @return true if there are fixed size arrays in this data item.
      */
-    public boolean isHasIndexedItems() {
-        return getIndexedCobolNames().size() > 0;
+    public boolean isHasCobolCounterNames() {
+        return getAllCobolCounterNames().size() > 0;
     }
 
     /**
-     * Recursively collects all elementary data items which must be referred to
-     * using an index.
+     * High level arrays, which are not themselves children of an array, become
+     * variable size arrays where the size (ODO object) is an additional field
+     * added to the structure.
      * <p/>
-     * Elementary data items are in this category if they have an OCCURS
-     * attribute or if one of their ancestors has an OCCURS attribute.
-     * <p/>
-     * TODO this ignores multidimensional arrays
+     * All other array fields however become fixed size arrays. For each one of
+     * these we need a working storage counter that we provision for here.
      * 
      * @param cobolDataItem the current COBOL data item
      * @param ancestorOccurs true if one ancestor at least has the OCCURS
      *            attribute
      * @return the list of elementary data items which need to be indexed
      */
-    protected List < String > getIndexedCobolNames(CobolDataItem cobolDataItem,
-            boolean ancestorOccurs) {
-        List < String > indexedCobolNames = new ArrayList < String >();
-        if (cobolDataItem.getChildren().size() == 0) {
-            if (ancestorOccurs || cobolDataItem.isArray()) {
-                indexedCobolNames.add(cobolDataItem.getCobolName());
-            }
-        } else {
-            boolean occurs = ancestorOccurs || cobolDataItem.isArray();
+    protected List < String > getAllCobolCounterNames(
+            CobolDataItem cobolDataItem) {
+        List < String > counterNames = new ArrayList < String >();
+        if (cobolDataItem.isArray()
+                && StringUtils.isBlank(cobolDataItem.getDependingOn())) {
+            counterNames.add(getCobolCounterName(cobolDataItem.getCobolName()));
+        }
+        if (cobolDataItem.getChildren().size() > 0) {
             for (CobolDataItem child : cobolDataItem.getChildren()) {
-                indexedCobolNames.addAll(getIndexedCobolNames(child, occurs));
+                counterNames.addAll(getAllCobolCounterNames(child));
             }
         }
-        return indexedCobolNames;
+        return counterNames;
+    }
+
+    /**
+     * For each direct child which are arrays, this contains the corresponding
+     * COBOL counter name.
+     * 
+     * @return the direct children COBOL counter names
+     */
+    public List < String > getDirectChildrenCobolCounterNames() {
+        List < String > counterNames = new ArrayList < String >();
+        for (ProtoCobolDataItem child : getChildren()) {
+            if (child.isArray()) {
+                counterNames.add(child.getCobolCounterName());
+            }
+        }
+        return counterNames;
     }
 
     /**
@@ -308,6 +399,32 @@ public class ProtoCobolDataItem {
     }
 
     /**
+     * When referenced in COBOL code, data item need to use indexes either
+     * because they are repeating items or because they belong to at least one
+     * parent who is a repeating item.
+     * 
+     * @return the Cobol element name
+     */
+    public String getIndexedCobolName() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(cobolDataItem.getCobolName());
+        if (cobolCounters.size() > 0) {
+            sb.append("(");
+            boolean first = true;
+            for (String cobolCounter : cobolCounters) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(", ");
+                }
+                sb.append(cobolCounter);
+            }
+            sb.append(")");
+        }
+        return sb.toString();
+    }
+
+    /**
      * @return the decorated cobol Data Item
      */
     public CobolDataItem getCobolDataItem() {
@@ -333,6 +450,16 @@ public class ProtoCobolDataItem {
      */
     public boolean isStructure() {
         return (getChildren().size() > 0);
+    }
+
+    /**
+     * @return true if this is the group holding all variable size array
+     *         counters. This group exist in the COBOL structure but not in the
+     *         protocol buffer stream.
+     */
+    public boolean isOccursCountersGroup() {
+        return cobolDataItem.getCobolName().equals(
+                ProtoCobolMapper.OCCURS_COUNTERS_GROUP_NAME);
     }
 
     /**
@@ -429,4 +556,19 @@ public class ProtoCobolDataItem {
     public void setProgramNamePrefix(String programNamePrefix) {
         this.programNamePrefix = programNamePrefix;
     }
+
+    /**
+     * @return the cobolCounters
+     */
+    public Stack < String > getCobolCounters() {
+        return cobolCounters;
+    }
+
+    /**
+     * @return true if this item is an array
+     */
+    public boolean isArray() {
+        return cobolDataItem.isArray();
+    }
+
 }

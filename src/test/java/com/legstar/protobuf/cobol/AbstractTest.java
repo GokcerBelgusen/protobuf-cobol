@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
+import junit.framework.TestCase;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import junit.framework.TestCase;
 
 public abstract class AbstractTest extends TestCase {
 
@@ -33,8 +34,10 @@ public abstract class AbstractTest extends TestCase {
     /**
      * This is our chance to remove reference files that are no longer used by a
      * test case. This happens when test cases are renamed or removed.
+     * 
+     * @throws IOException
      */
-    protected void cleanOldReferences() {
+    protected void cleanOldReferences() throws IOException {
         if (!getReferenceFolder().exists()) {
             return;
         }
@@ -54,19 +57,48 @@ public abstract class AbstractTest extends TestCase {
                 refFile.delete();
             }
         }
+        String[] dirs = getReferenceFolder().list(DirectoryFileFilter.INSTANCE);
+        for (String dir : dirs) {
+            boolean found = false;
+            for (int i = 0; i < methods.length; i++) {
+                if (methods[i].getName().equals(dir)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                FileUtils.deleteDirectory(new File(getReferenceFolder(), dir));
+            }
+        }
+
     }
 
     /**
      * Check a result against a reference.
      * 
-     * @throws IOException if something fails
+     * @param result the result obtained
      */
     protected void check(final String result) {
+        check(result, null);
+    }
+
+    /**
+     * Check a result against a reference.
+     * 
+     * @param result the result obtained
+     * @param fileName the corresponding file name generated (null if none)
+     */
+    protected void check(final String result, String fileName) {
+        String debugName = getClass().getSimpleName() + "-" + getName()
+                + ((fileName == null) ? "" : "." + fileName);
         try {
-            logger.debug(getClass().getSimpleName() + "-" + getName() + ":\n"
-                    + result);
-            File referenceFile = new File(getReferenceFolder(), getName() + "."
-                    + REF_FILE_EXT);
+
+            logger.debug(debugName + ":\n" + result);
+            File referenceFolder = (fileName == null) ? getReferenceFolder()
+                    : new File(getReferenceFolder(), getName());
+            File referenceFile = new File(referenceFolder,
+                    ((fileName == null) ? getName() : fileName) + "."
+                            + REF_FILE_EXT);
 
             if (isCreateReferences()) {
                 FileUtils.writeStringToFile(referenceFile, result, "UTF-8");
@@ -76,10 +108,23 @@ public abstract class AbstractTest extends TestCase {
                 assertEquals(expected, result);
             }
         } catch (IOException e) {
-            logger.error("Test " + getName() + " failed", e);
+            logger.error("Test " + debugName + " failed", e);
             fail(e.getMessage());
         }
 
+    }
+
+    /**
+     * Read the content of a file and check that it corresponds to the
+     * reference.
+     * 
+     * @param fileName the file name
+     * @throws IOException if reading the file fails
+     */
+    public void checkFile(String fileName) throws IOException {
+        String result = FileUtils.readFileToString(new File(getOutputFolder(),
+                fileName));
+        check(result, fileName);
     }
 
     /**

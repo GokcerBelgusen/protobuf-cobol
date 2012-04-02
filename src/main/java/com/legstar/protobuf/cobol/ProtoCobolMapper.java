@@ -2,6 +2,7 @@ package com.legstar.protobuf.cobol;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumDescriptor;
@@ -40,7 +41,7 @@ public class ProtoCobolMapper {
      * The set of counters associated with variable size arrays are added to the
      * final COBOL structure under this group name
      */
-    private static final String OCCURS_COUNTERS_GROUP_NAME = "OCCURS-COUNTERS--C";
+    public static final String OCCURS_COUNTERS_GROUP_NAME = "OCCURS-COUNTERS--C";
 
     /**
      * Dynamic counters also need a cobol name which is built from the
@@ -69,6 +70,9 @@ public class ProtoCobolMapper {
      * While processing this message fields, we might encounter variable size
      * arrays for which we need to create counters which are additional COBOL
      * numeric fields that hold the current array count.
+     * <p/>
+     * Arrays within arrays in COBOL translate to multidimensional arrays. We
+     * use a Stack to keep track of these dimensions.
      * 
      * @param messageDescriptor the message descriptor
      * @return the corresponding COBOL data item
@@ -77,8 +81,9 @@ public class ProtoCobolMapper {
         nameResolver = new CobolNameResolver();
         CobolDataItem occursCounters = new CobolDataItem(DEFAULT_ROOT_LEVEL
                 + DEFAULT_LEVEL_INCREMENT, OCCURS_COUNTERS_GROUP_NAME);
+        Stack < String > dimensions = new Stack < String >();
         CobolDataItem rootDataItem = toCobol(messageDescriptor,
-                DEFAULT_ROOT_LEVEL, occursCounters);
+                DEFAULT_ROOT_LEVEL, false, occursCounters, dimensions);
         if (occursCounters.getChildren().size() > 0) {
             rootDataItem.getChildren().add(0, occursCounters);
         }
@@ -90,19 +95,28 @@ public class ProtoCobolMapper {
      * 
      * @param messageDescriptor the message descriptor
      * @param level of this message in the parent message (1 if root)
+     * @param isRepeated true if this message repeats itself
      * @param occursCounters a set of counters for variable size arrays
+     * @param dimensions one entry per parent array in the hierarchy
      * @return the corresponding COBOL data item
      */
     public CobolDataItem toCobol(final Descriptor messageDescriptor,
-            final int level, CobolDataItem occursCounters) {
+            final int level, boolean isRepeated, CobolDataItem occursCounters,
+            Stack < String > dimensions) {
 
         CobolDataItem cobolDataItem = new CobolDataItem(level,
                 nameToCobol(messageDescriptor.getName()));
 
+        if (isRepeated) {
+            dimensions.push(messageDescriptor.getName());
+        }
         for (FieldDescriptor fd : messageDescriptor.getFields()) {
-            cobolDataItem.getChildren()
-                    .add(toCobol(fd, level + DEFAULT_LEVEL_INCREMENT,
-                            occursCounters));
+            cobolDataItem.getChildren().add(
+                    toCobol(fd, level + DEFAULT_LEVEL_INCREMENT,
+                            occursCounters, dimensions));
+        }
+        if (isRepeated) {
+            dimensions.pop();
         }
 
         return cobolDataItem;
@@ -114,15 +128,17 @@ public class ProtoCobolMapper {
      * @param fieldDescriptor the field descriptor
      * @param level the level of that field
      * @param occursCounters a set of counters for variable size arrays
+     * @param dimensions one entry per parent array in the hierarchy
      * @return the corresponding COBOL data item
      */
     public CobolDataItem toCobol(final FieldDescriptor fieldDescriptor,
-            final int level, CobolDataItem occursCounters) {
+            final int level, CobolDataItem occursCounters,
+            Stack < String > dimensions) {
 
         CobolDataItem cobolDataItem = null;
         if (isMessage(fieldDescriptor)) {
             cobolDataItem = toCobol(fieldDescriptor.getMessageType(), level,
-                    occursCounters);
+                    fieldDescriptor.isRepeated(), occursCounters, dimensions);
         } else {
             cobolDataItem = new CobolDataItem(level,
                     nameToCobol(fieldDescriptor.getName()));
@@ -138,7 +154,7 @@ public class ProtoCobolMapper {
         if (fieldDescriptor.isRepeated()) {
             repeatedToOccurs(fieldDescriptor.getName(),
                     fieldDescriptor.getJavaType(), cobolDataItem,
-                    occursCounters);
+                    occursCounters, dimensions);
         }
         return cobolDataItem;
     }
@@ -308,6 +324,11 @@ public class ProtoCobolMapper {
      * ones. The best we can do is translate them into COBOL variable size
      * arrays with a depending on clause.
      * <p/>
+     * There is a limitation though: COBOL does not support variable size arrays
+     * within variable size arrays because the ODO object cannot be variably
+     * located nor can it be an array element. So any array within an array is
+     * mapped to a fixed size array.
+     * <p/>
      * COBOL mandates that we specify a maximum size for arrays. Here we give a
      * chance to the caller to adjust that maximum or use a default.
      * 
@@ -315,15 +336,21 @@ public class ProtoCobolMapper {
      * @param fieldType the java type
      * @param cobolDataItem the COBOL data item being built
      * @param occursCounters a set of counters for variable size arrays
+     * @param dimensions one entry per parent array in the hierarchy
      */
     protected void repeatedToOccurs(String fieldName, JavaType fieldType,
-            CobolDataItem cobolDataItem, CobolDataItem occursCounters) {
+            CobolDataItem cobolDataItem, CobolDataItem occursCounters,
+            Stack < String > dimensions) {
 
-        cobolDataItem.setMinOccurs(0);
         cobolDataItem.setMaxOccurs(getMaxOccurs(fieldName, fieldType));
-        CobolDataItem counterDataItem = addCounter(cobolDataItem,
-                occursCounters);
-        cobolDataItem.setDependingOn(counterDataItem.getCobolName());
+        if (dimensions.empty()) {
+            cobolDataItem.setMinOccurs(0);
+            CobolDataItem counterDataItem = addCounter(cobolDataItem,
+                    occursCounters);
+            cobolDataItem.setDependingOn(counterDataItem.getCobolName());
+        } else {
+            cobolDataItem.setMinOccurs(cobolDataItem.getMaxOccurs());
+        }
 
     }
 

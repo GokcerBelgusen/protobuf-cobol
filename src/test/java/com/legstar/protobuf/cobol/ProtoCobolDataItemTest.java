@@ -90,7 +90,8 @@ public class ProtoCobolDataItemTest extends AbstractTest {
         CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
-        assertEquals("[]", protoCobolDataItem.getIndexedCobolNames().toString());
+        assertEquals("[]", protoCobolDataItem.getAllCobolCounterNames()
+                .toString());
     }
 
     public void testIndexedCobolNamesOnChildArray() {
@@ -102,20 +103,21 @@ public class ProtoCobolDataItemTest extends AbstractTest {
         cobolDataItem.getChildren().add(childDataItem1);
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
-        assertEquals("[CHILD1]", protoCobolDataItem.getIndexedCobolNames()
-                .toString());
+        assertEquals("[W-CHILD1-I]", protoCobolDataItem
+                .getAllCobolCounterNames().toString());
     }
 
     public void testIndexedCobolNamesOnChildOfGroupArray() {
         CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
-        cobolDataItem.setMinOccurs(10);
+        cobolDataItem.setMinOccurs(0);
         cobolDataItem.setMaxOccurs(10);
+        cobolDataItem.setDependingOn("SOME-COUNTER");
         CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
         childDataItem1.setPicture("X(72)");
         cobolDataItem.getChildren().add(childDataItem1);
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
-        assertEquals("[CHILD1]", protoCobolDataItem.getIndexedCobolNames()
+        assertEquals("[SOME-COUNTER]", protoCobolDataItem.getCobolCounters()
                 .toString());
     }
 
@@ -130,8 +132,8 @@ public class ProtoCobolDataItemTest extends AbstractTest {
         childDataItem1.getChildren().add(childDataItem2);
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
-        assertEquals("[CHILD2]", protoCobolDataItem.getIndexedCobolNames()
-                .toString());
+        assertEquals("[W-CUSTOMER-DATA-I]", protoCobolDataItem
+                .getCobolCounters().toString());
     }
 
     public void testListDependingOnsOnEmptyGroup() {
@@ -182,40 +184,41 @@ public class ProtoCobolDataItemTest extends AbstractTest {
                 cobolDataItem);
         assertEquals("CUSTDAT", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOME-OTHER-CHILD");
+        protoCobolDataItem.setCobolName("SOME-OTHER-CHILD");
         assertEquals("SOMOTCH", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOME-OTHER-CHI");
+        protoCobolDataItem.setCobolName("SOME-OTHER-CHI");
         assertEquals("SOMOTCH", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOME-OTHER-CH");
+        protoCobolDataItem.setCobolName("SOME-OTHER-CH");
         assertEquals("SOMOTCH", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOME-OTHER-C");
+        protoCobolDataItem.setCobolName("SOME-OTHER-C");
         assertEquals("SOMEOTC", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("S-OTHER-CHILD");
+        protoCobolDataItem.setCobolName("S-OTHER-CHILD");
         assertEquals("SOTHECH", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOME-OTHER-CHILD-AND-YET-SOME-OTHER-CHILD");
+        protoCobolDataItem
+                .setCobolName("SOME-OTHER-CHILD-AND-YET-SOME-OTHER-CHILD");
         assertEquals("SOCAYSO", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOME-OTHER-CHILD-AND-YET-SOME-OTHER");
+        protoCobolDataItem.setCobolName("SOME-OTHER-CHILD-AND-YET-SOME-OTHER");
         assertEquals("SOCAYSO", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOME-OTHER-CHILD-AND-YET-SOME");
+        protoCobolDataItem.setCobolName("SOME-OTHER-CHILD-AND-YET-SOME");
         assertEquals("SOOCAYS", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOMEOTHER");
+        protoCobolDataItem.setCobolName("SOMEOTHER");
         assertEquals("SOMEOTH", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOMEOTH");
+        protoCobolDataItem.setCobolName("SOMEOTH");
         assertEquals("SOMEOTH", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("SOMEOT");
+        protoCobolDataItem.setCobolName("SOMEOT");
         assertEquals("SOMEOT", protoCobolDataItem.getProgramNamePrefix());
 
-        cobolDataItem.setCobolName("");
+        protoCobolDataItem.setCobolName("");
         assertEquals("", protoCobolDataItem.getProgramNamePrefix());
 
     }

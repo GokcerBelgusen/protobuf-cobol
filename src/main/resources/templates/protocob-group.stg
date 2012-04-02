@@ -72,9 +72,9 @@ $if(protoCobolDataItem.hasSubStructures)$
       *    // Sub-messages maximum offset from input start
 $protoCobolDataItem.subStructuresCobolName:listSubMessageLength(); separator="\n"$$endif$
 
-$if(protoCobolDataItem.hasIndexedItems)$
+$if(protoCobolDataItem.hasCobolCounterNames)$
       *    // Array indexes
-$protoCobolDataItem.indexedCobolNames:listIndexedFieldsIndexes(); separator="\n"$$endif$
+$protoCobolDataItem.allCobolCounterNames:declareCobolCounter(); separator="\n"$$endif$
 
 $if(protoCobolDataItem.hasAlphanumItems)$
       *    // Conversion buffer for Strings
@@ -111,8 +111,7 @@ $protoCobolDataItem.copybook$
                PROTOBUF-BYTES-LEN,
 $\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$protoCobolDataItem.cobolName$.
       *    // Initialize counters
-$protoCobolDataItem.dependingOns:initDependingOns(); separator="\n"$
-$protoCobolDataItem.indexedCobolNames:initIndexedFieldsIndexes(); separator="\n"$
+$protoCobolDataItem.dependingOns:initDependingOn(); separator="\n"$
       *    // Parse the root protobuf message
            MOVE 1 TO W-I.
            PERFORM PARSE-$protoCobolDataItem.cobolName$ THRU
@@ -194,15 +193,11 @@ listSubMessageLength() ::= <<
        01  W-$it$-L     PIC 9(8) COMP-5.
 >>
 
-listIndexedFieldsIndexes() ::= <<
-       01  W-$it$-I     PIC 9(8) COMP-5.
+declareCobolCounter() ::= <<
+       01  $it$     PIC 9(8) COMP-5.
 >>
 
-initIndexedFieldsIndexes() ::= <<
-           MOVE ZERO TO W-$it$-I.
->>
-
-initDependingOns() ::= <<
+initDependingOn() ::= <<
            MOVE ZERO TO $it$.
 >>
 
@@ -229,6 +224,8 @@ $protoCobolDataItem.children:parseDataItem(protoCobolDataItem=it)$$endif$
 
 parseChild(protoCobolDataItem) ::= <<
                WHEN $i$
+$incrementCounter(protoCobolDataItem)$
+$protoCobolDataItem.directChildrenCobolCounterNames:initCobolCounter(); separator="\n"$
 $if(protoCobolDataItem.mappedToBool)$
 $pBoolToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToString)$
 $pStringToZAlphanum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToEnum)$
@@ -245,86 +242,115 @@ $messageToGroup(protoCobolDataItem)$$endif$
 pBoolToZUInt32(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-UINT32
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-UINT32
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 pStringToZAlphanum(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
-                 COMPUTE W-I = W-I + W-BYTES-USED
+$incrementPointer(protoCobolDataItem)$
                  MOVE FUNCTION NATIONAL-OF(
                     PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
                     TO W-UTF16-BUFFER
                  MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01147)
-                    TO $protoCobolDataItem.cobolName$
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-Z-UINT32
+                    TO $protoCobolDataItem.indexedCobolName$
+                 COMPUTE W-BYTES-USED = W-Z-UINT32
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 pEnumToZUInt32(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-UINT32
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-UINT32
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 pVarintToZInt32(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-INT32 THRU
                      END-P-VARINT-TO-Z-INT32
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-INT32
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-INT32
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 pVarintToZInt64(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-INT64 THRU
                      END-P-VARINT-TO-Z-INT64
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-INT64
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-INT64
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 pVarintToZUInt32(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-UINT32
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-UINT32
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 pVarintToZUInt64(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT64 THRU
                      END-P-VARINT-TO-Z-UINT64
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-UINT64
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-UINT64
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 pFloatToZComp1(protoCobolDataItem) ::= <<
                  PERFORM P-FLOAT-TO-Z-COMP-1 THRU
                      END-P-FLOAT-TO-Z-COMP-1
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-COMP-1
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-COMP-1
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 pDoubleToZComp2(protoCobolDataItem) ::= <<
                  PERFORM P-DOUBLE-TO-Z-COMP-2 THRU
                      END-P-DOUBLE-TO-Z-COMP-2
-                 COMPUTE $protoCobolDataItem.cobolName$ = W-Z-COMP-2
-      D          DISPLAY '$protoCobolDataItem.cobolName$ =' $protoCobolDataItem.cobolName$ ', AT OFFSET=' W-I
-                 COMPUTE W-I = W-I + W-BYTES-USED
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-COMP-2
+$debug(protoCobolDataItem)$
+$incrementPointer(protoCobolDataItem)$
 >>
 
 messageToGroup(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
-                 COMPUTE W-I = W-I + W-BYTES-USED
+$incrementPointer(protoCobolDataItem)$
                  COMPUTE W-$protoCobolDataItem.cobolName$-L = W-I + W-Z-UINT32 - 1
                  PERFORM PARSE-$protoCobolDataItem.cobolName$ THRU
                      END-PARSE-$protoCobolDataItem.cobolName$
                          UNTIL W-I > W-$protoCobolDataItem.cobolName$-L
 >>
+
+debug(protoCobolDataItem) ::= <<
+      D          DISPLAY '$protoCobolDataItem.indexedCobolName$ ='
+      D                   $protoCobolDataItem.indexedCobolName$
+      D                  ' ,AT OFFSET=' W-I
+>>
+
+incrementPointer(protoCobolDataItem) ::= <<
+                 ADD W-BYTES-USED TO W-I
+>>
+
+incrementCounter(protoCobolDataItem) ::= <<
+$if(protoCobolDataItem.array)$
+                 ADD 1 TO $protoCobolDataItem.cobolCounterName$$endif$
+>>
+
+initCobolCounter() ::= <<
+                 MOVE ZERO TO $it$
+>>
+

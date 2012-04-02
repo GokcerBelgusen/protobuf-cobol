@@ -67,6 +67,38 @@ public class ProtobufWireTest extends TestCase {
                 + "220c0a083635362d353031321000", HostData.toHexString(result));
     }
 
+    public void testSimpleMessage() {
+        com.example.simple.Simple.SearchRequest request = com.example.simple.Simple.SearchRequest
+                .newBuilder().setQuery("John Doe").setPageNumber(5)
+                .setResultPerPage(10).build();
+
+        byte[] result = request.toByteArray();
+        assertEquals(14, result.length);
+        assertEquals("0a084a6f686e20446f651005180a",
+                HostData.toHexString(result));
+    }
+
+    public void testCollectionsMessage() {
+        com.example.collections.Collections.Result result1 = com.example.collections.Collections.Result
+                .newBuilder().setTitle("result1").setUrl("http://url1")
+                .addSnippets("First snippet").addSnippets("Second snippet")
+                .addSnippets("Third snippet").build();
+
+        com.example.collections.Collections.Result result2 = com.example.collections.Collections.Result
+                .newBuilder().setTitle("result2").setUrl("http://url2")
+                .addSnippets("Fourth snippet").addSnippets("Fifth snippet")
+                .build();
+
+        com.example.collections.Collections.SearchResponse response = com.example.collections.Collections.SearchResponse
+                .newBuilder().addResult(result1).addResult(result2).build();
+
+        byte[] result = response.toByteArray();
+        assertEquals(125, result.length);
+        assertEquals(
+                "0a440a0b687474703a2f2f75726c311207726573756c74311a0d466972737420736e69707065741a0e5365636f6e6420736e69707065741a0d546869726420736e69707065740a350a0b687474703a2f2f75726c321207726573756c74321a0e466f7572746820736e69707065741a0d466966746820736e6970706574",
+                HostData.toHexString(result));
+    }
+
     public void testUint64Value300() {
         Uint64 uint64 = Uint64.newBuilder().setAuint64(300).build();
         byte[] result = uint64.toByteArray();

@@ -2,7 +2,9 @@ package com.legstar.protobuf.cobol;
 
 import java.io.File;
 
-import org.apache.commons.io.FileUtils;
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
+import com.google.protobuf.Descriptors.FieldDescriptor.Type;
+import com.legstar.protobuf.cobol.ProtoCobolMapper.HasMaxSize;
 
 /**
  * Unit test for Proto Cobol. The pom.xml has an antrun plugin bound to
@@ -10,39 +12,45 @@ import org.apache.commons.io.FileUtils;
  * *.proto to java so we can locate our test names by java class name (the PST
  * compilation is broken, at least on Windows).
  */
-public class ProtoCobolTest extends AbstractTest {
+public class ProtoCobolTest extends AbstractTest implements HasMaxSize {
 
     /** True when references should be created. */
     private static final boolean CREATE_REFERENCES = false;
 
     public void testSearchRequestProtos() throws Exception {
         run("com.example.simple.Simple");
-        check(FileUtils.readFileToString(new File(getOutputFolder(),
-                "SearchRequestC.cpy")));
+        checkFile("SearchRequestC.cpy");
     }
 
     public void testAddressBookProtos() throws Exception {
         run("com.example.tutorial.AddressBookProtos");
-        check(FileUtils.readFileToString(new File(getOutputFolder(),
-                "PersonC.cpy")));
+        checkFile("PersonC.cpy");
     }
 
     public void testNonTranslatedProtos() throws Exception {
         run(new File("src/test/resources/nontranslated.proto"));
-        check(FileUtils.readFileToString(new File(getOutputFolder(),
-                "SearchResponseC.cpy")));
+        checkFile("SearchResponseC.cpy");
     }
 
     public void testEnumSample() throws Exception {
         run("com.example.enumsample.Enumsample");
-        check(FileUtils.readFileToString(new File(getOutputFolder(),
-                "SearchRequestC.cpy")));
+        checkFile("SearchRequestC.cpy");
     }
 
     public void testAllTypes() throws Exception {
         run("com.example.alltypes.AllTypesProtos");
-        check(FileUtils.readFileToString(new File(getOutputFolder(),
-                "AllTypesC.cpy")));
+        checkFile("AllTypesC.cpy");
+    }
+
+    public void testCollectionsProtos() throws Exception {
+        run("com.example.collections.Collections");
+        checkFile("SearchResponseC.cpy");
+    }
+
+    public void testComplexArrays() throws Exception {
+        run("com.example.complexarrays.Complexarrays");
+        checkFile("AC.cpy");
+        checkFile("AP.cbl");
     }
 
     /**
@@ -53,10 +61,9 @@ public class ProtoCobolTest extends AbstractTest {
      * @throws ProtoCobolException if generation fails
      */
     protected void run(String javaClassName) throws ProtoCobolException {
-        ProtoCobol pc = new ProtoCobol();
-        pc.setOutputDir(getOutputFolder());
-        pc.setQualifiedClassName(javaClassName);
-        pc.run();
+        new ProtoCobol().setOutputDir(getOutputFolder())
+                .setQualifiedClassName(javaClassName).addSizeProvider(this)
+                .run();
     }
 
     /**
@@ -66,14 +73,26 @@ public class ProtoCobolTest extends AbstractTest {
      * @throws ProtoCobolException if generation fails
      */
     protected void run(File protoFile) throws ProtoCobolException {
-        ProtoCobol pc = new ProtoCobol();
-        pc.setOutputDir(getOutputFolder());
-        pc.setProtoFile(protoFile);
-        pc.run();
+        new ProtoCobol().setOutputDir(getOutputFolder())
+                .setProtoFile(protoFile).addSizeProvider(this).run();
     }
 
     public boolean isCreateReferences() {
         return CREATE_REFERENCES;
+    }
+
+    public Integer getMaxSize(String fieldName, Type fieldType) {
+        if (fieldName.equals("query")) {
+            return 144;
+        }
+        return null;
+    }
+
+    public Integer getMaxOccurs(String fieldName, JavaType fieldType) {
+        if (fieldName.equals("snippets")) {
+            return 5;
+        }
+        return null;
     }
 
 }

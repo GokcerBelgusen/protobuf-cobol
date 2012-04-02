@@ -47,6 +47,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.legstar.cobol.gen.CopybookGenerator;
 import com.legstar.cobol.model.CobolDataItem;
+import com.legstar.protobuf.cobol.ProtoCobolMapper.HasMaxSize;
 
 /**
  * Translates protocol buffer protos files to COBOL artifacts.
@@ -103,6 +104,9 @@ public class ProtoCobol {
     private File protoPath;
     private int timeout = DEFAULT_TIMEOUT;
 
+    /** The protobuf to COBOL mapping logic. */
+    private ProtoCobolMapper cobolMapper = new ProtoCobolMapper();
+
     /**
      * The main entry point if you don't have a FileDescriptor (@see
      * run(FileDescriptor) otherwise).
@@ -147,8 +151,6 @@ public class ProtoCobol {
 
         logger.info("ProtoCobol started with file: " + fd.getName()
                 + ", output dir: " + outputDir.getAbsolutePath());
-
-        ProtoCobolMapper cobolMapper = new ProtoCobolMapper();
 
         List < ProtoCobolException > exceptions = new ArrayList < ProtoCobolException >();
 
@@ -516,8 +518,9 @@ public class ProtoCobol {
      * @param outputDir the location of file system where COBOL files are
      *            generated to set
      */
-    public void setOutputDir(File outputDir) {
+    public ProtoCobol setOutputDir(File outputDir) {
         this.outputDir = outputDir;
+        return this;
     }
 
     /**
@@ -535,9 +538,11 @@ public class ProtoCobol {
      * 
      * @param qualifiedClassName the the protoc generated java qualified class
      *            name to set
+     * @return this instance for chaining
      */
-    public void setQualifiedClassName(String qualifiedClassName) {
+    public ProtoCobol setQualifiedClassName(String qualifiedClassName) {
         this.qualifiedClassName = qualifiedClassName;
+        return this;
     }
 
     /**
@@ -553,9 +558,11 @@ public class ProtoCobol {
      * input proto file.
      * 
      * @param protoFileName the input proto file to set
+     * @return this instance for chaining
      */
-    public void setProtoFile(File protoFile) {
+    public ProtoCobol setProtoFile(File protoFile) {
         this.protoFile = protoFile;
+        return this;
     }
 
     /**
@@ -571,9 +578,11 @@ public class ProtoCobol {
      * Imported protocol buffer files will be picked up from this location
      * 
      * @param protoPath the location where imported proto files are found to set
+     * @return this instance for chaining
      */
-    public void setProtoPath(File protoPath) {
+    public ProtoCobol setProtoPath(File protoPath) {
         this.protoPath = protoPath;
+        return this;
     }
 
     /**
@@ -590,9 +599,23 @@ public class ProtoCobol {
      * 
      * @param timeout the maximum time to wait for a command to execute
      *            (seconds) to set
+     * @return this instance for chaining
      */
-    public void setTimeout(int timeout) {
+    public ProtoCobol setTimeout(int timeout) {
         this.timeout = timeout;
+        return this;
+    }
+
+    /**
+     * Add a new size provider. This is a user provider code that will provide
+     * values for string maximum sizes and arrays maximum number of items.
+     * 
+     * @param provider a size provider
+     * @return this instance for chaining
+     */
+    public ProtoCobol addSizeProvider(HasMaxSize provider) {
+        cobolMapper.addSizeProvider(provider);
+        return this;
     }
 
 }
