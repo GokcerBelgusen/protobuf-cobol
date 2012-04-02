@@ -14,6 +14,7 @@ import com.example.alltypes.AllTypesProtos.Uint32;
 import com.example.alltypes.AllTypesProtos.Uint64;
 import com.example.hierarchy.Hierarchy.CustomerData;
 import com.example.tutorial.AddressBookProtos.Person;
+import com.example.tutorial.AddressBookProtos.Person.PhoneType;
 import com.legstar.coxb.host.HostData;
 
 public class ProtobufWireTest extends TestCase {
@@ -96,6 +97,28 @@ public class ProtobufWireTest extends TestCase {
         assertEquals(125, result.length);
         assertEquals(
                 "0a440a0b687474703a2f2f75726c311207726573756c74311a0d466972737420736e69707065741a0e5365636f6e6420736e69707065741a0d546869726420736e69707065740a350a0b687474703a2f2f75726c321207726573756c74321a0e466f7572746820736e69707065741a0d466966746820736e6970706574",
+                HostData.toHexString(result));
+    }
+
+    public void testTutorialMessage() {
+        com.example.tutorial.AddressBookProtos.Person person = com.example.tutorial.AddressBookProtos.Person
+                .newBuilder()
+                .setId(1)
+                .setName("Darth Vador")
+                .setEmail("darth@darkstar.com")
+                .addPhone(
+                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                .newBuilder().setNumber("041656897542")
+                                .setType(PhoneType.HOME))
+                .addPhone(
+                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                .newBuilder().setNumber("068645891245")
+                                .setType(PhoneType.MOBILE)).build();
+
+        byte[] result = person.toByteArray();
+        assertEquals(71, result.length);
+        assertEquals(
+                "0a0b4461727468205661646f7210011a126461727468406461726b737461722e636f6d22100a0c303431363536383937353432100122100a0c3036383634353839313234351000",
                 HostData.toHexString(result));
     }
 

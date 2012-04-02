@@ -93,14 +93,16 @@ public class ProtoCobolDataItem {
     protected void decorateChildren(ProtoCobolDataItem protoCobolDataItem,
             Stack < String > parentCobolCounters) {
         List < ProtoCobolDataItem > decoratedChildren = new ArrayList < ProtoCobolDataItem >();
-        for (CobolDataItem child : protoCobolDataItem.getCobolDataItem()
-                .getChildren()) {
-            ProtoCobolDataItem decoratedChild = new ProtoCobolDataItem(child,
-                    parentCobolCounters);
-            if (decoratedChild.isOccursCountersGroup()) {
-                continue;
+        if (isStructure()) {
+            for (CobolDataItem child : protoCobolDataItem.getCobolDataItem()
+                    .getChildren()) {
+                ProtoCobolDataItem decoratedChild = new ProtoCobolDataItem(
+                        child, parentCobolCounters);
+                if (decoratedChild.isOccursCountersGroup()) {
+                    continue;
+                }
+                decoratedChildren.add(decoratedChild);
             }
-            decoratedChildren.add(decoratedChild);
         }
         protoCobolDataItem.setChildren(decoratedChildren);
     }
@@ -262,17 +264,6 @@ public class ProtoCobolDataItem {
     }
 
     /**
-     * Retrieve all sub structures names whatever their depth in the hierarchy.
-     * <p/>
-     * TODO there is an implicit assumption that names are unique
-     * 
-     * @return the list of substructures COBOL names
-     */
-    public List < String > getSubStructuresCobolName() {
-        return getSubStructuresCobolName(cobolDataItem);
-    }
-
-    /**
      * @return true if this data item (or one of its children) contains a sub
      *         structure.
      */
@@ -284,19 +275,21 @@ public class ProtoCobolDataItem {
      * Recursively retrieves all sub structures names whatever their depth in
      * the hierarchy.
      * <p/>
+     * TODO there is an implicit assumption that names are unique
      * 
-     * @param cobolDataItem the current COBOL data item
      * @return the list of substructures COBOL names
      */
-    protected List < String > getSubStructuresCobolName(
-            CobolDataItem cobolDataItem) {
+    public List < String > getSubStructuresCobolName() {
 
         List < String > subStructuresCobolName = new ArrayList < String >();
-        for (CobolDataItem child : cobolDataItem.getChildren()) {
-            if (child.getChildren().size() > 0) {
-                subStructuresCobolName.add(child.getCobolName());
+        if (isStructure()) {
+            for (ProtoCobolDataItem child : getChildren()) {
+                if (child.isStructure()) {
+                    subStructuresCobolName.add(child.getCobolName());
+                    subStructuresCobolName.addAll(child
+                            .getSubStructuresCobolName());
+                }
             }
-            subStructuresCobolName.addAll(getSubStructuresCobolName(child));
         }
         return subStructuresCobolName;
 
@@ -449,7 +442,9 @@ public class ProtoCobolDataItem {
      * @return true if this data item is a structure (group).
      */
     public boolean isStructure() {
-        return (getChildren().size() > 0);
+        return (cobolDataItem.getPicture() == null)
+                && (cobolDataItem.getUsage() == null)
+                && (cobolDataItem.getChildren().size() > 0);
     }
 
     /**
