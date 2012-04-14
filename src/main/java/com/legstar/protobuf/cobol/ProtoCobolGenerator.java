@@ -27,6 +27,9 @@ public class ProtoCobolGenerator {
     /** Template that generates a protocol-cobol parser. */
     public static final String PARSER_TEMPLATE_NAME = "toProtocobParser";
 
+    /** Template that generates a protocol-cobol writer. */
+    public static final String WRITER_TEMPLATE_NAME = "toProtocobWriter";
+
     private static Log logger = LogFactory.getLog(ProtoCobolGenerator.class);
 
     /** Utility class. */
@@ -56,6 +59,16 @@ public class ProtoCobolGenerator {
      */
     public static String generateParser(ProtoCobolDataItem protoCobolDataItem) {
         return generate(protoCobolDataItem, PARSER_TEMPLATE_NAME);
+    }
+
+    /**
+     * Generates a COBOL protocol buffer writer as a string.
+     * 
+     * @param protoCobolDataItem the COBOL data item
+     * @return the COBOL protocol buffer writer content
+     */
+    public static String generateWriter(ProtoCobolDataItem protoCobolDataItem) {
+        return generate(protoCobolDataItem, WRITER_TEMPLATE_NAME);
     }
 
     /**

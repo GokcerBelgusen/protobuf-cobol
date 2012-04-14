@@ -17,7 +17,7 @@ import com.example.tutorial.AddressBookProtos.Person;
 import com.example.tutorial.AddressBookProtos.Person.PhoneType;
 import com.legstar.coxb.host.HostData;
 
-public class ProtobufWireTest extends TestCase {
+public class ProtobufWriteWireTest extends TestCase {
 
     public void test1() {
         Person john = Person
@@ -101,24 +101,48 @@ public class ProtobufWireTest extends TestCase {
     }
 
     public void testTutorialMessage() {
-        com.example.tutorial.AddressBookProtos.Person person = com.example.tutorial.AddressBookProtos.Person
-                .newBuilder()
-                .setId(1)
-                .setName("Darth Vador")
-                .setEmail("darth@darkstar.com")
-                .addPhone(
-                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
-                                .newBuilder().setNumber("041656897542")
-                                .setType(PhoneType.HOME))
-                .addPhone(
-                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
-                                .newBuilder().setNumber("068645891245")
-                                .setType(PhoneType.MOBILE)).build();
 
-        byte[] result = person.toByteArray();
-        assertEquals(71, result.length);
+        com.example.tutorial.AddressBookProtos.AddressBook addressBook = com.example.tutorial.AddressBookProtos.AddressBook
+                .newBuilder()
+                .addPerson(
+                        com.example.tutorial.AddressBookProtos.Person
+                                .newBuilder()
+                                .setId(1)
+                                .setName("Darth Vador")
+                                .setEmail("darth@darkstar.com")
+                                .addPhone(
+                                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                                .newBuilder()
+                                                .setNumber("041656897542")
+                                                .setType(PhoneType.HOME))
+                                .addPhone(
+                                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                                .newBuilder()
+                                                .setNumber("068645891245")
+                                                .setType(PhoneType.MOBILE))
+                                .build())
+                .addPerson(
+                        com.example.tutorial.AddressBookProtos.Person
+                                .newBuilder()
+                                .setId(1)
+                                .setName("Luke Skywaker")
+                                .setEmail("luke@tatouine.com")
+                                .addPhone(
+                                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                                .newBuilder()
+                                                .setNumber("05689124578")
+                                                .setType(PhoneType.HOME))
+                                .addPhone(
+                                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                                .newBuilder()
+                                                .setNumber("0689537845")
+                                                .setType(PhoneType.MOBILE))
+                                .build()).build();
+
+        byte[] result = addressBook.toByteArray();
+        assertEquals(144, result.length);
         assertEquals(
-                "0a0b4461727468205661646f7210011a126461727468406461726b737461722e636f6d22100a0c303431363536383937353432100122100a0c3036383634353839313234351000",
+                "0a470a0b4461727468205661646f7210011a126461727468406461726b737461722e636f6d22100a0c303431363536383937353432100122100a0c30363836343538393132343510000a450a0d4c756b6520536b7977616b657210011a116c756b65407461746f75696e652e636f6d220f0a0b30353638393132343537381001220e0a0a303638393533373834351000",
                 HostData.toHexString(result));
     }
 

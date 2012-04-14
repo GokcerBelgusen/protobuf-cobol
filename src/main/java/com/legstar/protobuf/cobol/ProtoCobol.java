@@ -183,6 +183,16 @@ public class ProtoCobol {
                     logger.debug(parserContent);
                 }
 
+                String writerContent = ProtoCobolGenerator
+                        .generateWriter(protoCobolDataItem);
+                File writerFile = writeWriterFile(protoCobolDataItem,
+                        writerContent);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Generated writer in file: "
+                            + writerFile.getPath());
+                    logger.debug(writerContent);
+                }
+
             }
         } catch (Exception e) {
             exceptions
@@ -228,6 +238,23 @@ public class ProtoCobol {
                         + PROGRAM_FILE_EXTENSION);
         FileUtils.writeStringToFile(parserFile, parserContent);
         return parserFile;
+    }
+
+    /**
+     * Write the COBOL writer to a file.
+     * 
+     * @param protoCobolDataItem the decorated data item
+     * @param writerContent the writer content
+     * @return a file named after the generated writer program name
+     * @throws IOException if writing fails
+     */
+    protected File writeWriterFile(ProtoCobolDataItem protoCobolDataItem,
+            String writerContent) throws IOException {
+        File writerFile = new File(outputDir,
+                protoCobolDataItem.getWriterProgramName() + "."
+                        + PROGRAM_FILE_EXTENSION);
+        FileUtils.writeStringToFile(writerFile, writerContent);
+        return writerFile;
     }
 
     /**

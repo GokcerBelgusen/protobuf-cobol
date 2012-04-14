@@ -72,11 +72,7 @@ public class ProtoCobolDataItem {
         this.cobolCounters = new Stack < String >();
         cobolCounters.addAll(parentCobolCounters);
         if (cobolDataItem.isArray()) {
-            if (StringUtils.isBlank(cobolDataItem.getDependingOn())) {
-                cobolCounters.push(getCobolCounterName());
-            } else {
-                cobolCounters.push(cobolDataItem.getDependingOn());
-            }
+            cobolCounters.push(getCobolCounterName());
         }
         decorateChildren(this, cobolCounters);
         programNamePrefix = createProgramNamePrefix();
@@ -120,14 +116,10 @@ public class ProtoCobolDataItem {
      *         is not an array)
      */
     public String getCobolCounterName() {
-        if (StringUtils.isBlank(cobolDataItem.getDependingOn())) {
-            if (isArray()) {
-                return getCobolCounterName(cobolDataItem.getCobolName());
-            } else {
-                return null;
-            }
+        if (isArray()) {
+            return getCobolCounterName(cobolDataItem.getCobolName());
         } else {
-            return cobolDataItem.getDependingOn();
+            return null;
         }
     }
 
@@ -239,6 +231,14 @@ public class ProtoCobolDataItem {
     }
 
     /**
+     * @return true if this data item is a variable size array with a depending
+     *         on clause
+     */
+    public boolean isHasDependingOn() {
+        return getCobolDataItem().isVariableSizeArray();
+    }
+
+    /**
      * Recursively search for the largest alphanumeric data item.
      * 
      * @param cobolDataItem the current COBOL data item
@@ -314,23 +314,16 @@ public class ProtoCobolDataItem {
     }
 
     /**
-     * High level arrays, which are not themselves children of an array, become
-     * variable size arrays where the size (ODO object) is an additional field
-     * added to the structure.
-     * <p/>
-     * All other array fields however become fixed size arrays. For each one of
-     * these we need a working storage counter that we provision for here.
+     * For each array field we might need a working storage counter that we
+     * provision for here.
      * 
      * @param cobolDataItem the current COBOL data item
-     * @param ancestorOccurs true if one ancestor at least has the OCCURS
-     *            attribute
      * @return the list of elementary data items which need to be indexed
      */
     protected List < String > getAllCobolCounterNames(
             CobolDataItem cobolDataItem) {
         List < String > counterNames = new ArrayList < String >();
-        if (cobolDataItem.isArray()
-                && StringUtils.isBlank(cobolDataItem.getDependingOn())) {
+        if (cobolDataItem.isArray()) {
             counterNames.add(getCobolCounterName(cobolDataItem.getCobolName()));
         }
         if (cobolDataItem.getChildren().size() > 0) {
@@ -564,6 +557,20 @@ public class ProtoCobolDataItem {
      */
     public boolean isArray() {
         return cobolDataItem.isArray();
+    }
+
+    /**
+     * @return the depending on object
+     */
+    public String getDependingOn() {
+        return cobolDataItem.getDependingOn();
+    }
+
+    /**
+     * @return the maximum number of occurrences
+     */
+    public int getMaxOccurs() {
+        return cobolDataItem.getMaxOccurs();
     }
 
 }

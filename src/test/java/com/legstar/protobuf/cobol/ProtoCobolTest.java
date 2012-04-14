@@ -25,6 +25,8 @@ public class ProtoCobolTest extends AbstractTest implements HasMaxSize {
     public void testAddressBookProtos() throws Exception {
         run("com.example.tutorial.AddressBookProtos");
         checkFile("PersonC.cpy");
+        checkFile("ADDRBOOP.cbl");
+        checkFile("ADDRBOOW.cbl");
     }
 
     public void testNonTranslatedProtos() throws Exception {

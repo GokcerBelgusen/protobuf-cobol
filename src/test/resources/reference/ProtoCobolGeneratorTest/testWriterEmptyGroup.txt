@@ -1,10 +1,10 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. CUSTDATP.
+       PROGRAM-ID. CUSTDATW.
       *****************************************************************
       * OVERVIEW                                                      *
       * --------                                                      *
-      * Subprogram that parses a protobuf byte stream and populates   *
-      * a cobol structure.                                            *
+      * Subprogram that writes a protobuf byte stream from  a cobol   *
+      * structure content.                                            *
       *                                                               *
       * This is generated code produced by protobuf-cobol.            *
       * It uses the PB4CBLIB protobuf-cobol library.                  *
@@ -25,7 +25,7 @@
        WORKING-STORAGE SECTION.
 
       *    // z/OS code page
-       77  ZOS-CODEPAGE              PIC 9(4) COMP VALUE 1047.
+       77  ZOS-CODEPAGE             PIC 9(4) COMP VALUE 1047.
 
       *    // Protobuf field key and type
        01  W-P-KEYTYPE.
@@ -65,12 +65,15 @@
        01  W-BYTES-USED              PIC 9(8) COMP-5.
 
 
-      *    // Sub-messages maximum offset from input start
-       01  W-CHILD1-L     PIC 9(8) COMP-5.
-
 
       *    // Conversion buffer for Strings
-       01  W-UTF16-BUFFER            PIC N(72).
+       01  W-UTF16-BUFFER            PIC N(32).
+
+      *    // Temporary storage for variable integers
+       01  W-P-VARINT                PIC X(10).
+
+      *    // Counters
+       01  W-J                       PIC 9(8) COMP-5.
 
       *****************************************************************
       *        L I N K A G E    S E C T I O N                         *
@@ -83,11 +86,8 @@
       *    // The protobuf input byte stream length
        01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.
 
-      *    // The output COBOL structure
+      *    // The input COBOL structure
        01  CUSTOMER-DATA.
-           05  CHILD1.
-             10  CHILD3 PIC X(72).
-           05  CHILD2 PIC X(11).
 
 
       *    // A protobuf variable integer
@@ -103,147 +103,80 @@
       *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
       *****************************************************************
        PROCEDURE DIVISION USING
+               CUSTOMER-DATA,
                PROTOBUF-BYTES,
-               PROTOBUF-BYTES-LEN,
-               CUSTOMER-DATA.
-      *    // Parse the root protobuf message
+               PROTOBUF-BYTES-LEN.
+      *    // Write the root protobuf message
            MOVE 1 TO W-I.
-           PERFORM PARSE-CUSTOMER-DATA THRU
-               END-PARSE-CUSTOMER-DATA
-                   UNTIL W-I > PROTOBUF-BYTES-LEN.
+           PERFORM WRITE-CUSTOMER-DATA THRU
+               END-WRITE-CUSTOMER-DATA.
+           COMPUTE PROTOBUF-BYTES-LEN = W-I - 1.
            GOBACK.
 
-      * ---------------------------------------------------------------
-      * Parse the CUSTOMER-DATA message field
-      * ---------------------------------------------------------------
-       PARSE-CUSTOMER-DATA.
-      D    DISPLAY 'PARSE-CUSTOMER-DATA OFFSET=' W-I.
-
-           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           PERFORM GET-P-KEYTYPE THRU END-GET-P-KEYTYPE.
-           ADD W-BYTES-USED TO W-I.
-
-           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           EVALUATE W-P-KEY
-               WHEN 1
-                 PERFORM P-VARINT-TO-Z-UINT32 THRU
-                     END-P-VARINT-TO-Z-UINT32
-                 ADD W-BYTES-USED TO W-I
-                 COMPUTE W-CHILD1-L = W-I + W-Z-UINT32 - 1
-                 PERFORM PARSE-CHILD1 THRU
-                     END-PARSE-CHILD1
-                         UNTIL W-I > W-CHILD1-L
-               WHEN 2
-                 PERFORM P-VARINT-TO-Z-UINT32 THRU
-                     END-P-VARINT-TO-Z-UINT32
-                 ADD W-BYTES-USED TO W-I
-                 MOVE FUNCTION NATIONAL-OF(
-                    PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
-                    TO W-UTF16-BUFFER
-                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
-                    TO CHILD2
-                 COMPUTE W-BYTES-USED = W-Z-UINT32
-      D          DISPLAY 'CHILD2 ='
-      D                   CHILD2
-      D                  ' ,AT OFFSET=' W-I
-                 ADD W-BYTES-USED TO W-I
-           END-EVALUATE.
-       END-PARSE-CUSTOMER-DATA. EXIT.
 
       * ---------------------------------------------------------------
-      * Parse the CHILD1 message field
-      * ---------------------------------------------------------------
-       PARSE-CHILD1.
-      D    DISPLAY 'PARSE-CHILD1 OFFSET=' W-I.
-
-           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           PERFORM GET-P-KEYTYPE THRU END-GET-P-KEYTYPE.
-           ADD W-BYTES-USED TO W-I.
-
-           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           EVALUATE W-P-KEY
-               WHEN 1
-                 PERFORM P-VARINT-TO-Z-UINT32 THRU
-                     END-P-VARINT-TO-Z-UINT32
-                 ADD W-BYTES-USED TO W-I
-                 MOVE FUNCTION NATIONAL-OF(
-                    PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
-                    TO W-UTF16-BUFFER
-                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
-                    TO CHILD3
-                 COMPUTE W-BYTES-USED = W-Z-UINT32
-      D          DISPLAY 'CHILD3 ='
-      D                   CHILD3
-      D                  ' ,AT OFFSET=' W-I
-                 ADD W-BYTES-USED TO W-I
-           END-EVALUATE.
-       END-PARSE-CHILD1. EXIT.
-
-
-
-      * ---------------------------------------------------------------
-      * Get a field key (identifier) and type from the stream.
+      * Write a field key (identifier) and type to the stream.
       *
       * Field and Type are both encoded in a single variable integer.
       *
       * Field type is 3 lower bits of header varint, higher bits are
       * the field key (identifier)
       * ---------------------------------------------------------------
-       GET-P-KEYTYPE.
-           PERFORM P-VARINT-TO-Z-UINT64 THRU END-P-VARINT-TO-Z-UINT64.
-           DIVIDE W-Z-UINT64 BY 8 GIVING W-P-KEY REMAINDER W-P-TYPE.
-       END-GET-P-KEYTYPE. EXIT.
+       PUT-P-KEYTYPE.
+           COMPUTE W-Z-UINT64 = W-P-TYPE + (8 * W-P-KEY).
+           PERFORM Z-UINT64-TO-P-VARINT THRU END-Z-UINT64-TO-P-VARINT.
+       END-PUT-P-KEYTYPE. EXIT.
 
       * ---------------------------------------------------------------
-      * Get a variable integer from the stream as unsigned double word
-      * binary.
+      * Put an unsigned double word binary as a variable integer to the
+      * output stream.
       * ---------------------------------------------------------------
-       P-VARINT-TO-Z-UINT64.
+       Z-UINT64-TO-P-VARINT.
            SET ADDRESS OF P-VARINT TO W-STREAM.
-           CALL 'PBVI2U64' USING P-VARINT W-Z-UINT64 W-BYTES-USED.
-       END-P-VARINT-TO-Z-UINT64. EXIT.
+           CALL 'PBU642VI' USING W-Z-UINT64 P-VARINT W-BYTES-USED.
+       END-Z-UINT64-TO-P-VARINT. EXIT.
 
       * ---------------------------------------------------------------
-      * Get a variable integer from the stream as unsigned single word
-      * binary.
+      * Put an unsigned single word binary as a variable integer to the
+      * output stream.
       * ---------------------------------------------------------------
-       P-VARINT-TO-Z-UINT32.
+       Z-UINT32-TO-P-VARINT.
            SET ADDRESS OF P-VARINT TO W-STREAM.
-           CALL 'PBVI2U32' USING P-VARINT W-Z-UINT32 W-BYTES-USED.
-       END-P-VARINT-TO-Z-UINT32. EXIT.
+           CALL 'PBU322VI' USING W-Z-UINT32 P-VARINT W-BYTES-USED.
+       END-Z-UINT32-TO-P-VARINT. EXIT.
 
       * ---------------------------------------------------------------
-      * Get a variable integer from the stream as signed double word
-      * binary.
+      * Put a signed double word binary as a variable integer to the
+      * output stream.
       * ---------------------------------------------------------------
-       P-VARINT-TO-Z-INT64.
+       Z-INT64-TO-P-VARINT.
            SET ADDRESS OF P-VARINT TO W-STREAM.
-           CALL 'PBVI2S64' USING P-VARINT W-Z-INT64 W-BYTES-USED.
-       END-P-VARINT-TO-Z-INT64. EXIT.
+           CALL 'PBS642VI' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARINT. EXIT.
 
       * ---------------------------------------------------------------
-      * Get a variable integer from the stream as signed single word
-      * binary.
+      * Put a signed single word binary as a variable integer to the
+      * output stream.
       * ---------------------------------------------------------------
-       P-VARINT-TO-Z-INT32.
+       Z-INT32-TO-P-VARINT.
            SET ADDRESS OF P-VARINT TO W-STREAM.
-           CALL 'PBVI2S32' USING P-VARINT W-Z-INT32 W-BYTES-USED.
-       END-P-VARINT-TO-Z-INT32. EXIT.
+           CALL 'PBS322VI' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARINT. EXIT.
 
       * ---------------------------------------------------------------
-      * Get a IEEE float from the stream as a COMP-1
+      * Put a COMP-1 as a IEEE float to the output stream.
       * ---------------------------------------------------------------
-       P-FLOAT-TO-Z-COMP-1.
+       Z-COMP-1-TO-P-FLOAT.
            SET ADDRESS OF P-FLOAT TO W-STREAM.
-           CALL 'PB2ZFLOA' USING P-FLOAT W-Z-COMP-1 W-BYTES-USED.
-       END-P-FLOAT-TO-Z-COMP-1. EXIT.
+           CALL 'PB2PFLOA' USING W-Z-COMP-1 P-FLOAT W-BYTES-USED.
+       END-Z-COMP-1-TO-P-FLOAT. EXIT.
 
       * ---------------------------------------------------------------
-      * Get a IEEE double from the stream as a COMP-2
+      * Put a COMP-2 as a IEEE double to the output stream.
       * ---------------------------------------------------------------
-       P-DOUBLE-TO-Z-COMP-2.
+       Z-COMP-2-TO-P-DOUBLE.
            SET ADDRESS OF P-DOUBLE TO W-STREAM.
-           CALL 'PB2ZDBLE' USING P-DOUBLE W-Z-COMP-2 W-BYTES-USED.
-       END-P-DOUBLE-TO-Z-COMP-2. EXIT.
+           CALL 'PB2PDBLE' USING W-Z-COMP-2 P-DOUBLE W-BYTES-USED.
+       END-Z-COMP-2-TO-P-DOUBLE. EXIT.
 
-       END PROGRAM CUSTDATP.
+       END PROGRAM CUSTDATW.

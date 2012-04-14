@@ -1,0 +1,104 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTTUTO.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST GENERATED PROGRAMS FOR: addressbook.proto                *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  PROTOBUF-BYTES                    PIC X(4096).
+       01  PROTOBUF-BYTES-LEN                PIC 9(8) COMP-5.
+       01  W-BYTES-USED                      PIC 9(8) COMP-5.
+       01  PROTOBUF-BYTES-HEX-STRING         PIC X(8192).
+
+       01  W-L                               PIC 9(4) COMP-5.
+
+      *    // The output COBOL structure
+       01  AddressBook.
+           03  OCCURS-COUNTERS--C.
+             05  Person--C PIC 9(9) COMP-5.
+           03  Person OCCURS 0 TO 10 DEPENDING ON Person--C.
+             05  name PIC X(32) DISPLAY.
+             05  R-id PIC S9(9) COMP-5.
+             05  email PIC X(32) DISPLAY.
+             05  PhoneNumber OCCURS 10.
+               07  R-number PIC X(32) DISPLAY.
+               07  R-type PIC 9(4) COMP-5.
+                 88  MOBILE VALUE 0.
+                 88  HOME VALUE 1.
+                 88  WORK VALUE 2.
+
+
+       01  W-I                                PIC 9(4) COMP VALUE 0.
+       01  W-J                                PIC 9(4) COMP VALUE 0.
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO AddressBook 
+      * ---------------------------------------------------------------
+           DISPLAY "TO-AddressBook ======= 0 =============="
+           PERFORM TEST-ADDRBOOP THRU END-TEST-ADDRBOOP.
+           PERFORM TEST-ADDRBOOW THRU END-TEST-ADDRBOOW.
+           
+           GOBACK.
+
+       TEST-ADDRBOOP.
+           DISPLAY 'TEST-ADDRBOOP'.
+           
+           MOVE X'0a470a0b4461727468205661646f7210011a126461727468406461
+      -    '726b737461722e636f6d22100a0c30343136353638393735343210012210
+      -    '0a0c30363836343538393132343510000a450a0d4c756b6520536b797761
+      -    '6b657210011a116c756b65407461746f75696e652e636f6d220f0a0b3035
+      -    '3638393132343537381001220e0a0a303638393533373834351000'
+             TO PROTOBUF-BYTES.
+           MOVE 144 TO PROTOBUF-BYTES-LEN.
+           CALL 'ADDRBOOP' USING PROTOBUF-BYTES
+                                 PROTOBUF-BYTES-LEN
+                                 AddressBook.
+           DISPLAY 'Person--C=' Person--C.
+           PERFORM VARYING W-I FROM 1 BY 1 UNTIL W-I > Person--C
+               DISPLAY 'name(' W-I ')=' name(W-I)
+               DISPLAY 'R-id(' W-I ')=' R-id(W-I)
+               DISPLAY 'email(' W-I ')=' email(W-I)
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 10
+                   DISPLAY 'R-number(' W-I ',' W-J ')='
+                            R-number(W-I, W-J)
+                   DISPLAY 'R-type(' W-I ',' W-J ')='
+                            R-type(W-I, W-J)
+               END-PERFORM
+           END-PERFORM.
+           
+       END-TEST-ADDRBOOP. EXIT.
+
+       TEST-ADDRBOOW.
+           DISPLAY 'TEST-ADDRBOOW'.
+          
+           MOVE LOW-VALUES TO PROTOBUF-BYTES.
+           MOVE ZERO TO PROTOBUF-BYTES-LEN.
+           CALL 'ADDRBOOW' USING AddressBook
+                                 PROTOBUF-BYTES
+                                 PROTOBUF-BYTES-LEN.
+
+           COMPUTE W-L = PROTOBUF-BYTES-LEN.
+           CALL 'PBBA2HEX' USING W-L
+                           PROTOBUF-BYTES
+                           PROTOBUF-BYTES-HEX-STRING
+           
+           DISPLAY 'PROTOBUF-BYTES-LEN=' PROTOBUF-BYTES-LEN.
+           DISPLAY 'PROTOBUF-BYTES=' PROTOBUF-BYTES-HEX-STRING.
+
+       END-TEST-ADDRBOOW. EXIT.
+
+       END PROGRAM PBCTTUTO.
+

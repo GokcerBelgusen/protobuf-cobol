@@ -114,4 +114,11 @@ public class ProtoCobolGeneratorTest extends AbstractTest {
         check(ProtoCobolGenerator.generateParser(protoCobolDataItem));
     }
 
+    public void testWriterEmptyGroup() {
+        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
+                cobolDataItem);
+        check(ProtoCobolGenerator.generateWriter(protoCobolDataItem));
+    }
+
 }

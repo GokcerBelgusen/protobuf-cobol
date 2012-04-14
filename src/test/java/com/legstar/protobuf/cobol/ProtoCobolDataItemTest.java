@@ -117,8 +117,8 @@ public class ProtoCobolDataItemTest extends AbstractTest {
         cobolDataItem.getChildren().add(childDataItem1);
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
-        assertEquals("[SOME-COUNTER]", protoCobolDataItem.getCobolCounters()
-                .toString());
+        assertEquals("[W-CUSTOMER-DATA-I]", protoCobolDataItem
+                .getCobolCounters().toString());
     }
 
     public void testIndexedCobolNamesOnAncestry() {

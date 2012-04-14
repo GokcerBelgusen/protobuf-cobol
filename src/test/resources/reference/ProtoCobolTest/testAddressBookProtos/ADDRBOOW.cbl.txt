@@ -1,0 +1,512 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. ADDRBOOW.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * Subprogram that writes a protobuf byte stream from  a cobol   *
+      * structure content.                                            *
+      *                                                               *
+      * This is generated code produced by protobuf-cobol.            *
+      * It uses the PB4CBLIB protobuf-cobol library.                  *
+      *                                                               *
+      * Limits:                                                       *
+      *    256 fields per message                                     *
+      *    16777215 message byte length                               *
+      *                                                               *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+
+      *    // z/OS code page
+       77  ZOS-CODEPAGE             PIC 9(4) COMP VALUE 1047.
+
+      *    // Protobuf field key and type
+       01  W-P-KEYTYPE.
+           05  W-P-KEY               PIC 9(8) COMP-5.
+           05  W-P-TYPE              PIC 9(4) COMP-5.
+               88 VARINT             VALUE 0.
+               88 FIXED-64           VALUE 1.
+               88 LENGTH-DELIMITED   VALUE 2.
+               88 FIXED-32           VALUE 5.
+               88 VALID-WIRE-TYPE    VALUE 0, 1, 2, 5.
+
+      *    // Tracks the current location in protobuf byte stream
+       01  W-I                       PIC 9(8) COMP-5.
+
+      *    // A pointer to the current protobuf byte stream location
+       01  W-STREAM                  POINTER.
+
+      *    // A double word binary to hold unsigned long integers
+       01  W-Z-UINT64                PIC 9(18) COMP-5.
+
+      *    // A single word binary to hold unsigned integers
+       01  W-Z-UINT32                PIC 9(8) COMP-5.
+
+      *    // A double word binary to hold signed long integers
+       01  W-Z-INT64                 PIC S9(18) COMP-5.
+
+      *    // A single word binary to hold signed integers
+       01  W-Z-INT32                 PIC S9(8) COMP-5.
+
+      *    // A simple floating point numeric
+       01  W-Z-COMP-1                COMP-1.
+
+      *    // A double floating point numeric
+       01  W-Z-COMP-2                COMP-2.
+
+      *    // Library calls return how many stream bytes were consumed
+       01  W-BYTES-USED              PIC 9(8) COMP-5.
+
+      *    // Sub-messages length
+       01  W-Person-L     PIC 9(8) COMP-5.
+       01  W-PhoneNumber-L     PIC 9(8) COMP-5.
+
+      *    // Array indexes
+       01  W-Person-I     PIC 9(8) COMP-5.
+       01  W-PhoneNumber-I     PIC 9(8) COMP-5.
+
+      *    // Conversion buffer for Strings
+       01  W-UTF16-BUFFER            PIC N(32).
+
+      *    // Temporary storage for variable integers
+       01  W-P-VARINT                PIC X(10).
+
+      *    // Counters
+       01  W-J                       PIC 9(8) COMP-5.
+
+      *****************************************************************
+      *        L I N K A G E    S E C T I O N                         *
+      *****************************************************************
+       LINKAGE SECTION.
+
+      *    // The protobuf input byte stream
+       01  PROTOBUF-BYTES            PIC X(16777215).
+
+      *    // The protobuf input byte stream length
+       01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.
+
+      *    // The input COBOL structure
+       01  AddressBook.
+           03  OCCURS-COUNTERS--C.
+             05  Person--C PIC 9(9) COMP-5.
+           03  Person OCCURS 0 TO 10 DEPENDING ON Person--C.
+             05  name PIC X(32) DISPLAY.
+             05  R-id PIC S9(9) COMP-5.
+             05  email PIC X(32) DISPLAY.
+             05  PhoneNumber OCCURS 10.
+               07  R-number PIC X(32) DISPLAY.
+               07  R-type PIC 9(4) COMP-5.
+                 88  MOBILE VALUE 0.
+                 88  HOME VALUE 1.
+                 88  WORK VALUE 2.
+
+
+      *    // A protobuf variable integer
+       01  P-VARINT                  PIC X(10).
+
+      *    // A protobuf float (IEEE 754)
+       01  P-FLOAT                   PIC X(4).
+
+      *    // A protobuf double (IEEE 754)
+       01  P-DOUBLE                  PIC X(8).
+
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION USING
+               AddressBook,
+               PROTOBUF-BYTES,
+               PROTOBUF-BYTES-LEN.
+      *    // Write the root protobuf message
+           MOVE ZERO TO W-Person-I.
+           MOVE 1 TO W-I.
+           PERFORM WRITE-AddressBook THRU
+               END-WRITE-AddressBook.
+           COMPUTE PROTOBUF-BYTES-LEN = W-I - 1.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * Write the AddressBook message field
+      * ---------------------------------------------------------------
+       WRITE-AddressBook.
+      D    DISPLAY 'WRITE-AddressBook OFFSET=' W-I.
+           PERFORM VARYING W-Person-I FROM 1 BY 1
+                   UNTIL W-Person-I > Person--C
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 1 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+    
+               PERFORM CALC-Person-SIZE THRU
+                   END-CALC-Person-SIZE
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32 = W-Person-L
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               PERFORM WRITE-Person THRU
+                   END-WRITE-Person
+
+           END-PERFORM.
+       END-WRITE-AddressBook. EXIT.
+
+      * ---------------------------------------------------------------
+      * Write the Person message field
+      * ---------------------------------------------------------------
+       WRITE-Person.
+      D    DISPLAY 'WRITE-Person OFFSET=' W-I.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 1 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 
+                       LENGTH OF name(W-Person-I)
+                   IF (name(W-Person-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               MOVE FUNCTION
+                   NATIONAL-OF(name(W-Person-I),
+                               ZOS-CODEPAGE) TO W-UTF16-BUFFER
+               MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01208)
+                   TO PROTOBUF-BYTES(W-I:W-Z-UINT32)
+               COMPUTE W-BYTES-USED = W-Z-UINT32
+      D        DISPLAY 'name(W-Person-I) ='
+      D                 name(W-Person-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
+
+           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 2 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+    
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = R-id(W-Person-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+      D        DISPLAY 'R-id(W-Person-I) ='
+      D                 R-id(W-Person-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
+           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 3 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 
+                       LENGTH OF email(W-Person-I)
+                   IF (email(W-Person-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               MOVE FUNCTION
+                   NATIONAL-OF(email(W-Person-I),
+                               ZOS-CODEPAGE) TO W-UTF16-BUFFER
+               MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01208)
+                   TO PROTOBUF-BYTES(W-I:W-Z-UINT32)
+               COMPUTE W-BYTES-USED = W-Z-UINT32
+      D        DISPLAY 'email(W-Person-I) ='
+      D                 email(W-Person-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
+
+           END-PERFORM.
+           PERFORM VARYING W-PhoneNumber-I FROM 1 BY 1
+                   UNTIL W-PhoneNumber-I > 10
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 4 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+    
+               PERFORM CALC-PhoneNumber-SIZE THRU
+                   END-CALC-PhoneNumber-SIZE
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32 = W-PhoneNumber-L
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               PERFORM WRITE-PhoneNumber THRU
+                   END-WRITE-PhoneNumber
+
+           END-PERFORM.
+       END-WRITE-Person. EXIT.
+
+      * ---------------------------------------------------------------
+      * Write the PhoneNumber message field
+      * ---------------------------------------------------------------
+       WRITE-PhoneNumber.
+      D    DISPLAY 'WRITE-PhoneNumber OFFSET=' W-I.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 1 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 
+                       LENGTH OF R-number(W-Person-I, W-PhoneNumber-I)
+                   IF (R-number(W-Person-I, W-PhoneNumber-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               MOVE FUNCTION
+                   NATIONAL-OF(R-number(W-Person-I, W-PhoneNumber-I),
+                               ZOS-CODEPAGE) TO W-UTF16-BUFFER
+               MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01208)
+                   TO PROTOBUF-BYTES(W-I:W-Z-UINT32)
+               COMPUTE W-BYTES-USED = W-Z-UINT32
+      D        DISPLAY 'R-number(W-Person-I, W-PhoneNumber-I) ='
+      D                 R-number(W-Person-I, W-PhoneNumber-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
+
+           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 2 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+    
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32
+                     = R-type(W-Person-I, W-PhoneNumber-I)
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+      D        DISPLAY 'R-type(W-Person-I, W-PhoneNumber-I) ='
+      D                 R-type(W-Person-I, W-PhoneNumber-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
+           END-PERFORM.
+       END-WRITE-PhoneNumber. EXIT.
+
+
+
+      * ---------------------------------------------------------------
+      * Calculates the PhoneNumber message size
+      * ---------------------------------------------------------------
+       CALC-PhoneNumber-SIZE.
+      D    DISPLAY 'CALC-PhoneNumber-SIZE OFFSET=' W-I.
+           MOVE ZERO TO W-PhoneNumber-L.
+
+           PERFORM 
+
+               ADD 1 TO W-PhoneNumber-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF R-number(W-Person-I, W-PhoneNumber-I)
+                   IF (R-number(W-Person-I, W-PhoneNumber-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-PhoneNumber-L
+               ADD W-Z-UINT32 TO W-PhoneNumber-L
+
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-PhoneNumber-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-UINT32
+                     = R-type(W-Person-I, W-PhoneNumber-I)
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-PhoneNumber-L
+           END-PERFORM.
+
+      D    DISPLAY 'PhoneNumber size=' W-PhoneNumber-L.
+       END-CALC-PhoneNumber-SIZE. EXIT.
+
+      * ---------------------------------------------------------------
+      * Calculates the Person message size
+      * ---------------------------------------------------------------
+       CALC-Person-SIZE.
+      D    DISPLAY 'CALC-Person-SIZE OFFSET=' W-I.
+           MOVE ZERO TO W-Person-L.
+
+           PERFORM 
+
+               ADD 1 TO W-Person-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF name(W-Person-I)
+                   IF (name(W-Person-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-Person-L
+               ADD W-Z-UINT32 TO W-Person-L
+
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-Person-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-INT32
+                     = R-id(W-Person-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-Person-L
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-Person-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF email(W-Person-I)
+                   IF (email(W-Person-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-Person-L
+               ADD W-Z-UINT32 TO W-Person-L
+
+           END-PERFORM.
+           PERFORM VARYING W-PhoneNumber-I FROM 1 BY 1
+                   UNTIL W-PhoneNumber-I > 10
+
+               ADD 1 TO W-Person-L
+               PERFORM CALC-PhoneNumber-SIZE THRU
+                   END-CALC-PhoneNumber-SIZE
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-UINT32 =
+                   W-PhoneNumber-L
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-Person-L
+               ADD W-PhoneNumber-L TO W-Person-L
+
+           END-PERFORM.
+
+      D    DISPLAY 'Person size=' W-Person-L.
+       END-CALC-Person-SIZE. EXIT.
+
+
+      * ---------------------------------------------------------------
+      * Write a field key (identifier) and type to the stream.
+      *
+      * Field and Type are both encoded in a single variable integer.
+      *
+      * Field type is 3 lower bits of header varint, higher bits are
+      * the field key (identifier)
+      * ---------------------------------------------------------------
+       PUT-P-KEYTYPE.
+           COMPUTE W-Z-UINT64 = W-P-TYPE + (8 * W-P-KEY).
+           PERFORM Z-UINT64-TO-P-VARINT THRU END-Z-UINT64-TO-P-VARINT.
+       END-PUT-P-KEYTYPE. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned double word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT64-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBU642VI' USING W-Z-UINT64 P-VARINT W-BYTES-USED.
+       END-Z-UINT64-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned single word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT32-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBU322VI' USING W-Z-UINT32 P-VARINT W-BYTES-USED.
+       END-Z-UINT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS642VI' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS322VI' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a COMP-1 as a IEEE float to the output stream.
+      * ---------------------------------------------------------------
+       Z-COMP-1-TO-P-FLOAT.
+           SET ADDRESS OF P-FLOAT TO W-STREAM.
+           CALL 'PB2PFLOA' USING W-Z-COMP-1 P-FLOAT W-BYTES-USED.
+       END-Z-COMP-1-TO-P-FLOAT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a COMP-2 as a IEEE double to the output stream.
+      * ---------------------------------------------------------------
+       Z-COMP-2-TO-P-DOUBLE.
+           SET ADDRESS OF P-DOUBLE TO W-STREAM.
+           CALL 'PB2PDBLE' USING W-Z-COMP-2 P-DOUBLE W-BYTES-USED.
+       END-Z-COMP-2-TO-P-DOUBLE. EXIT.
+
+       END PROGRAM ADDRBOOW.

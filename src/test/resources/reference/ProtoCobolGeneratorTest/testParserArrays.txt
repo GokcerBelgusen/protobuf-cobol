@@ -24,6 +24,9 @@
       *****************************************************************
        WORKING-STORAGE SECTION.
 
+      *    // z/OS code page
+       77  ZOS-CODEPAGE              PIC 9(4) COMP VALUE 1047.
+
       *    // Protobuf field key and type
        01  W-P-KEYTYPE.
            05  W-P-KEY               PIC 9(8) COMP-5.
@@ -37,28 +40,28 @@
       *    // Tracks the current location in protobuf byte stream
        01  W-I                       PIC 9(8) COMP-5.
 
-      *    // A pointer to the current protobuf byte stream location 
+      *    // A pointer to the current protobuf byte stream location
        01  W-STREAM                  POINTER.
 
-      *    // a double word binary to hold unsigned long integers
+      *    // A double word binary to hold unsigned long integers
        01  W-Z-UINT64                PIC 9(18) COMP-5.
 
-      *    // a single word binary to hold unsigned integers
+      *    // A single word binary to hold unsigned integers
        01  W-Z-UINT32                PIC 9(8) COMP-5.
 
-      *    // a double word binary to hold signed long integers
+      *    // A double word binary to hold signed long integers
        01  W-Z-INT64                 PIC S9(18) COMP-5.
 
-      *    // a single word binary to hold signed integers
+      *    // A single word binary to hold signed integers
        01  W-Z-INT32                 PIC S9(8) COMP-5.
 
-      *    // a simple floating point numeric
+      *    // A simple floating point numeric
        01  W-Z-COMP-1                COMP-1.
 
-      *    // a double floating point numeric
+      *    // A double floating point numeric
        01  W-Z-COMP-2                COMP-2.
 
-      *    // library calls return how many stream bytes were consumed 
+      *    // Library calls return how many stream bytes were consumed
        01  W-BYTES-USED              PIC 9(8) COMP-5.
 
 
@@ -88,10 +91,10 @@
              10  CHILD2 PIC X(72).
              10  CHILD3 PIC 9(4).
 
-       
+
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
-     
+
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
 
@@ -105,7 +108,6 @@
                PROTOBUF-BYTES,
                PROTOBUF-BYTES-LEN,
                CUSTOMER-DATA.
-      *    // Initialize counters
       *    // Parse the root protobuf message
            MOVE 1 TO W-I.
            PERFORM PARSE-CUSTOMER-DATA THRU
@@ -113,7 +115,6 @@
                    UNTIL W-I > PROTOBUF-BYTES-LEN.
            GOBACK.
 
- 
       * ---------------------------------------------------------------
       * Parse the CUSTOMER-DATA message field
       * ---------------------------------------------------------------
@@ -137,7 +138,6 @@
            END-EVALUATE.
        END-PARSE-CUSTOMER-DATA. EXIT.
 
- 
       * ---------------------------------------------------------------
       * Parse the CHILD1 message field
       * ---------------------------------------------------------------
@@ -157,7 +157,7 @@
                  MOVE FUNCTION NATIONAL-OF(
                     PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
                     TO W-UTF16-BUFFER
-                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01147)
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
                     TO CHILD2(W-CUSTOMER-DATA-I)
                  COMPUTE W-BYTES-USED = W-Z-UINT32
       D          DISPLAY 'CHILD2(W-CUSTOMER-DATA-I) ='
@@ -190,7 +190,7 @@
            PERFORM P-VARINT-TO-Z-UINT64 THRU END-P-VARINT-TO-Z-UINT64.
            DIVIDE W-Z-UINT64 BY 8 GIVING W-P-KEY REMAINDER W-P-TYPE.
        END-GET-P-KEYTYPE. EXIT.
-       
+
       * ---------------------------------------------------------------
       * Get a variable integer from the stream as unsigned double word
       * binary.

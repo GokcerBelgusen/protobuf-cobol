@@ -1,5 +1,5 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. CUSTDATP.
+       PROGRAM-ID. ADDRBOOP.
       *****************************************************************
       * OVERVIEW                                                      *
       * --------                                                      *
@@ -66,11 +66,15 @@
 
 
       *    // Sub-messages maximum offset from input start
-       01  W-CHILD1-L     PIC 9(8) COMP-5.
+       01  W-Person-L     PIC 9(8) COMP-5.
+       01  W-PhoneNumber-L     PIC 9(8) COMP-5.
 
+      *    // Array indexes
+       01  W-Person-I     PIC 9(8) COMP-5.
+       01  W-PhoneNumber-I     PIC 9(8) COMP-5.
 
       *    // Conversion buffer for Strings
-       01  W-UTF16-BUFFER            PIC N(72).
+       01  W-UTF16-BUFFER            PIC N(32).
 
       *****************************************************************
       *        L I N K A G E    S E C T I O N                         *
@@ -84,10 +88,19 @@
        01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.
 
       *    // The output COBOL structure
-       01  CUSTOMER-DATA.
-           05  CHILD1.
-             10  CHILD3 PIC X(72).
-           05  CHILD2 PIC X(11).
+       01  AddressBook.
+           03  OCCURS-COUNTERS--C.
+             05  Person--C PIC 9(9) COMP-5.
+           03  Person OCCURS 0 TO 10 DEPENDING ON Person--C.
+             05  name PIC X(32) DISPLAY.
+             05  R-id PIC S9(9) COMP-5.
+             05  email PIC X(32) DISPLAY.
+             05  PhoneNumber OCCURS 10.
+               07  R-number PIC X(32) DISPLAY.
+               07  R-type PIC 9(4) COMP-5.
+                 88  MOBILE VALUE 0.
+                 88  HOME VALUE 1.
+                 88  WORK VALUE 2.
 
 
       *    // A protobuf variable integer
@@ -105,19 +118,46 @@
        PROCEDURE DIVISION USING
                PROTOBUF-BYTES,
                PROTOBUF-BYTES-LEN,
-               CUSTOMER-DATA.
+               AddressBook.
       *    // Parse the root protobuf message
+           MOVE ZERO TO W-Person-I.
            MOVE 1 TO W-I.
-           PERFORM PARSE-CUSTOMER-DATA THRU
-               END-PARSE-CUSTOMER-DATA
+           PERFORM PARSE-AddressBook THRU
+               END-PARSE-AddressBook
                    UNTIL W-I > PROTOBUF-BYTES-LEN.
            GOBACK.
 
       * ---------------------------------------------------------------
-      * Parse the CUSTOMER-DATA message field
+      * Parse the AddressBook message field
       * ---------------------------------------------------------------
-       PARSE-CUSTOMER-DATA.
-      D    DISPLAY 'PARSE-CUSTOMER-DATA OFFSET=' W-I.
+       PARSE-AddressBook.
+      D    DISPLAY 'PARSE-AddressBook OFFSET=' W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           PERFORM GET-P-KEYTYPE THRU END-GET-P-KEYTYPE.
+           ADD W-BYTES-USED TO W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           EVALUATE W-P-KEY
+               WHEN 1
+                 ADD 1 TO W-Person-I
+                 MOVE W-Person-I TO Person--C
+                 MOVE ZERO TO W-PhoneNumber-I
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
+                 ADD W-BYTES-USED TO W-I
+                 COMPUTE W-Person-L = W-I + W-Z-UINT32 - 1
+                 PERFORM PARSE-Person THRU
+                     END-PARSE-Person
+                         UNTIL W-I > W-Person-L
+           END-EVALUATE.
+       END-PARSE-AddressBook. EXIT.
+
+      * ---------------------------------------------------------------
+      * Parse the Person message field
+      * ---------------------------------------------------------------
+       PARSE-Person.
+      D    DISPLAY 'PARSE-Person OFFSET=' W-I.
 
            SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
            PERFORM GET-P-KEYTYPE THRU END-GET-P-KEYTYPE.
@@ -129,55 +169,89 @@
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
                  ADD W-BYTES-USED TO W-I
-                 COMPUTE W-CHILD1-L = W-I + W-Z-UINT32 - 1
-                 PERFORM PARSE-CHILD1 THRU
-                     END-PARSE-CHILD1
-                         UNTIL W-I > W-CHILD1-L
+                 MOVE FUNCTION NATIONAL-OF(
+                    PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
+                    TO W-UTF16-BUFFER
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
+                    TO name(W-Person-I)
+                 COMPUTE W-BYTES-USED = W-Z-UINT32
+      D          DISPLAY 'name(W-Person-I) ='
+      D                   name(W-Person-I)
+      D                  ' ,AT OFFSET=' W-I
+                 ADD W-BYTES-USED TO W-I
+               WHEN 2
+                 PERFORM P-VARINT-TO-Z-INT32 THRU
+                     END-P-VARINT-TO-Z-INT32
+                 COMPUTE R-id(W-Person-I)
+                       = W-Z-INT32
+      D          DISPLAY 'R-id(W-Person-I) ='
+      D                   R-id(W-Person-I)
+      D                  ' ,AT OFFSET=' W-I
+                 ADD W-BYTES-USED TO W-I
+               WHEN 3
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
+                 ADD W-BYTES-USED TO W-I
+                 MOVE FUNCTION NATIONAL-OF(
+                    PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
+                    TO W-UTF16-BUFFER
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
+                    TO email(W-Person-I)
+                 COMPUTE W-BYTES-USED = W-Z-UINT32
+      D          DISPLAY 'email(W-Person-I) ='
+      D                   email(W-Person-I)
+      D                  ' ,AT OFFSET=' W-I
+                 ADD W-BYTES-USED TO W-I
+               WHEN 4
+                 ADD 1 TO W-PhoneNumber-I
+
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
+                 ADD W-BYTES-USED TO W-I
+                 COMPUTE W-PhoneNumber-L = W-I + W-Z-UINT32 - 1
+                 PERFORM PARSE-PhoneNumber THRU
+                     END-PARSE-PhoneNumber
+                         UNTIL W-I > W-PhoneNumber-L
+           END-EVALUATE.
+       END-PARSE-Person. EXIT.
+
+      * ---------------------------------------------------------------
+      * Parse the PhoneNumber message field
+      * ---------------------------------------------------------------
+       PARSE-PhoneNumber.
+      D    DISPLAY 'PARSE-PhoneNumber OFFSET=' W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           PERFORM GET-P-KEYTYPE THRU END-GET-P-KEYTYPE.
+           ADD W-BYTES-USED TO W-I.
+
+           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
+           EVALUATE W-P-KEY
+               WHEN 1
+                 PERFORM P-VARINT-TO-Z-UINT32 THRU
+                     END-P-VARINT-TO-Z-UINT32
+                 ADD W-BYTES-USED TO W-I
+                 MOVE FUNCTION NATIONAL-OF(
+                    PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
+                    TO W-UTF16-BUFFER
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
+                    TO R-number(W-Person-I, W-PhoneNumber-I)
+                 COMPUTE W-BYTES-USED = W-Z-UINT32
+      D          DISPLAY 'R-number(W-Person-I, W-PhoneNumber-I) ='
+      D                   R-number(W-Person-I, W-PhoneNumber-I)
+      D                  ' ,AT OFFSET=' W-I
+                 ADD W-BYTES-USED TO W-I
                WHEN 2
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
-                 ADD W-BYTES-USED TO W-I
-                 MOVE FUNCTION NATIONAL-OF(
-                    PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
-                    TO W-UTF16-BUFFER
-                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
-                    TO CHILD2
-                 COMPUTE W-BYTES-USED = W-Z-UINT32
-      D          DISPLAY 'CHILD2 ='
-      D                   CHILD2
+                 COMPUTE R-type(W-Person-I, W-PhoneNumber-I)
+                       = W-Z-UINT32
+      D          DISPLAY 'R-type(W-Person-I, W-PhoneNumber-I) ='
+      D                   R-type(W-Person-I, W-PhoneNumber-I)
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
            END-EVALUATE.
-       END-PARSE-CUSTOMER-DATA. EXIT.
-
-      * ---------------------------------------------------------------
-      * Parse the CHILD1 message field
-      * ---------------------------------------------------------------
-       PARSE-CHILD1.
-      D    DISPLAY 'PARSE-CHILD1 OFFSET=' W-I.
-
-           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           PERFORM GET-P-KEYTYPE THRU END-GET-P-KEYTYPE.
-           ADD W-BYTES-USED TO W-I.
-
-           SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
-           EVALUATE W-P-KEY
-               WHEN 1
-                 PERFORM P-VARINT-TO-Z-UINT32 THRU
-                     END-P-VARINT-TO-Z-UINT32
-                 ADD W-BYTES-USED TO W-I
-                 MOVE FUNCTION NATIONAL-OF(
-                    PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
-                    TO W-UTF16-BUFFER
-                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
-                    TO CHILD3
-                 COMPUTE W-BYTES-USED = W-Z-UINT32
-      D          DISPLAY 'CHILD3 ='
-      D                   CHILD3
-      D                  ' ,AT OFFSET=' W-I
-                 ADD W-BYTES-USED TO W-I
-           END-EVALUATE.
-       END-PARSE-CHILD1. EXIT.
+       END-PARSE-PhoneNumber. EXIT.
 
 
 
@@ -246,4 +320,4 @@
            CALL 'PB2ZDBLE' USING P-DOUBLE W-Z-COMP-2 W-BYTES-USED.
        END-P-DOUBLE-TO-Z-COMP-2. EXIT.
 
-       END PROGRAM CUSTDATP.
+       END PROGRAM ADDRBOOP.

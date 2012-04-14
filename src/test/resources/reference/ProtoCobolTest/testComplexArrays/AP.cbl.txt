@@ -24,6 +24,9 @@
       *****************************************************************
        WORKING-STORAGE SECTION.
 
+      *    // z/OS code page
+       77  ZOS-CODEPAGE              PIC 9(4) COMP VALUE 1047.
+
       *    // Protobuf field key and type
        01  W-P-KEYTYPE.
            05  W-P-KEY               PIC 9(8) COMP-5.
@@ -37,28 +40,28 @@
       *    // Tracks the current location in protobuf byte stream
        01  W-I                       PIC 9(8) COMP-5.
 
-      *    // A pointer to the current protobuf byte stream location 
+      *    // A pointer to the current protobuf byte stream location
        01  W-STREAM                  POINTER.
 
-      *    // a double word binary to hold unsigned long integers
+      *    // A double word binary to hold unsigned long integers
        01  W-Z-UINT64                PIC 9(18) COMP-5.
 
-      *    // a single word binary to hold unsigned integers
+      *    // A single word binary to hold unsigned integers
        01  W-Z-UINT32                PIC 9(8) COMP-5.
 
-      *    // a double word binary to hold signed long integers
+      *    // A double word binary to hold signed long integers
        01  W-Z-INT64                 PIC S9(18) COMP-5.
 
-      *    // a single word binary to hold signed integers
+      *    // A single word binary to hold signed integers
        01  W-Z-INT32                 PIC S9(8) COMP-5.
 
-      *    // a simple floating point numeric
+      *    // A simple floating point numeric
        01  W-Z-COMP-1                COMP-1.
 
-      *    // a double floating point numeric
+      *    // A double floating point numeric
        01  W-Z-COMP-2                COMP-2.
 
-      *    // library calls return how many stream bytes were consumed 
+      *    // Library calls return how many stream bytes were consumed
        01  W-BYTES-USED              PIC 9(8) COMP-5.
 
 
@@ -68,7 +71,9 @@
        01  W-E-L     PIC 9(8) COMP-5.
 
       *    // Array indexes
+       01  W-B-I     PIC 9(8) COMP-5.
        01  W-d-I     PIC 9(8) COMP-5.
+       01  W-E-I     PIC 9(8) COMP-5.
 
       *    // Conversion buffer for Strings
        01  W-UTF16-BUFFER            PIC N(32).
@@ -95,10 +100,10 @@
              03  E OCCURS 0 TO 10 DEPENDING ON E--C.
                05  f PIC X(32) DISPLAY.
 
-       
+
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
-     
+
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
 
@@ -112,17 +117,15 @@
                PROTOBUF-BYTES,
                PROTOBUF-BYTES-LEN,
                A.
-      *    // Initialize counters
-           MOVE ZERO TO B--C.
-           MOVE ZERO TO E--C.
       *    // Parse the root protobuf message
+           MOVE ZERO TO W-B-I.
+           MOVE ZERO TO W-E-I.
            MOVE 1 TO W-I.
            PERFORM PARSE-A THRU
                END-PARSE-A
                    UNTIL W-I > PROTOBUF-BYTES-LEN.
            GOBACK.
 
- 
       * ---------------------------------------------------------------
       * Parse the A message field
       * ---------------------------------------------------------------
@@ -136,7 +139,8 @@
            SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:).
            EVALUATE W-P-KEY
                WHEN 1
-                 ADD 1 TO B--C
+                 ADD 1 TO W-B-I
+                 MOVE W-B-I TO B--C
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
                  ADD W-BYTES-USED TO W-I
@@ -145,7 +149,8 @@
                      END-PARSE-B
                          UNTIL W-I > W-B-L
                WHEN 2
-                 ADD 1 TO E--C
+                 ADD 1 TO W-E-I
+                 MOVE W-E-I TO E--C
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
                  ADD W-BYTES-USED TO W-I
@@ -156,7 +161,6 @@
            END-EVALUATE.
        END-PARSE-A. EXIT.
 
- 
       * ---------------------------------------------------------------
       * Parse the B message field
       * ---------------------------------------------------------------
@@ -181,7 +185,6 @@
            END-EVALUATE.
        END-PARSE-B. EXIT.
 
- 
       * ---------------------------------------------------------------
       * Parse the C message field
       * ---------------------------------------------------------------
@@ -196,23 +199,23 @@
            EVALUATE W-P-KEY
                WHEN 1
                  ADD 1 TO W-d-I
+
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
                  ADD W-BYTES-USED TO W-I
                  MOVE FUNCTION NATIONAL-OF(
                     PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
                     TO W-UTF16-BUFFER
-                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01147)
-                    TO d(B--C, W-d-I)
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
+                    TO d(W-B-I, W-d-I)
                  COMPUTE W-BYTES-USED = W-Z-UINT32
-      D          DISPLAY 'd(B--C, W-d-I) ='
-      D                   d(B--C, W-d-I)
+      D          DISPLAY 'd(W-B-I, W-d-I) ='
+      D                   d(W-B-I, W-d-I)
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
            END-EVALUATE.
        END-PARSE-C. EXIT.
 
- 
       * ---------------------------------------------------------------
       * Parse the E message field
       * ---------------------------------------------------------------
@@ -232,11 +235,11 @@
                  MOVE FUNCTION NATIONAL-OF(
                     PROTOBUF-BYTES(W-I:W-Z-UINT32), 01208)
                     TO W-UTF16-BUFFER
-                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01147)
-                    TO f(E--C)
+                 MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, ZOS-CODEPAGE)
+                    TO f(W-E-I)
                  COMPUTE W-BYTES-USED = W-Z-UINT32
-      D          DISPLAY 'f(E--C) ='
-      D                   f(E--C)
+      D          DISPLAY 'f(W-E-I) ='
+      D                   f(W-E-I)
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
            END-EVALUATE.
@@ -256,7 +259,7 @@
            PERFORM P-VARINT-TO-Z-UINT64 THRU END-P-VARINT-TO-Z-UINT64.
            DIVIDE W-Z-UINT64 BY 8 GIVING W-P-KEY REMAINDER W-P-TYPE.
        END-GET-P-KEYTYPE. EXIT.
-       
+
       * ---------------------------------------------------------------
       * Get a variable integer from the stream as unsigned double word
       * binary.
