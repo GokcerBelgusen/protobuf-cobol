@@ -20,6 +20,8 @@ public class ProtoCobolTest extends AbstractTest implements HasMaxSize {
     public void testSearchRequestProtos() throws Exception {
         run("com.example.simple.Simple");
         checkFile("SearchRequestC.cpy");
+        checkFile("SEARREQP.cbl");
+        checkFile("SEARREQW.cbl");
     }
 
     public void testAddressBookProtos() throws Exception {
@@ -32,27 +34,43 @@ public class ProtoCobolTest extends AbstractTest implements HasMaxSize {
     public void testNonTranslatedProtos() throws Exception {
         run(new File("src/test/resources/nontranslated.proto"));
         checkFile("SearchResponseC.cpy");
-    }
-
-    public void testEnumSample() throws Exception {
-        run("com.example.enumsample.Enumsample");
-        checkFile("SearchRequestC.cpy");
-    }
-
-    public void testAllTypes() throws Exception {
-        run("com.example.alltypes.AllTypesProtos");
-        checkFile("AllTypesC.cpy");
+        checkFile("SEARRESP.cbl");
+        checkFile("SEARRESW.cbl");
     }
 
     public void testCollectionsProtos() throws Exception {
         run("com.example.collections.Collections");
         checkFile("SearchResponseC.cpy");
+        checkFile("SEARRESP.cbl");
+        checkFile("SEARRESW.cbl");
+    }
+
+    public void testHierarchyProtos() throws Exception {
+        run("com.example.hierarchy.Hierarchy");
+        checkFile("CustomerDataC.cpy");
+        checkFile("CUSTDATP.cbl");
+        checkFile("CUSTDATW.cbl");
     }
 
     public void testComplexArrays() throws Exception {
         run("com.example.complexarrays.Complexarrays");
         checkFile("AC.cpy");
         checkFile("AP.cbl");
+        checkFile("AW.cbl");
+    }
+
+    public void testEnumSample() throws Exception {
+        run("com.example.enumsample.Enumsample");
+        checkFile("EnumRequestC.cpy");
+        checkFile("ENUMREQP.cbl");
+        checkFile("ENUMREQW.cbl");
+    }
+
+    public void testAllTypes() throws Exception {
+        run("com.example.alltypes.AllTypesProtos");
+        checkFile("AllTypesC.cpy");
+        checkFile("ALLTYPEP.cbl");
+        checkFile("ALLTYPEW.cbl");
     }
 
     /**

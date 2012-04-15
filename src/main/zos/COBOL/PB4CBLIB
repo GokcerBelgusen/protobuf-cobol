@@ -38,6 +38,28 @@
               10 W-HWORD2-BYTE-1           PIC X.
               10 W-HWORD2-BYTE-2           PIC X.
 
+      *    // IEEE 754 float
+       01  W-IEEE-FLOAT                    PIC X(4).
+       01  W-IEEE-FLOAT-BYTES REDEFINES W-IEEE-FLOAT.
+           05 W-IEEE-FLOAT-BYTE-1          PIC X.
+           05 W-IEEE-FLOAT-BYTE-2          PIC X.
+           05 W-IEEE-FLOAT-BYTE-3          PIC X.
+           05 W-IEEE-FLOAT-BYTE-4          PIC X.
+       01  W-IEEE-FLOAT-COMP REDEFINES W-IEEE-FLOAT PIC 9(9) COMP-5.
+
+      *    // IEEE 754 double
+       01  W-IEEE-DOUBLE                     PIC X(8).
+       01  W-IEEE-DOUBLE-BYTES REDEFINES W-IEEE-DOUBLE.
+           05 W-IEEE-DOUBLE-BYTE-1           PIC X.
+           05 W-IEEE-DOUBLE-BYTE-2           PIC X.
+           05 W-IEEE-DOUBLE-BYTE-3           PIC X.
+           05 W-IEEE-DOUBLE-BYTE-4           PIC X.
+           05 W-IEEE-DOUBLE-BYTE-5           PIC X.
+           05 W-IEEE-DOUBLE-BYTE-6           PIC X.
+           05 W-IEEE-DOUBLE-BYTE-7           PIC X.
+           05 W-IEEE-DOUBLE-BYTE-8           PIC X.
+       01  W-IEEE-DOUBLE-COMP REDEFINES W-IEEE-DOUBLE PIC 9(18) COMP-5.
+
       *    // conditions
        01  FILLER                          PIC 9(4) COMP.
            88 VARINT-INCOMPLETE VALUE 0.
@@ -66,8 +88,8 @@
        01  W-PB-VARINT-DISPLAY             PIC X(20).
        01  W-PB-FIXED64-DISPLAY            PIC X(16).
        01  W-PB-FIXED32-DISPLAY            PIC X(8).
-       01  W-IEEE-FLOAT-DISPLAY            PIC X(8).
-       01  W-IEEE-DOUBLE-DISPLAY           PIC X(16).
+       01  W-IEEE-FLOAT-LE-DISPLAY         PIC X(8).
+       01  W-IEEE-DOUBLE-LE-DISPLAY        PIC X(16).
 
       *****************************************************************
       *        L I N K A G E    S T O R A G E    S E C T I O N        *
@@ -96,13 +118,13 @@
        01  ZOS-SINT32-BYTES REDEFINES ZOS-SINT32.
            05 ZOS-SINT32-BYTE OCCURS 4 PIC X.
 
-       01  IEEE-FLOAT                      PIC X(4).
-       01  IEEE-FLOAT-BYTES REDEFINES IEEE-FLOAT.
-           05 IEEE-FLOAT-BYTE-1            PIC X.
-           05 IEEE-FLOAT-BYTE-2            PIC X.
-           05 IEEE-FLOAT-BYTE-3            PIC X.
-           05 IEEE-FLOAT-BYTE-4            PIC X.
-       01  IEEE-FLOAT-COMP REDEFINES IEEE-FLOAT PIC 9(9) COMP-5.
+      *    // PB encodes floats in little endian
+       01  IEEE-FLOAT-LE                   PIC X(4).
+       01  IEEE-FLOAT-LE-BYTES REDEFINES IEEE-FLOAT-LE.
+           05 IEEE-FLOAT-LE-BYTE-1         PIC X.
+           05 IEEE-FLOAT-LE-BYTE-2         PIC X.
+           05 IEEE-FLOAT-LE-BYTE-3         PIC X.
+           05 IEEE-FLOAT-LE-BYTE-4         PIC X.
 
        01  ZOS-FLOAT                       COMP-1.
        01  ZOS-FLOAT-BYTES REDEFINES ZOS-FLOAT.
@@ -112,17 +134,17 @@
            05 ZOS-FLOAT-BYTE-4             PIC X.
        01  ZOS-FLOAT-COMP REDEFINES ZOS-FLOAT PIC 9(9) COMP-5.
 
-       01  IEEE-DOUBLE                     PIC X(8).
-       01  IEEE-DOUBLE-BYTES REDEFINES IEEE-DOUBLE.
-           05 IEEE-DOUBLE-BYTE-1           PIC X.
-           05 IEEE-DOUBLE-BYTE-2           PIC X.
-           05 IEEE-DOUBLE-BYTE-3           PIC X.
-           05 IEEE-DOUBLE-BYTE-4           PIC X.
-           05 IEEE-DOUBLE-BYTE-5           PIC X.
-           05 IEEE-DOUBLE-BYTE-6           PIC X.
-           05 IEEE-DOUBLE-BYTE-7           PIC X.
-           05 IEEE-DOUBLE-BYTE-8           PIC X.
-       01  IEEE-DOUBLE-COMP REDEFINES IEEE-DOUBLE PIC 9(18) COMP-5.
+      *    // PB encodes doubles in little endian
+       01  IEEE-DOUBLE-LE                  PIC X(8).
+       01  IEEE-DOUBLE-LE-BYTES REDEFINES IEEE-DOUBLE-LE.
+           05 IEEE-DOUBLE-LE-BYTE-1        PIC X.
+           05 IEEE-DOUBLE-LE-BYTE-2        PIC X.
+           05 IEEE-DOUBLE-LE-BYTE-3        PIC X.
+           05 IEEE-DOUBLE-LE-BYTE-4        PIC X.
+           05 IEEE-DOUBLE-LE-BYTE-5        PIC X.
+           05 IEEE-DOUBLE-LE-BYTE-6        PIC X.
+           05 IEEE-DOUBLE-LE-BYTE-7        PIC X.
+           05 IEEE-DOUBLE-LE-BYTE-8        PIC X.
 
        01  ZOS-DOUBLE                      COMP-2.
        01  ZOS-DOUBLE-BYTES REDEFINES ZOS-DOUBLE.
@@ -228,16 +250,16 @@
            GOBACK.
 
       * ---------------------------------------------------------------
-      * PB2ZFLOA Entry point: IEEE Float to COMP-1
+      * PB2ZFLOA Entry point: IEEE Float (little endian) to COMP-1
       * ---------------------------------------------------------------
-           ENTRY 'PB2ZFLOA' USING IEEE-FLOAT ZOS-FLOAT BYTES-USED.
+           ENTRY 'PB2ZFLOA' USING IEEE-FLOAT-LE ZOS-FLOAT BYTES-USED.
            PERFORM PB2ZFLOA THRU END-PB2ZFLOA.
            GOBACK.
 
       * ---------------------------------------------------------------
-      * PB2ZDBLE Entry point: IEEE Double to COMP-2
+      * PB2ZDBLE Entry point: IEEE Double (little endian) to COMP-2
       * ---------------------------------------------------------------
-           ENTRY 'PB2ZDBLE' USING IEEE-DOUBLE ZOS-DOUBLE BYTES-USED.
+           ENTRY 'PB2ZDBLE' USING IEEE-DOUBLE-LE ZOS-DOUBLE BYTES-USED.
            PERFORM PB2ZDBLE THRU END-PB2ZDBLE.
            GOBACK.
 
@@ -315,16 +337,16 @@
            GOBACK.
 
       * ---------------------------------------------------------------
-      * PB2PFLOA Entry point: COMP-1 to IEEE Float
+      * PB2PFLOA Entry point: COMP-1 to IEEE Float (little endian)
       * ---------------------------------------------------------------
-           ENTRY 'PB2PFLOA' USING ZOS-FLOAT IEEE-FLOAT BYTES-USED.
+           ENTRY 'PB2PFLOA' USING ZOS-FLOAT IEEE-FLOAT-LE BYTES-USED.
            PERFORM PB2PFLOA THRU END-PB2PFLOA.
            GOBACK.
 
       * ---------------------------------------------------------------
-      * PB2PDBLE Entry point: COMP-2 to IEEE Double
+      * PB2PDBLE Entry point: COMP-2 to IEEE Double (little endian)
       * ---------------------------------------------------------------
-           ENTRY 'PB2PDBLE' USING ZOS-DOUBLE IEEE-DOUBLE BYTES-USED.
+           ENTRY 'PB2PDBLE' USING ZOS-DOUBLE IEEE-DOUBLE-LE BYTES-USED.
            PERFORM PB2PDBLE THRU END-PB2PDBLE.
            GOBACK.
 
@@ -612,34 +634,41 @@
        END-PBFI2S32. EXIT.
 
       * ---------------------------------------------------------------
-      * Convert Protocol Buffer IEEE Float to z/OS Float
-      *   param : IEEE-FLOAT
+      * Convert Protocol Buffer IEEE Float (little endian)
+      *         to z/OS Float
+      *   param : IEEE-FLOAT-LE
       *   return: ZOS-FLOAT
       * ---------------------------------------------------------------
        PB2ZFLOA.
 
       D    DISPLAY 'PB2ZFLOA STARTED'.
-      D    PERFORM DISPLAY-IEEE-FLOAT THRU END-DISPLAY-IEEE-FLOAT.
+      D    PERFORM DISPLAY-IEEE-FLOAT-LE THRU END-DISPLAY-IEEE-FLOAT-LE.
 
-           COMPUTE BYTES-USED = LENGTH OF IEEE-FLOAT.
+      *    // reverse to big endian
+           MOVE IEEE-FLOAT-LE-BYTE-1 TO W-IEEE-FLOAT-BYTE-4.
+           MOVE IEEE-FLOAT-LE-BYTE-2 TO W-IEEE-FLOAT-BYTE-3.
+           MOVE IEEE-FLOAT-LE-BYTE-3 TO W-IEEE-FLOAT-BYTE-2.
+           MOVE IEEE-FLOAT-LE-BYTE-4 TO W-IEEE-FLOAT-BYTE-1.
+ 
+           COMPUTE BYTES-USED = LENGTH OF W-IEEE-FLOAT.
 
       *    // check for 0 and -0
-           IF IEEE-FLOAT-COMP = ZERO OR
-              IEEE-FLOAT-COMP = 2147483648
+           IF W-IEEE-FLOAT-COMP = ZERO OR
+              W-IEEE-FLOAT-COMP = 2147483648
               COMPUTE ZOS-FLOAT = ZERO
               GO TO END-PB2ZFLOA
            END-IF.
 
       *    // first bit is the sign
            MOVE ZERO TO W-HWORD.
-           MOVE IEEE-FLOAT-BYTE-1 TO W-HWORD-BYTE-2.
+           MOVE W-IEEE-FLOAT-BYTE-1 TO W-HWORD-BYTE-2.
            DIVIDE W-HWORD BY 128
                   GIVING W-SIGN
                   REMAINDER W-EXPONENT
 
       *    // exponent is 8 bits so recover first bit of second byte
            MOVE ZERO TO W-HWORD.
-           MOVE IEEE-FLOAT-BYTE-2 TO W-HWORD-BYTE-2.
+           MOVE W-IEEE-FLOAT-BYTE-2 TO W-HWORD-BYTE-2.
            DIVIDE W-HWORD BY 128
                   GIVING W-HWORD
                   REMAINDER W-HWORD2
@@ -661,8 +690,8 @@
       *    // construct mantissa
            MOVE ZERO TO ZOS-FLOAT-COMP.
            MOVE W-HWORD2-BYTE-2     TO ZOS-FLOAT-BYTE-2.
-           MOVE IEEE-FLOAT-BYTE-3   TO ZOS-FLOAT-BYTE-3.
-           MOVE IEEE-FLOAT-BYTE-4   TO ZOS-FLOAT-BYTE-4.
+           MOVE W-IEEE-FLOAT-BYTE-3   TO ZOS-FLOAT-BYTE-3.
+           MOVE W-IEEE-FLOAT-BYTE-4   TO ZOS-FLOAT-BYTE-4.
       D    DISPLAY 'IEEE MANTISSA=' ZOS-FLOAT-COMP.
 
       *    // Determine hex exponent. Add 1 bit first
@@ -730,34 +759,46 @@
        END-PB2ZFLOA. EXIT.
 
       * ---------------------------------------------------------------
-      * Convert Protocol Buffer IEEE double to z/OS double
-      *   param : IEEE-DOUBLE
+      * Convert Protocol Buffer IEEE double (little endian) to
+      *         z/OS double
+      *   param : IEEE-DOUBLE-LE
       *   return: ZOS-DOUBLE
       * ---------------------------------------------------------------
        PB2ZDBLE.
 
       D    DISPLAY 'PB2ZDBLE STARTED'.
-      D    PERFORM DISPLAY-IEEE-DOUBLE THRU END-DISPLAY-IEEE-DOUBLE.
+      D    PERFORM DISPLAY-IEEE-DOUBLE-LE THRU
+      D        END-DISPLAY-IEEE-DOUBLE-LE.
 
-           COMPUTE BYTES-USED = LENGTH OF IEEE-DOUBLE.
+      *    // reverse to big endian
+           MOVE IEEE-DOUBLE-LE-BYTE-1 TO W-IEEE-DOUBLE-BYTE-8.
+           MOVE IEEE-DOUBLE-LE-BYTE-2 TO W-IEEE-DOUBLE-BYTE-7.
+           MOVE IEEE-DOUBLE-LE-BYTE-3 TO W-IEEE-DOUBLE-BYTE-6.
+           MOVE IEEE-DOUBLE-LE-BYTE-4 TO W-IEEE-DOUBLE-BYTE-5.
+           MOVE IEEE-DOUBLE-LE-BYTE-5 TO W-IEEE-DOUBLE-BYTE-4.
+           MOVE IEEE-DOUBLE-LE-BYTE-6 TO W-IEEE-DOUBLE-BYTE-3.
+           MOVE IEEE-DOUBLE-LE-BYTE-7 TO W-IEEE-DOUBLE-BYTE-2.
+           MOVE IEEE-DOUBLE-LE-BYTE-8 TO W-IEEE-DOUBLE-BYTE-1.
+
+           COMPUTE BYTES-USED = LENGTH OF W-IEEE-DOUBLE.
 
       *    // check for 0 and -0
-           IF IEEE-DOUBLE-COMP = ZERO OR
-              IEEE-DOUBLE-COMP = 9223372036854775808
+           IF W-IEEE-DOUBLE-COMP = ZERO OR
+              W-IEEE-DOUBLE-COMP = 9223372036854775808
               COMPUTE ZOS-DOUBLE = ZERO
               GO TO END-PB2ZDBLE
            END-IF.
 
       *    // first bit is the sign, 7 next bits are part of exponent
            MOVE ZERO TO W-HWORD.
-           MOVE IEEE-DOUBLE-BYTE-1 TO W-HWORD-BYTE-2.
+           MOVE W-IEEE-DOUBLE-BYTE-1 TO W-HWORD-BYTE-2.
            DIVIDE W-HWORD BY 128
                   GIVING W-SIGN
                   REMAINDER W-EXPONENT
 
       *    // exponent is 11 bits so recover 4 bits of second byte
            MOVE ZERO TO W-HWORD.
-           MOVE IEEE-DOUBLE-BYTE-2 TO W-HWORD-BYTE-2.
+           MOVE W-IEEE-DOUBLE-BYTE-2 TO W-HWORD-BYTE-2.
            DIVIDE W-HWORD BY 16
                   GIVING W-HWORD
                   REMAINDER W-HWORD2
@@ -778,13 +819,13 @@
 
       *    // construct mantissa
            MOVE ZERO TO ZOS-DOUBLE-COMP.
-           MOVE W-HWORD2-BYTE-2      TO ZOS-DOUBLE-BYTE-2.
-           MOVE IEEE-DOUBLE-BYTE-3   TO ZOS-DOUBLE-BYTE-3.
-           MOVE IEEE-DOUBLE-BYTE-4   TO ZOS-DOUBLE-BYTE-4.
-           MOVE IEEE-DOUBLE-BYTE-5   TO ZOS-DOUBLE-BYTE-5.
-           MOVE IEEE-DOUBLE-BYTE-6   TO ZOS-DOUBLE-BYTE-6.
-           MOVE IEEE-DOUBLE-BYTE-7   TO ZOS-DOUBLE-BYTE-7.
-           MOVE IEEE-DOUBLE-BYTE-8   TO ZOS-DOUBLE-BYTE-8.
+           MOVE W-HWORD2-BYTE-2        TO ZOS-DOUBLE-BYTE-2.
+           MOVE W-IEEE-DOUBLE-BYTE-3   TO ZOS-DOUBLE-BYTE-3.
+           MOVE W-IEEE-DOUBLE-BYTE-4   TO ZOS-DOUBLE-BYTE-4.
+           MOVE W-IEEE-DOUBLE-BYTE-5   TO ZOS-DOUBLE-BYTE-5.
+           MOVE W-IEEE-DOUBLE-BYTE-6   TO ZOS-DOUBLE-BYTE-6.
+           MOVE W-IEEE-DOUBLE-BYTE-7   TO ZOS-DOUBLE-BYTE-7.
+           MOVE W-IEEE-DOUBLE-BYTE-8   TO ZOS-DOUBLE-BYTE-8.
       D    DISPLAY 'IEEE MANTISSA=' ZOS-DOUBLE-COMP.
 
       *    // Determine hex exponent. Add 4 bits first
@@ -1110,9 +1151,9 @@
        END-PBS322FI. EXIT.
 
       * ---------------------------------------------------------------
-      * Convert z/OS Float to Protocol Buffer IEEE Float
+      * Convert z/OS Float to Protocol Buffer IEEE Float (Little Endian)
       *   param : ZOS-FLOAT
-      *   return: IEEE-FLOAT
+      *   return: IEEE-FLOAT-LE
       * ---------------------------------------------------------------
        PB2PFLOA.
 
@@ -1134,27 +1175,27 @@
            COMPUTE W-EXPONENT = W-EXPONENT * 4.
 
       *    // compute mantissa
-           MOVE ZOS-FLOAT-BYTES TO IEEE-FLOAT-BYTES.
-           MOVE LOW-VALUES TO IEEE-FLOAT-BYTE-1.
-      D    DISPLAY 'ZOS MANTISSA=' IEEE-FLOAT-COMP.
+           MOVE ZOS-FLOAT-BYTES TO W-IEEE-FLOAT-BYTES.
+           MOVE LOW-VALUES TO W-IEEE-FLOAT-BYTE-1.
+      D    DISPLAY 'ZOS MANTISSA=' W-IEEE-FLOAT-COMP.
 
       *    // IEEE zero is all zeroes
-           IF IEEE-FLOAT-COMP = ZERO
-              MOVE LOW-VALUES TO IEEE-FLOAT
+           IF W-IEEE-FLOAT-COMP = ZERO
+              MOVE LOW-VALUES TO W-IEEE-FLOAT
               IF W-SIGN = 1
-                 MOVE X'80' TO IEEE-FLOAT-BYTE-1
+                 MOVE X'80' TO W-IEEE-FLOAT-BYTE-1
               END-IF
-              GO TO END-PB2PFLOA
+              GO TO PB2PFLOA-REVERSE-AND-RETURN
            END-IF.
 
       *    // remove all leading binary zeroes from mantissa
-           PERFORM UNTIL IEEE-FLOAT-COMP NOT < 8388608
+           PERFORM UNTIL W-IEEE-FLOAT-COMP NOT < 8388608
                SUBTRACT 1 FROM W-EXPONENT
-               COMPUTE IEEE-FLOAT-COMP = IEEE-FLOAT-COMP * 2
+               COMPUTE W-IEEE-FLOAT-COMP = W-IEEE-FLOAT-COMP * 2
            END-PERFORM.
 
       D    DISPLAY 'SHIFTED BINARY EXPONENT=' W-EXPONENT.
-      D    DISPLAY 'SHIFTED MANTISSA=' IEEE-FLOAT-COMP.
+      D    DISPLAY 'SHIFTED MANTISSA=' W-IEEE-FLOAT-COMP.
 
       *    // smallest normalized exponent is -126, below, denormalize
            IF W-EXPONENT > -126
@@ -1165,7 +1206,14 @@
                    END-PB2PFLOA-DENORMALIZED
            END-IF.
 
-      D    PERFORM DISPLAY-IEEE-FLOAT THRU END-DISPLAY-IEEE-FLOAT.
+       PB2PFLOA-REVERSE-AND-RETURN.
+      *    // reverse to little endian
+           MOVE W-IEEE-FLOAT-BYTE-4 TO IEEE-FLOAT-LE-BYTE-1.
+           MOVE W-IEEE-FLOAT-BYTE-3 TO IEEE-FLOAT-LE-BYTE-2.
+           MOVE W-IEEE-FLOAT-BYTE-2 TO IEEE-FLOAT-LE-BYTE-3.
+           MOVE W-IEEE-FLOAT-BYTE-1 TO IEEE-FLOAT-LE-BYTE-4.
+
+      D    PERFORM DISPLAY-IEEE-FLOAT-LE THRU END-DISPLAY-IEEE-FLOAT-LE.
       D    DISPLAY 'PB2PFLOA ENDED'.
 
        END-PB2PFLOA. EXIT.
@@ -1182,14 +1230,14 @@
       *    // of exponent
            DIVIDE W-EXPONENT BY 2 GIVING W-HWORD
                   REMAINDER W-HWORD2.
-           COMPUTE IEEE-FLOAT-COMP = IEEE-FLOAT-COMP
+           COMPUTE W-IEEE-FLOAT-COMP = W-IEEE-FLOAT-COMP
                    + ((W-HWORD2 - 1) * 8388608)
 
       *    // store 7 bits of exponent and sign
            IF W-SIGN = 1
               ADD 128 TO W-HWORD
            END-IF.
-           MOVE W-HWORD-BYTE-2 TO IEEE-FLOAT-BYTE-1.
+           MOVE W-HWORD-BYTE-2 TO W-IEEE-FLOAT-BYTE-1.
 
        END-PB2PFLOA-NORMALIZED. EXIT.
 
@@ -1199,7 +1247,7 @@
 
       *    // exponent is right after the msb in ieee (not before)
            SUBTRACT 1 FROM W-EXPONENT.
-           COMPUTE IEEE-FLOAT-COMP = IEEE-FLOAT-COMP / 2.
+           COMPUTE W-IEEE-FLOAT-COMP = W-IEEE-FLOAT-COMP / 2.
 
       *    // denormalized numbers assume -127 as the exponent
       *    // (although it is stored as zero)
@@ -1209,18 +1257,18 @@
       D    DISPLAY 'DENORMALIZED SHIFT=' W-EXPONENT.
 
            COMPUTE W-HWORD = -1 * W-EXPONENT.
-           COMPUTE IEEE-FLOAT-COMP =
-                   IEEE-FLOAT-COMP / (2 ** (W-HWORD)).
+           COMPUTE W-IEEE-FLOAT-COMP =
+                   W-IEEE-FLOAT-COMP / (2 ** (W-HWORD)).
            IF W-SIGN = 1
-               MOVE X'80' TO IEEE-FLOAT-BYTE-1
+               MOVE X'80' TO W-IEEE-FLOAT-BYTE-1
            END-IF.
 
        END-PB2PFLOA-DENORMALIZED. EXIT.
 
       * ---------------------------------------------------------------
-      * Convert z/OS double to Protocol Buffer IEEE double
+      * Convert z/OS double to Protocol Buffer IEEE double (Little Endian)
       *   param : ZOS-DOUBLE
-      *   return: IEEE-DOUBLE
+      *   return: IEEE-DOUBLE-LE
       * ---------------------------------------------------------------
        PB2PDBLE.
 
@@ -1242,34 +1290,34 @@
            COMPUTE W-EXPONENT = W-EXPONENT * 4.
 
       *    // compute mantissa
-           MOVE ZOS-DOUBLE-BYTES TO IEEE-DOUBLE-BYTES.
-           MOVE LOW-VALUES TO IEEE-DOUBLE-BYTE-1.
-      D    DISPLAY 'ZOS MANTISSA=' IEEE-DOUBLE-COMP.
+           MOVE ZOS-DOUBLE-BYTES TO W-IEEE-DOUBLE-BYTES.
+           MOVE LOW-VALUES TO W-IEEE-DOUBLE-BYTE-1.
+      D    DISPLAY 'ZOS MANTISSA=' W-IEEE-DOUBLE-COMP.
 
       *    // IEEE zero is all zeroes
-           IF IEEE-DOUBLE-COMP = ZERO
-              MOVE LOW-VALUES TO IEEE-DOUBLE
+           IF W-IEEE-DOUBLE-COMP = ZERO
+              MOVE LOW-VALUES TO W-IEEE-DOUBLE
               IF W-SIGN = 1
-                 MOVE X'80' TO IEEE-DOUBLE-BYTE-1
+                 MOVE X'80' TO W-IEEE-DOUBLE-BYTE-1
               END-IF
-              GO TO END-PB2PDBLE
+              GO TO PB2PDBLE-REVERSE-AND-RETURN
            END-IF.
 
       *    // free up bits 53-56 that IEEE needs for the exponent
       *    // bit 54 is on if comp >= 2 ** 53
-           PERFORM UNTIL IEEE-DOUBLE-COMP < 9007199254740992
+           PERFORM UNTIL W-IEEE-DOUBLE-COMP < 9007199254740992
                ADD 1 TO W-EXPONENT
-               COMPUTE IEEE-DOUBLE-COMP = IEEE-DOUBLE-COMP / 2
+               COMPUTE W-IEEE-DOUBLE-COMP = W-IEEE-DOUBLE-COMP / 2
            END-PERFORM.
       *    // remove all leading binary zeroes from mantissa
       *    // bit 53 is on if comp >= 2 ** 52
-           PERFORM UNTIL IEEE-DOUBLE-COMP NOT < 4503599627370496
+           PERFORM UNTIL W-IEEE-DOUBLE-COMP NOT < 4503599627370496
                SUBTRACT 1 FROM W-EXPONENT
-               COMPUTE IEEE-DOUBLE-COMP = IEEE-DOUBLE-COMP * 2
+               COMPUTE W-IEEE-DOUBLE-COMP = W-IEEE-DOUBLE-COMP * 2
            END-PERFORM.
 
       D    DISPLAY 'SHIFTED BINARY EXPONENT=' W-EXPONENT.
-      D    DISPLAY 'SHIFTED MANTISSA=' IEEE-DOUBLE-COMP.
+      D    DISPLAY 'SHIFTED MANTISSA=' W-IEEE-DOUBLE-COMP.
 
       *    // smallest normalized exponent is -1022, below, denormalize
            IF W-EXPONENT > -1022
@@ -1280,7 +1328,19 @@
                    END-PB2PDBLE-DENORMALIZED
            END-IF.
 
-      D    PERFORM DISPLAY-IEEE-DOUBLE THRU END-DISPLAY-IEEE-DOUBLE.
+       PB2PDBLE-REVERSE-AND-RETURN.
+      *    // reverse to little endian
+           MOVE W-IEEE-DOUBLE-BYTE-8 TO IEEE-DOUBLE-LE-BYTE-1.
+           MOVE W-IEEE-DOUBLE-BYTE-7 TO IEEE-DOUBLE-LE-BYTE-2.
+           MOVE W-IEEE-DOUBLE-BYTE-6 TO IEEE-DOUBLE-LE-BYTE-3.
+           MOVE W-IEEE-DOUBLE-BYTE-5 TO IEEE-DOUBLE-LE-BYTE-4.
+           MOVE W-IEEE-DOUBLE-BYTE-4 TO IEEE-DOUBLE-LE-BYTE-5.
+           MOVE W-IEEE-DOUBLE-BYTE-3 TO IEEE-DOUBLE-LE-BYTE-6.
+           MOVE W-IEEE-DOUBLE-BYTE-2 TO IEEE-DOUBLE-LE-BYTE-7.
+           MOVE W-IEEE-DOUBLE-BYTE-1 TO IEEE-DOUBLE-LE-BYTE-8.
+
+      D    PERFORM DISPLAY-IEEE-DOUBLE-LE THRU
+      D        END-DISPLAY-IEEE-DOUBLE-LE.
       D    DISPLAY 'PB2PDBLE ENDED'.
 
        END-PB2PDBLE. EXIT.
@@ -1300,14 +1360,14 @@
       *    // of exponent
            DIVIDE W-EXPONENT BY 16 GIVING W-HWORD
                   REMAINDER W-HWORD2.
-           COMPUTE IEEE-DOUBLE-COMP = IEEE-DOUBLE-COMP
+           COMPUTE W-IEEE-DOUBLE-COMP = W-IEEE-DOUBLE-COMP
                    + ((W-HWORD2 - 1) * 4503599627370496)
 
       *    // store top 7 bits of exponent and sign in byte 1
            IF W-SIGN = 1
               ADD 128 TO W-HWORD
            END-IF.
-           MOVE W-HWORD-BYTE-2 TO IEEE-DOUBLE-BYTE-1.
+           MOVE W-HWORD-BYTE-2 TO W-IEEE-DOUBLE-BYTE-1.
 
        END-PB2PDBLE-NORMALIZED. EXIT.
 
@@ -1317,7 +1377,7 @@
 
       *    // exponent is right after the msb in ieee (not before)
            SUBTRACT 1 FROM W-EXPONENT.
-           COMPUTE IEEE-DOUBLE-COMP = IEEE-DOUBLE-COMP / 2.
+           COMPUTE W-IEEE-DOUBLE-COMP = W-IEEE-DOUBLE-COMP / 2.
 
       *    // denormalized numbers assume -1023 as the exponent
       *    // (although it is stored as zero)
@@ -1327,10 +1387,10 @@
       D    DISPLAY 'DENORMALIZED SHIFT=' W-EXPONENT.
 
            COMPUTE W-HWORD = -1 * W-EXPONENT.
-           COMPUTE IEEE-DOUBLE-COMP =
-                   IEEE-DOUBLE-COMP / (2 ** (W-HWORD)).
+           COMPUTE W-IEEE-DOUBLE-COMP =
+                   W-IEEE-DOUBLE-COMP / (2 ** (W-HWORD)).
            IF W-SIGN = 1
-               MOVE X'80' TO IEEE-DOUBLE-BYTE-1
+               MOVE X'80' TO W-IEEE-DOUBLE-BYTE-1
            END-IF.
 
        END-PB2PDBLE-DENORMALIZED. EXIT.
@@ -1378,28 +1438,30 @@
        END-DISPLAY-PB-FIXED32. EXIT.
 
       * ---------------------------------------------------------------
-      * Display the IEEE float in hexadecimal
+      * Display the IEEE float (little endian) in hexadecimal
       * ---------------------------------------------------------------
-       DISPLAY-IEEE-FLOAT.
-           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF IEEE-FLOAT.
+       DISPLAY-IEEE-FLOAT-LE.
+           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF IEEE-FLOAT-LE.
            SET ADDRESS OF BYTE-ARRAY-LEN TO ADDRESS OF W-L.
-           MOVE LENGTH OF IEEE-FLOAT TO W-L.
-           SET ADDRESS OF HEX-STRING TO ADDRESS OF W-IEEE-FLOAT-DISPLAY.
+           MOVE LENGTH OF IEEE-FLOAT-LE TO W-L.
+           SET ADDRESS OF HEX-STRING
+            TO ADDRESS OF W-IEEE-FLOAT-LE-DISPLAY.
            PERFORM PBBA2HEX THRU END-PBBA2HEX.
-           DISPLAY 'IEEE FLOAT=0x''' W-IEEE-FLOAT-DISPLAY ''''.
-       END-DISPLAY-IEEE-FLOAT. EXIT.
+           DISPLAY 'IEEE FLOAT-LE=0x''' W-IEEE-FLOAT-LE-DISPLAY ''''.
+       END-DISPLAY-IEEE-FLOAT-LE. EXIT.
 
       * ---------------------------------------------------------------
-      * Display the IEEE double in hexadecimal
+      * Display the IEEE double (little endian) in hexadecimal
       * ---------------------------------------------------------------
-       DISPLAY-IEEE-DOUBLE.
-           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF IEEE-DOUBLE.
+       DISPLAY-IEEE-DOUBLE-LE.
+           SET ADDRESS OF BYTE-ARRAY TO ADDRESS OF IEEE-DOUBLE-LE.
            SET ADDRESS OF BYTE-ARRAY-LEN TO ADDRESS OF W-L.
-           MOVE LENGTH OF IEEE-DOUBLE TO W-L.
-           SET ADDRESS OF HEX-STRING TO ADDRESS OF W-IEEE-DOUBLE-DISPLAY.
+           MOVE LENGTH OF IEEE-DOUBLE-LE TO W-L.
+           SET ADDRESS OF HEX-STRING
+            TO ADDRESS OF W-IEEE-DOUBLE-LE-DISPLAY.
            PERFORM PBBA2HEX THRU END-PBBA2HEX.
-           DISPLAY 'IEEE DOUBLE=0x''' W-IEEE-DOUBLE-DISPLAY ''''.
-       END-DISPLAY-IEEE-DOUBLE. EXIT.
+           DISPLAY 'IEEE DOUBLE=0x''' W-IEEE-DOUBLE-LE-DISPLAY ''''.
+       END-DISPLAY-IEEE-DOUBLE-LE. EXIT.
 
       * ---------------------------------------------------------------
       * Format a byte array in hexadecimal

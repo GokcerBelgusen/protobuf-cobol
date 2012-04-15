@@ -1,7 +1,7 @@
 package enumsample;
 option java_package = "com.example.enumsample";
 
-message SearchRequest {
+message EnumRequest {
   required string query = 1;
   optional int32 page_number = 2;
   optional int32 result_per_page = 3 [default = 10];

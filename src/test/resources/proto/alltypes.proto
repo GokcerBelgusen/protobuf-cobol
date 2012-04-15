@@ -21,6 +21,12 @@ message AllTypes {
   required int64 aint64 = 7;
   required uint32 auint32 = 8;
   required uint64 auint64 = 9;
+  required sint32 asint32 = 10;
+  required sint64 asint64 = 11;
+  required fixed64 afixed64 = 12;
+  required sfixed64 asfixed64 = 13;
+  required fixed32 afixed32 = 14;
+  required sfixed32 asfixed32 = 15;
 }
 
 message Uint64 {

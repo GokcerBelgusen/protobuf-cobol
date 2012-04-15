@@ -12,22 +12,23 @@ import com.example.alltypes.AllTypesProtos.Sint64;
 import com.example.alltypes.AllTypesProtos.Sint64ZigZag;
 import com.example.alltypes.AllTypesProtos.Uint32;
 import com.example.alltypes.AllTypesProtos.Uint64;
-import com.example.hierarchy.Hierarchy.CustomerData;
-import com.example.tutorial.AddressBookProtos.Person;
-import com.example.tutorial.AddressBookProtos.Person.PhoneType;
 import com.legstar.coxb.host.HostData;
 
 public class ProtobufWriteWireTest extends TestCase {
 
     public void test1() {
-        Person john = Person
+        com.example.tutorial.AddressBookProtos.Person john = com.example.tutorial.AddressBookProtos.Person
                 .newBuilder()
                 .setId(1234)
                 .setName("John Doe")
                 .setEmail("jdoe@example.com")
                 .addPhone(
-                        Person.PhoneNumber.newBuilder().setNumber("555-4321")
-                                .setType(Person.PhoneType.HOME)).build();
+                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                .newBuilder()
+                                .setNumber("555-4321")
+                                .setType(
+                                        com.example.tutorial.AddressBookProtos.Person.PhoneType.HOME))
+                .build();
 
         byte[] result = john.toByteArray();
         assertEquals(45, result.length);
@@ -37,7 +38,8 @@ public class ProtobufWriteWireTest extends TestCase {
     }
 
     public void test2() {
-        Person john = Person.newBuilder().setId(1234).setName("John Doe")
+        com.example.tutorial.AddressBookProtos.Person john = com.example.tutorial.AddressBookProtos.Person
+                .newBuilder().setId(1234).setName("John Doe")
                 .setEmail("jdoe@example.com").build();
 
         byte[] result = john.toByteArray();
@@ -48,17 +50,24 @@ public class ProtobufWriteWireTest extends TestCase {
     }
 
     public void test3() {
-        Person john = Person
+        com.example.tutorial.AddressBookProtos.Person john = com.example.tutorial.AddressBookProtos.Person
                 .newBuilder()
                 .setId(1234)
                 .setName("John Doe")
                 .setEmail("jdoe@example.com")
                 .addPhone(
-                        Person.PhoneNumber.newBuilder().setNumber("555-4321")
-                                .setType(Person.PhoneType.HOME))
+                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                .newBuilder()
+                                .setNumber("555-4321")
+                                .setType(
+                                        com.example.tutorial.AddressBookProtos.Person.PhoneType.HOME))
                 .addPhone(
-                        Person.PhoneNumber.newBuilder().setNumber("656-5012")
-                                .setType(Person.PhoneType.MOBILE)).build();
+                        com.example.tutorial.AddressBookProtos.Person.PhoneNumber
+                                .newBuilder()
+                                .setNumber("656-5012")
+                                .setType(
+                                        com.example.tutorial.AddressBookProtos.Person.PhoneType.MOBILE))
+                .build();
 
         byte[] result = john.toByteArray();
         assertEquals(59, result.length);
@@ -100,6 +109,19 @@ public class ProtobufWriteWireTest extends TestCase {
                 HostData.toHexString(result));
     }
 
+    public void testHierarchy() {
+        com.example.hierarchy.Hierarchy.CustomerData customerData = com.example.hierarchy.Hierarchy.CustomerData
+                .newBuilder()
+                .setChild1(
+                        com.example.hierarchy.Hierarchy.CustomerData.Child1
+                                .newBuilder().setChild2("child2"))
+                .setChild3("child3").build();
+        byte[] result = customerData.toByteArray();
+        assertEquals(18, result.length);
+        assertEquals("0a080a066368696c643212066368696c6433",
+                HostData.toHexString(result));
+    }
+
     public void testTutorialMessage() {
 
         com.example.tutorial.AddressBookProtos.AddressBook addressBook = com.example.tutorial.AddressBookProtos.AddressBook
@@ -114,12 +136,14 @@ public class ProtobufWriteWireTest extends TestCase {
                                         com.example.tutorial.AddressBookProtos.Person.PhoneNumber
                                                 .newBuilder()
                                                 .setNumber("041656897542")
-                                                .setType(PhoneType.HOME))
+                                                .setType(
+                                                        com.example.tutorial.AddressBookProtos.Person.PhoneType.HOME))
                                 .addPhone(
                                         com.example.tutorial.AddressBookProtos.Person.PhoneNumber
                                                 .newBuilder()
                                                 .setNumber("068645891245")
-                                                .setType(PhoneType.MOBILE))
+                                                .setType(
+                                                        com.example.tutorial.AddressBookProtos.Person.PhoneType.MOBILE))
                                 .build())
                 .addPerson(
                         com.example.tutorial.AddressBookProtos.Person
@@ -131,18 +155,79 @@ public class ProtobufWriteWireTest extends TestCase {
                                         com.example.tutorial.AddressBookProtos.Person.PhoneNumber
                                                 .newBuilder()
                                                 .setNumber("05689124578")
-                                                .setType(PhoneType.HOME))
+                                                .setType(
+                                                        com.example.tutorial.AddressBookProtos.Person.PhoneType.HOME))
                                 .addPhone(
                                         com.example.tutorial.AddressBookProtos.Person.PhoneNumber
                                                 .newBuilder()
                                                 .setNumber("0689537845")
-                                                .setType(PhoneType.MOBILE))
+                                                .setType(
+                                                        com.example.tutorial.AddressBookProtos.Person.PhoneType.MOBILE))
                                 .build()).build();
 
         byte[] result = addressBook.toByteArray();
         assertEquals(144, result.length);
         assertEquals(
                 "0a470a0b4461727468205661646f7210011a126461727468406461726b737461722e636f6d22100a0c303431363536383937353432100122100a0c30363836343538393132343510000a450a0d4c756b6520536b7977616b657210011a116c756b65407461746f75696e652e636f6d220f0a0b30353638393132343537381001220e0a0a303638393533373834351000",
+                HostData.toHexString(result));
+    }
+
+    public void testComplexArrays() {
+        com.example.complexarrays.Complexarrays.A a = com.example.complexarrays.Complexarrays.A
+                .newBuilder()
+                .addB(com.example.complexarrays.Complexarrays.B.newBuilder()
+                        .setC(com.example.complexarrays.Complexarrays.C
+                                .newBuilder().addD("D11").addD("D12")))
+                .addB(com.example.complexarrays.Complexarrays.B.newBuilder()
+                        .setC(com.example.complexarrays.Complexarrays.C
+                                .newBuilder().addD("D21").addD("D22")))
+                .addE(com.example.complexarrays.Complexarrays.E.newBuilder()
+                        .setF("F1"))
+                .addE(com.example.complexarrays.Complexarrays.E.newBuilder()
+                        .setF("F2"))
+                .addE(com.example.complexarrays.Complexarrays.E.newBuilder()
+                        .setF("F3")).build();
+        byte[] result = a.toByteArray();
+        assertEquals(46, result.length);
+        assertEquals(
+                "0a0c0a0a0a034431310a034431320a0c0a0a0a034432310a0344323212040a02463112040a02463212040a024633",
+                HostData.toHexString(result));
+    }
+
+    public void testEnumSample() {
+        com.example.enumsample.Enumsample.EnumRequest request = com.example.enumsample.Enumsample.EnumRequest
+                .newBuilder()
+                .setQuery("John Doe")
+                .setPageNumber(5)
+                .setResultPerPage(10)
+                .setCorpus(
+                        com.example.enumsample.Enumsample.EnumRequest.Corpus.IMAGES)
+                .build();
+
+        byte[] result = request.toByteArray();
+        assertEquals(16, result.length);
+        assertEquals("0a084a6f686e20446f651005180a2002",
+                HostData.toHexString(result));
+    }
+
+    public void testAlltypes() {
+        com.example.alltypes.AllTypesProtos.AllTypes request = com.example.alltypes.AllTypesProtos.AllTypes
+                .newBuilder()
+                .setAbool(true)
+                .setAdouble(0.25689e2)
+                .setAenum(
+                        com.example.alltypes.AllTypesProtos.AllTypes.Aenum.PRODUCTS)
+                .setAfixed32(675).setAfixed64(Integer.MAX_VALUE)
+                .setAfloat(-0.45689e12f).setAint32(56).setAint64(-64)
+                .setAsfixed32(-456897).setAsfixed64(Integer.MIN_VALUE)
+                .setAsint32(-5689457).setAsint64(456655865)
+                .setAstring("classified").setAuint32(45887).setAuint64(2)
+                .build();
+
+        byte[] result = request.toByteArray();
+        assertEquals(88, result.length);
+        assertEquals(
+                "0801120a636c617373696669656419aaf1d24d62b0394020052d88c1d4d2303838c0ffffffffffffffff0140bfe602480250e1c1b60558f28fc0b30361ffffff7f000000006900000080ffffffff75a30200007d3f07f9ff",
                 HostData.toHexString(result));
     }
 
@@ -463,17 +548,6 @@ public class ProtobufWriteWireTest extends TestCase {
         byte[] result = int32.toByteArray();
         assertEquals(5, result.length);
         assertEquals("0d00000080", HostData.toHexString(result));
-    }
-
-    public void testHierarchy() {
-        CustomerData customerData = CustomerData
-                .newBuilder()
-                .setChild1(CustomerData.Child1.newBuilder().setChild2("child2"))
-                .setChild3("child3").build();
-        byte[] result = customerData.toByteArray();
-        assertEquals(18, result.length);
-        assertEquals("0a080a066368696c643212066368696c6433",
-                HostData.toHexString(result));
     }
 
 }

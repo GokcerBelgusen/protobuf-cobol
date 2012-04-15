@@ -1,0 +1,263 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SEARREQW.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * Subprogram that writes a protobuf byte stream from  a cobol   *
+      * structure content.                                            *
+      *                                                               *
+      * This is generated code produced by protobuf-cobol.            *
+      * It uses the PB4CBLIB protobuf-cobol library.                  *
+      *                                                               *
+      * Limits:                                                       *
+      *    256 fields per message                                     *
+      *    16777215 message byte length                               *
+      *                                                               *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+
+      *    // z/OS code page
+       77  ZOS-CODEPAGE             PIC 9(4) COMP VALUE 1047.
+
+      *    // Protobuf field key and type
+       01  W-P-KEYTYPE.
+           05  W-P-KEY               PIC 9(8) COMP-5.
+           05  W-P-TYPE              PIC 9(4) COMP-5.
+               88 VARINT             VALUE 0.
+               88 FIXED-64           VALUE 1.
+               88 LENGTH-DELIMITED   VALUE 2.
+               88 FIXED-32           VALUE 5.
+               88 VALID-WIRE-TYPE    VALUE 0, 1, 2, 5.
+
+      *    // Tracks the current location in protobuf byte stream
+       01  W-I                       PIC 9(8) COMP-5.
+
+      *    // A pointer to the current protobuf byte stream location
+       01  W-STREAM                  POINTER.
+
+      *    // A double word binary to hold unsigned long integers
+       01  W-Z-UINT64                PIC 9(18) COMP-5.
+
+      *    // A single word binary to hold unsigned integers
+       01  W-Z-UINT32                PIC 9(8) COMP-5.
+
+      *    // A double word binary to hold signed long integers
+       01  W-Z-INT64                 PIC S9(18) COMP-5.
+
+      *    // A single word binary to hold signed integers
+       01  W-Z-INT32                 PIC S9(8) COMP-5.
+
+      *    // A simple floating point numeric
+       01  W-Z-COMP-1                COMP-1.
+
+      *    // A double floating point numeric
+       01  W-Z-COMP-2                COMP-2.
+
+      *    // Library calls return how many stream bytes were consumed
+       01  W-BYTES-USED              PIC 9(8) COMP-5.
+
+
+
+      *    // Conversion buffer for Strings
+       01  W-UTF16-BUFFER            PIC N(32).
+
+      *    // Temporary storage for variable integers
+       01  W-P-VARINT                PIC X(10).
+
+      *    // Counters
+       01  W-J                       PIC 9(8) COMP-5.
+
+      *****************************************************************
+      *        L I N K A G E    S E C T I O N                         *
+      *****************************************************************
+       LINKAGE SECTION.
+
+      *    // The protobuf input byte stream
+       01  PROTOBUF-BYTES            PIC X(16777215).
+
+      *    // The protobuf input byte stream length
+       01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.
+
+      *    // The input COBOL structure
+       01  SearchRequest.
+           03  query PIC X(144) DISPLAY.
+           03  page-number PIC S9(9) COMP-5.
+           03  result-per-page PIC S9(9) COMP-5.
+
+
+      *    // A protobuf variable integer
+       01  P-VARINT                  PIC X(10).
+
+      *    // A protobuf float (IEEE 754)
+       01  P-FLOAT                   PIC X(4).
+
+      *    // A protobuf double (IEEE 754)
+       01  P-DOUBLE                  PIC X(8).
+
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION USING
+               SearchRequest,
+               PROTOBUF-BYTES,
+               PROTOBUF-BYTES-LEN.
+      *    // Write the root protobuf message
+           MOVE 1 TO W-I.
+           PERFORM WRITE-SearchRequest THRU
+               END-WRITE-SearchRequest.
+           COMPUTE PROTOBUF-BYTES-LEN = W-I - 1.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * Write the SearchRequest message field
+      * ---------------------------------------------------------------
+       WRITE-SearchRequest.
+      D    DISPLAY 'WRITE-SearchRequest OFFSET=' W-I.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 1 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 
+                       LENGTH OF query
+                   IF (query(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               MOVE FUNCTION
+                   NATIONAL-OF(query,
+                               ZOS-CODEPAGE) TO W-UTF16-BUFFER
+               MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01208)
+                   TO PROTOBUF-BYTES(W-I:W-Z-UINT32)
+               COMPUTE W-BYTES-USED = W-Z-UINT32
+      D        DISPLAY 'query ='
+      D                 query
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
+
+           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 2 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+    
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = page-number
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+      D        DISPLAY 'page-number ='
+      D                 page-number
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
+           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 3 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+    
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = result-per-page
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+      D        DISPLAY 'result-per-page ='
+      D                 result-per-page
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
+           END-PERFORM.
+       END-WRITE-SearchRequest. EXIT.
+
+
+
+
+      * ---------------------------------------------------------------
+      * Write a field key (identifier) and type to the stream.
+      *
+      * Field and Type are both encoded in a single variable integer.
+      *
+      * Field type is 3 lower bits of header varint, higher bits are
+      * the field key (identifier)
+      * ---------------------------------------------------------------
+       PUT-P-KEYTYPE.
+           COMPUTE W-Z-UINT64 = W-P-TYPE + (8 * W-P-KEY).
+           PERFORM Z-UINT64-TO-P-VARINT THRU END-Z-UINT64-TO-P-VARINT.
+       END-PUT-P-KEYTYPE. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned double word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT64-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBU642VI' USING W-Z-UINT64 P-VARINT W-BYTES-USED.
+       END-Z-UINT64-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned single word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT32-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBU322VI' USING W-Z-UINT32 P-VARINT W-BYTES-USED.
+       END-Z-UINT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS642VI' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS322VI' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a COMP-1 as a IEEE float to the output stream.
+      * ---------------------------------------------------------------
+       Z-COMP-1-TO-P-FLOAT.
+           SET ADDRESS OF P-FLOAT TO W-STREAM.
+           CALL 'PB2PFLOA' USING W-Z-COMP-1 P-FLOAT W-BYTES-USED.
+       END-Z-COMP-1-TO-P-FLOAT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a COMP-2 as a IEEE double to the output stream.
+      * ---------------------------------------------------------------
+       Z-COMP-2-TO-P-DOUBLE.
+           SET ADDRESS OF P-DOUBLE TO W-STREAM.
+           CALL 'PB2PDBLE' USING W-Z-COMP-2 P-DOUBLE W-BYTES-USED.
+       END-Z-COMP-2-TO-P-DOUBLE. EXIT.
+
+       END PROGRAM SEARREQW.

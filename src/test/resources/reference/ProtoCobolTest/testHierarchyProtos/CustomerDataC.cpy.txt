@@ -1,0 +1,7 @@
+      * ----------------------------------------------------------------
+      * Generated copybook for CustomerData
+      * ----------------------------------------------------------------
+       01  CustomerData.
+           03  Child1.
+             05  child2 PIC X(32) DISPLAY.
+           03  child3 PIC X(32) DISPLAY.

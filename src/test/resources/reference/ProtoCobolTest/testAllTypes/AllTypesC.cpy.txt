@@ -18,3 +18,9 @@
            03  aint64 PIC S9(18) COMP-5.
            03  auint32 PIC 9(9) COMP-5.
            03  auint64 PIC 9(18) COMP-5.
+           03  asint32 PIC S9(9) COMP-5.
+           03  asint64 PIC S9(18) COMP-5.
+           03  afixed64 PIC 9(18) COMP-5.
+           03  asfixed64 PIC S9(18) COMP-5.
+           03  afixed32 PIC 9(9) COMP-5.
+           03  asfixed32 PIC S9(9) COMP-5.

@@ -16,6 +16,9 @@
        01  PROTOBUF-BYTES                    PIC X(4096).
        01  PROTOBUF-BYTES-LEN                PIC 9(8) COMP-5.
        01  W-BYTES-USED                      PIC 9(8) COMP-5.
+       01  PROTOBUF-BYTES-HEX-STRING         PIC X(8192).
+
+       01  W-L                               PIC 9(4) COMP-5.
 
       *    // The output COBOL structure
        01  SearchRequest.
@@ -33,13 +36,16 @@
       * TEST TO SearchRequest 
       * ---------------------------------------------------------------
            DISPLAY "TO-SearchRequest ======= 0 =============="
-           MOVE X'0a084a6f686e20446f651005180a' TO PROTOBUF-BYTES.
-           MOVE 14 TO PROTOBUF-BYTES-LEN.
            PERFORM TEST-SEARREQP THRU END-TEST-SEARREQP.
+           PERFORM TEST-SEARREQW THRU END-TEST-SEARREQW.
            
            GOBACK.
 
        TEST-SEARREQP.
+           DISPLAY 'TEST-SEARREQP'.
+
+           MOVE X'0a084a6f686e20446f651005180a' TO PROTOBUF-BYTES.
+           MOVE 14 TO PROTOBUF-BYTES-LEN.
            CALL 'SEARREQP' USING PROTOBUF-BYTES
                                  PROTOBUF-BYTES-LEN
                                  SearchRequest.
@@ -48,6 +54,25 @@
            DISPLAY 'result-per-page=' result-per-page.
            
        END-TEST-SEARREQP. EXIT.
+
+       TEST-SEARREQW.
+           DISPLAY 'TEST-SEARREQW'.
+          
+           MOVE LOW-VALUES TO PROTOBUF-BYTES.
+           MOVE ZERO TO PROTOBUF-BYTES-LEN.
+           CALL 'SEARREQW' USING SearchRequest
+                                 PROTOBUF-BYTES
+                                 PROTOBUF-BYTES-LEN.
+
+           COMPUTE W-L = PROTOBUF-BYTES-LEN.
+           CALL 'PBBA2HEX' USING W-L
+                           PROTOBUF-BYTES
+                           PROTOBUF-BYTES-HEX-STRING
+           
+           DISPLAY 'PROTOBUF-BYTES-LEN=' PROTOBUF-BYTES-LEN.
+           DISPLAY 'PROTOBUF-BYTES=' PROTOBUF-BYTES-HEX-STRING.
+
+       END-TEST-SEARREQW. EXIT.
 
        END PROGRAM PBCTSIMP.
 

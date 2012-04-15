@@ -13,14 +13,15 @@
       *        W O R K I N G    S T O R A G E    S E C T I O N        *
       *****************************************************************
        WORKING-STORAGE SECTION.
-       01  W-IEEE-FLOAT                      PIC X(4).
-       01  W-ZOS-FLOAT                       USAGE COMP-1.
+       01  W-IEEE-FLOAT-LE                    PIC X(4).
+       01  W-ZOS-FLOAT                        USAGE COMP-1.
+       01  W-BYTES-USED                       PIC 9(8) COMP-5.
 
-       01  W-EXPECTED-IEEE-FLOAT             PIC X(4).
-       01  W-EXPECTED-ZOS-FLOAT              USAGE COMP-1.
+       01  W-EXPECTED-IEEE-FLOAT              PIC X(4).
+       01  W-EXPECTED-ZOS-FLOAT               USAGE COMP-1.
 
-       01  W-FLOAT-ARRAY-LEN                 PIC 9(4) COMP-5 VALUE 4.
-       01  W-FLOAT-HEX-STRING                PIC X(8).
+       01  W-FLOAT-ARRAY-LEN                  PIC 9(4) COMP-5 VALUE 4.
+       01  W-FLOAT-HEX-STRING                 PIC X(8).
 
        01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
       *****************************************************************
@@ -32,32 +33,32 @@
       * TEST TO ZOS Float
       * ---------------------------------------------------------------
            DISPLAY "TO-ZOSFLOAT ======= -375.256 =============="
-           MOVE X'C3BBA0C5' TO W-IEEE-FLOAT.
+           MOVE X'C8A0BBC3' TO W-IEEE-FLOAT-LE.
            MOVE -375.256 to W-EXPECTED-ZOS-FLOAT.
            PERFORM TEST-PB2ZFLOA THRU END-TEST-PB2ZFLOA.
 
            DISPLAY "TO-ZOSFLOAT ======= 0.0 =============="
-           MOVE X'00000000' TO W-IEEE-FLOAT.
+           MOVE X'00000000' TO W-IEEE-FLOAT-LE.
            MOVE 0.0 to W-EXPECTED-ZOS-FLOAT.
            PERFORM TEST-PB2ZFLOA THRU END-TEST-PB2ZFLOA.
 
            DISPLAY "TO-ZOSFLOAT ======= -0.0 =============="
-           MOVE X'80000000' TO W-IEEE-FLOAT.
+           MOVE X'00000080' TO W-IEEE-FLOAT-LE.
            MOVE 0.0 to W-EXPECTED-ZOS-FLOAT.
            PERFORM TEST-PB2ZFLOA THRU END-TEST-PB2ZFLOA.
 
            DISPLAY "TO-ZOSFLOAT ===3.40282347e+38f======="
-           MOVE X'7F7FFFFF' TO W-IEEE-FLOAT.
+           MOVE X'FFFF7F7F' TO W-IEEE-FLOAT-LE.
            MOVE 3.40282347e+38 to W-EXPECTED-ZOS-FLOAT.
            PERFORM TEST-PB2ZFLOA THRU END-TEST-PB2ZFLOA.
 
            DISPLAY "TO-ZOSFLOAT =====1.40239846e-45f=========="
-           MOVE X'00000001' TO W-IEEE-FLOAT.
+           MOVE X'01000000' TO W-IEEE-FLOAT-LE.
            MOVE 1.40239846e-45 to W-EXPECTED-ZOS-FLOAT.
            PERFORM TEST-PB2ZFLOA THRU END-TEST-PB2ZFLOA.
 
            DISPLAY "TO-ZOSFLOAT =====1.40239846e-1f=========="
-           MOVE X'3E0F9B09' TO W-IEEE-FLOAT.
+           MOVE X'099B0F3E' TO W-IEEE-FLOAT-LE.
            MOVE 1.40239846e-1 to W-EXPECTED-ZOS-FLOAT.
            PERFORM TEST-PB2ZFLOA THRU END-TEST-PB2ZFLOA.
 
@@ -66,7 +67,7 @@
       * ---------------------------------------------------------------
            DISPLAY "TO-IEEEFLOAT ==========-375.256 =========="
            COMPUTE W-ZOS-FLOAT = -375.256.
-           MOVE X'C3BBA0C8' to W-EXPECTED-IEEE-FLOAT.
+           MOVE X'C8A0BBC3' to W-EXPECTED-IEEE-FLOAT.
            PERFORM TEST-PB2PFLOA THRU END-TEST-PB2PFLOA.
 
            DISPLAY "TO-IEEEFLOAT ==========0.0 =========="
@@ -81,34 +82,35 @@
 
            DISPLAY "TO-IEEEFLOAT ==========1.40239846e-1f =========="
            COMPUTE W-ZOS-FLOAT = 1.40239846e-1.
-           MOVE X'3E0F9B08' to W-EXPECTED-IEEE-FLOAT.
+           MOVE X'089B0F3E' to W-EXPECTED-IEEE-FLOAT.
            PERFORM TEST-PB2PFLOA THRU END-TEST-PB2PFLOA.
 
            DISPLAY "TO-IEEEFLOAT ==========1.40239846e-45f =========="
            COMPUTE W-ZOS-FLOAT = 1.40239846e-45.
-           MOVE X'00000001' to W-EXPECTED-IEEE-FLOAT.
+           MOVE X'01000000' to W-EXPECTED-IEEE-FLOAT.
            PERFORM TEST-PB2PFLOA THRU END-TEST-PB2PFLOA.
 
            DISPLAY "TO-IEEEFLOAT ==========1.17549435E-38 =========="
            COMPUTE W-ZOS-FLOAT = 1.17549435E-38.
-           MOVE X'00800000' to W-EXPECTED-IEEE-FLOAT.
+           MOVE X'00008000' to W-EXPECTED-IEEE-FLOAT.
            PERFORM TEST-PB2PFLOA THRU END-TEST-PB2PFLOA.
 
            DISPLAY "TO-IEEEFLOAT ==========2.3509886E-38 =========="
            COMPUTE W-ZOS-FLOAT = 2.3509886E-38.
-           MOVE X'01000000' to W-EXPECTED-IEEE-FLOAT.
+           MOVE X'00000001' to W-EXPECTED-IEEE-FLOAT.
            PERFORM TEST-PB2PFLOA THRU END-TEST-PB2PFLOA.
 
            DISPLAY "TO-IEEEFLOAT ==========5.88E-39 =========="
            COMPUTE W-ZOS-FLOAT = 5.88E-39.
-           MOVE X'0040070C' to W-EXPECTED-IEEE-FLOAT.
+           MOVE X'0C074000' to W-EXPECTED-IEEE-FLOAT.
            PERFORM TEST-PB2PFLOA THRU END-TEST-PB2PFLOA.
 
            MOVE W-RETURN-CODE to RETURN-CODE.
            GOBACK.
 
        TEST-PB2ZFLOA.
-           CALL 'PB2ZFLOA' USING W-IEEE-FLOAT W-ZOS-FLOAT.
+           CALL 'PB2ZFLOA' USING W-IEEE-FLOAT-LE W-ZOS-FLOAT
+                 W-BYTES-USED.
            IF W-ZOS-FLOAT NOT = W-EXPECTED-ZOS-FLOAT
               DISPLAY 'ERROR: ZOS-FLOAT'
               DISPLAY '    RESULT  : ' W-ZOS-FLOAT
@@ -120,11 +122,12 @@
        END-TEST-PB2ZFLOA. EXIT.
 
        TEST-PB2PFLOA.
-           CALL 'PB2PFLOA' USING W-ZOS-FLOAT W-IEEE-FLOAT.
-           IF W-IEEE-FLOAT NOT = W-EXPECTED-IEEE-FLOAT
+           CALL 'PB2PFLOA' USING W-ZOS-FLOAT W-IEEE-FLOAT-LE
+                W-BYTES-USED.
+           IF W-IEEE-FLOAT-LE NOT = W-EXPECTED-IEEE-FLOAT
               DISPLAY 'ERROR: IEEE-FLOAT'
               CALL 'PBBA2HEX' USING W-FLOAT-ARRAY-LEN
-                              W-IEEE-FLOAT
+                              W-IEEE-FLOAT-LE
                               W-FLOAT-HEX-STRING
               DISPLAY '    RESULT  : ' W-FLOAT-HEX-STRING
               CALL 'PBBA2HEX' USING W-FLOAT-ARRAY-LEN

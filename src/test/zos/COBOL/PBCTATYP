@@ -1,0 +1,114 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PBCTATYP.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * TEST GENERATED PROGRAMS FOR: alltypes.proto                   *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+       01  PROTOBUF-BYTES                    PIC X(4096).
+       01  PROTOBUF-BYTES-LEN                PIC 9(8) COMP-5.
+       01  W-BYTES-USED                      PIC 9(8) COMP-5.
+       01  PROTOBUF-BYTES-HEX-STRING         PIC X(8192).
+
+       01  W-L                               PIC 9(4) COMP-5.
+
+      *    // The COBOL structure
+       01  AllTypes.
+           03  abool PIC 9(1) BINARY.
+           03  astring PIC X(32) DISPLAY.
+           03  adouble COMP-2.
+           03  aenum PIC 9(4) COMP-5.
+             88  UNIVERSAL VALUE 0.
+             88  WEB VALUE 1.
+             88  IMAGES VALUE 2.
+             88  LOCAL VALUE 3.
+             88  NEWS VALUE 4.
+             88  PRODUCTS VALUE 5.
+             88  VIDEO VALUE 6.
+           03  afloat COMP-1.
+           03  aint32 PIC S9(9) COMP-5.
+           03  aint64 PIC S9(18) COMP-5.
+           03  auint32 PIC 9(9) COMP-5.
+           03  auint64 PIC 9(18) COMP-5.
+           03  asint32 PIC S9(9) COMP-5.
+           03  asint64 PIC S9(18) COMP-5.
+           03  afixed64 PIC 9(18) COMP-5.
+           03  asfixed64 PIC S9(18) COMP-5.
+           03  afixed32 PIC 9(9) COMP-5.
+           03  asfixed32 PIC S9(9) COMP-5.
+
+
+       01  W-RETURN-CODE                      PIC 9(4) COMP VALUE 0.
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      * ---------------------------------------------------------------
+      * TEST TO AllTypes
+      * ---------------------------------------------------------------
+           DISPLAY "TO-AllTypes ======= 0 =============="
+           PERFORM TEST-ALLTYPEP THRU END-TEST-ALLTYPEP.
+           PERFORM TEST-ALLTYPEW THRU END-TEST-ALLTYPEW.
+
+           GOBACK.
+
+       TEST-ALLTYPEP.
+           DISPLAY 'TEST-ALLTYPEP'.
+
+           MOVE X'0801120a636c617373696669656419aaf1d24d62b0394020052d88
+      -          'c1d4d2303838c0ffffffffffffffff0140bfe602480250e1c1b605
+      -          '58f28fc0b30361ffffff7f000000006900000080ffffffff75a302
+      -          '00007d3f07f9ff' TO PROTOBUF-BYTES.
+           MOVE 88 TO PROTOBUF-BYTES-LEN.
+           CALL 'ALLTYPEP' USING PROTOBUF-BYTES
+                                 PROTOBUF-BYTES-LEN
+                                 AllTypes.
+
+           DISPLAY 'abool       =' abool.
+           DISPLAY 'astring     =' astring.
+           DISPLAY 'adouble     =' adouble.
+           DISPLAY 'aenum       =' aenum.
+           DISPLAY 'afloat      =' afloat.
+           DISPLAY 'aint32      =' aint32.
+           DISPLAY 'aint64      =' aint64.
+           DISPLAY 'auint32     =' auint32.
+           DISPLAY 'auint64     =' auint64.
+           DISPLAY 'asint32     =' asint32.
+           DISPLAY 'asint64     =' asint64.
+           DISPLAY 'afixed64    =' afixed64.
+           DISPLAY 'asfixed64   =' asfixed64.
+           DISPLAY 'afixed32    =' afixed32.
+           DISPLAY 'asfixed32   =' asfixed32.
+
+       END-TEST-ALLTYPEP. EXIT.
+
+       TEST-ALLTYPEW.
+           DISPLAY 'TEST-ALLTYPEW'.
+
+           MOVE LOW-VALUES TO PROTOBUF-BYTES.
+           MOVE ZERO TO PROTOBUF-BYTES-LEN.
+           CALL 'ALLTYPEW' USING AllTypes
+                                 PROTOBUF-BYTES
+                                 PROTOBUF-BYTES-LEN.
+
+           COMPUTE W-L = PROTOBUF-BYTES-LEN.
+           CALL 'PBBA2HEX' USING W-L
+                           PROTOBUF-BYTES
+                           PROTOBUF-BYTES-HEX-STRING
+
+           DISPLAY 'PROTOBUF-BYTES-LEN=' PROTOBUF-BYTES-LEN.
+           DISPLAY 'PROTOBUF-BYTES=' PROTOBUF-BYTES-HEX-STRING.
+
+       END-TEST-ALLTYPEW. EXIT.
+
+       END PROGRAM PBCTATYP.
+

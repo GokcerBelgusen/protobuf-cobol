@@ -1,9 +1,9 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. PBCTARRA.
+       PROGRAM-ID. PBCTCUST.
       *****************************************************************
       * OVERVIEW                                                      *
       * --------                                                      *
-      * TEST GENERATED PROGRAMS FOR: complexarrays.proto              *
+      * TEST GENERATED PROGRAMS FOR: hierarchy.proto                  *
       *****************************************************************
 
        ENVIRONMENT DIVISION.
@@ -21,15 +21,10 @@
        01  W-L                               PIC 9(4) COMP-5.
 
       *    // The COBOL structure
-       01  A.
-           03  OCCURS-COUNTERS--C.
-             05  B--C PIC 9(9) COMP-5.
-             05  E--C PIC 9(9) COMP-5.
-           03  B OCCURS 0 TO 10 DEPENDING ON B--C.
-             05  C.
-               07  d OCCURS 10 PIC X(32) DISPLAY.
-             03  E OCCURS 0 TO 10 DEPENDING ON E--C.
-               05  f PIC X(32) DISPLAY.
+       01  CustomerData.
+           03  Child1.
+             05  child2 PIC X(32) DISPLAY.
+           03  child3 PIC X(32) DISPLAY.
 
        01  W-I                                PIC 9(4) COMP VALUE 0.
        01  W-J                                PIC 9(4) COMP VALUE 0.
@@ -40,41 +35,34 @@
        PROCEDURE DIVISION.
 
       * ---------------------------------------------------------------
-      * TEST TO A 
+      * TEST TO CustomerData 
       * ---------------------------------------------------------------
-           DISPLAY "TO-ComplexArrays ======= 0 =============="
-           PERFORM TEST-AP THRU END-TEST-AP.
-           PERFORM TEST-AW THRU END-TEST-AW.
+           DISPLAY "TO-Hierarchy ======= 0 =============="
+           PERFORM TEST-CUSTDATP THRU END-TEST-CUSTDATP.
+           PERFORM TEST-CUSTDATW THRU END-TEST-CUSTDATW.
            
            GOBACK.
 
-       TEST-AP.
-           DISPLAY 'TEST-AP'.
+       TEST-CUSTDATP.
+           DISPLAY 'TEST-CUSTDATP'.
            
-           MOVE X'0a0c0a0a0a034431310a034431320a0c0a0a0a034432310a034432
-      -          '3212040a02463112040a02463212040a024633'
+           MOVE X'0a080a066368696c643212066368696c6433'
              TO PROTOBUF-BYTES.
-           MOVE 46 TO PROTOBUF-BYTES-LEN.
-           CALL 'AP' USING PROTOBUF-BYTES
+           MOVE 18 TO PROTOBUF-BYTES-LEN.
+           CALL 'CUSTDATP' USING PROTOBUF-BYTES
                                  PROTOBUF-BYTES-LEN
-                                 A.
-           PERFORM VARYING W-I FROM 1 BY 1 UNTIL W-I > B--C
-               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 10
-                   DISPLAY 'd(' W-I ', ' W-J ')=' d( W-I , W-J)
-               END-PERFORM
-           END-PERFORM.
-           PERFORM VARYING W-I FROM 1 BY 1 UNTIL W-I > E--C
-               DISPLAY 'f(' W-I ')=' f(W-I)
-           END-PERFORM.
+                                 CustomerData.
+           DISPLAY 'child2=' child2.
+           DISPLAY 'child3=' child3.
            
-       END-TEST-AP. EXIT.
+       END-TEST-CUSTDATP. EXIT.
 
-       TEST-AW.
-           DISPLAY 'TEST-AW'.
+       TEST-CUSTDATW.
+           DISPLAY 'TEST-CUSTDATW'.
           
            MOVE LOW-VALUES TO PROTOBUF-BYTES.
            MOVE ZERO TO PROTOBUF-BYTES-LEN.
-           CALL 'AW' USING A
+           CALL 'CUSTDATW' USING CustomerData
                                  PROTOBUF-BYTES
                                  PROTOBUF-BYTES-LEN.
 
@@ -86,7 +74,7 @@
            DISPLAY 'PROTOBUF-BYTES-LEN=' PROTOBUF-BYTES-LEN.
            DISPLAY 'PROTOBUF-BYTES=' PROTOBUF-BYTES-HEX-STRING.
 
-       END-TEST-AW. EXIT.
+       END-TEST-CUSTDATW. EXIT.
 
-       END PROGRAM PBCTARRA.
+       END PROGRAM PBCTCUST.
 
