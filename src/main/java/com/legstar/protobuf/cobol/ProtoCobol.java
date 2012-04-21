@@ -157,21 +157,18 @@ public class ProtoCobol {
         try {
             for (Descriptor messageDescriptor : fd.getMessageTypes()) {
 
-                CobolDataItem cobolDataItem = cobolMapper
+                ProtoCobolDataItem protoCobolDataItem = cobolMapper
                         .toCobol(messageDescriptor);
 
                 String copybookContent = CopybookGenerator
-                        .generate(cobolDataItem);
-                File copybookFile = writeCopybookFile(cobolDataItem,
-                        copybookContent);
+                        .generate(protoCobolDataItem.getCobolDataItem());
+                File copybookFile = writeCopybookFile(
+                        protoCobolDataItem.getCobolDataItem(), copybookContent);
                 if (logger.isDebugEnabled()) {
                     logger.debug("Generated copy book in file: "
                             + copybookFile.getPath());
                     logger.debug(copybookContent);
                 }
-
-                ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
-                        cobolDataItem);
 
                 String parserContent = ProtoCobolGenerator
                         .generateParser(protoCobolDataItem);

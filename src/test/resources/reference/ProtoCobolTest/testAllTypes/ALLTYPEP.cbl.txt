@@ -83,7 +83,7 @@
 
       *    // The output COBOL structure
        01  AllTypes.
-           03  abool PIC 9(1) BINARY.
+           03  abool PIC 9(4) BINARY.
            03  astring PIC X(32) DISPLAY.
            03  adouble COMP-2.
            03  aenum PIC 9(4) COMP-5.
@@ -109,6 +109,12 @@
 
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
+
+      *    // A protobuf fixed 32 bits integer
+       01  P-FIXED32                 PIC X(4).
+
+      *    // A protobuf fixed 64 bits integer
+       01  P-FIXED64                 PIC X(8).
 
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
@@ -229,8 +235,8 @@
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
                WHEN 10
-                 PERFORM P-VARINT-TO-Z-INT32 THRU
-                     END-P-VARINT-TO-Z-INT32
+                 PERFORM P-VARZIG-TO-Z-INT32 THRU
+                     END-P-VARZIG-TO-Z-INT32
                  COMPUTE asint32
                        = W-Z-INT32
       D          DISPLAY 'asint32 ='
@@ -238,8 +244,8 @@
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
                WHEN 11
-                 PERFORM P-VARINT-TO-Z-INT64 THRU
-                     END-P-VARINT-TO-Z-INT64
+                 PERFORM P-VARZIG-TO-Z-INT64 THRU
+                     END-P-VARZIG-TO-Z-INT64
                  COMPUTE asint64
                        = W-Z-INT64
       D          DISPLAY 'asint64 ='
@@ -247,8 +253,8 @@
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
                WHEN 12
-                 PERFORM P-VARINT-TO-Z-UINT64 THRU
-                     END-P-VARINT-TO-Z-UINT64
+                 PERFORM P-FIXED64-TO-Z-UINT64 THRU
+                     END-P-FIXED64-TO-Z-UINT64
                  COMPUTE afixed64
                        = W-Z-UINT64
       D          DISPLAY 'afixed64 ='
@@ -256,8 +262,8 @@
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
                WHEN 13
-                 PERFORM P-VARINT-TO-Z-INT64 THRU
-                     END-P-VARINT-TO-Z-INT64
+                 PERFORM P-FIXED64-TO-Z-INT64 THRU
+                     END-P-FIXED64-TO-Z-INT64
                  COMPUTE asfixed64
                        = W-Z-INT64
       D          DISPLAY 'asfixed64 ='
@@ -265,8 +271,8 @@
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
                WHEN 14
-                 PERFORM P-VARINT-TO-Z-UINT32 THRU
-                     END-P-VARINT-TO-Z-UINT32
+                 PERFORM P-FIXED32-TO-Z-UINT32 THRU
+                     END-P-FIXED32-TO-Z-UINT32
                  COMPUTE afixed32
                        = W-Z-UINT32
       D          DISPLAY 'afixed32 ='
@@ -274,8 +280,8 @@
       D                  ' ,AT OFFSET=' W-I
                  ADD W-BYTES-USED TO W-I
                WHEN 15
-                 PERFORM P-VARINT-TO-Z-INT32 THRU
-                     END-P-VARINT-TO-Z-INT32
+                 PERFORM P-FIXED32-TO-Z-INT32 THRU
+                     END-P-FIXED32-TO-Z-INT32
                  COMPUTE asfixed32
                        = W-Z-INT32
       D          DISPLAY 'asfixed32 ='
@@ -335,6 +341,60 @@
            SET ADDRESS OF P-VARINT TO W-STREAM.
            CALL 'PBVI2S32' USING P-VARINT W-Z-INT32 W-BYTES-USED.
        END-P-VARINT-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a zigzag integer from the stream as signed single word
+      * binary.
+      * ---------------------------------------------------------------
+       P-VARZIG-TO-Z-INT32.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVZ2S32' USING P-VARINT W-Z-INT32 W-BYTES-USED.
+       END-P-VARZIG-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a zigzag integer from the stream as signed double word
+      * binary.
+      * ---------------------------------------------------------------
+       P-VARZIG-TO-Z-INT64.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVZ2S64' USING P-VARINT W-Z-INT64 W-BYTES-USED.
+       END-P-VARZIG-TO-Z-INT64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as signed single word
+      * signed binary.
+      * ---------------------------------------------------------------
+       P-FIXED32-TO-Z-INT32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBFI2S32' USING P-FIXED32 W-Z-INT32 W-BYTES-USED.
+       END-P-FIXED32-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as double single word
+      * signed binary.
+      * ---------------------------------------------------------------
+       P-FIXED64-TO-Z-INT64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBFI2S64' USING P-FIXED64 W-Z-INT64 W-BYTES-USED.
+       END-P-FIXED64-TO-Z-INT64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as unsigned single word
+      * unsigned binary.
+      * ---------------------------------------------------------------
+       P-FIXED32-TO-Z-UINT32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBFI2U32' USING P-FIXED32 W-Z-UINT32 W-BYTES-USED.
+       END-P-FIXED32-TO-Z-UINT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as double single word
+      * unsigned binary.
+      * ---------------------------------------------------------------
+       P-FIXED64-TO-Z-UINT64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBFI2U64' USING P-FIXED64 W-Z-UINT64 W-BYTES-USED.
+       END-P-FIXED64-TO-Z-UINT64. EXIT.
 
       * ---------------------------------------------------------------
       * Get a IEEE float from the stream as a COMP-1

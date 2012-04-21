@@ -2,7 +2,7 @@
       * Generated copybook for AllTypes
       * ----------------------------------------------------------------
        01  AllTypes.
-           03  abool PIC 9(1) BINARY.
+           03  abool PIC 9(4) BINARY.
            03  astring PIC X(32) DISPLAY.
            03  adouble COMP-2.
            03  aenum PIC 9(4) COMP-5.

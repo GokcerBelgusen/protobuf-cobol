@@ -137,4 +137,27 @@ public class ProtobufParseWireTest extends TestCase {
                 searchRequest.getCorpus());
     }
 
+    public void testAlltypes() throws Exception {
+        com.example.alltypes.AllTypesProtos.AllTypes allTypes = com.example.alltypes.AllTypesProtos.AllTypes
+                .parseFrom(HostData
+                        .toByteArray("0801120A636C617373696669656419AAF1D24D62B0394020052D88C1D4D2303838C0FFFFFFFFFFFFFFFF0140BFE602480250E1C1B"
+                                + "60558F28FC0B30361FFFFFF7F000000006900000080FFFFFFFF75A30200007D3F07F9FF"));
+        assertEquals(true, allTypes.getAbool());
+        assertEquals(25.689D, allTypes.getAdouble());
+        assertEquals(675, allTypes.getAfixed32());
+        assertEquals(Integer.MAX_VALUE, allTypes.getAfixed64());
+        assertEquals(-4.56889991E11F, allTypes.getAfloat());
+        assertEquals(56, allTypes.getAint32());
+        assertEquals(-64, allTypes.getAint64());
+        assertEquals(-456897, allTypes.getAsfixed32());
+        assertEquals(Integer.MIN_VALUE, allTypes.getAsfixed64());
+        assertEquals(-5689457, allTypes.getAsint32());
+        assertEquals(456655865, allTypes.getAsint64());
+        assertEquals("classified", allTypes.getAstring());
+        assertEquals(45887, allTypes.getAuint32());
+        assertEquals(2, allTypes.getAuint64());
+        assertEquals(
+                com.example.alltypes.AllTypesProtos.AllTypes.Aenum.PRODUCTS,
+                allTypes.getAenum());
+    }
 }

@@ -99,6 +99,12 @@
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
 
+      *    // A protobuf fixed 32 bits integer
+       01  P-FIXED32                 PIC X(4).
+
+      *    // A protobuf fixed 64 bits integer
+       01  P-FIXED64                 PIC X(8).
+
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
 
@@ -255,6 +261,60 @@
            SET ADDRESS OF P-VARINT TO W-STREAM.
            CALL 'PBVI2S32' USING P-VARINT W-Z-INT32 W-BYTES-USED.
        END-P-VARINT-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a zigzag integer from the stream as signed single word
+      * binary.
+      * ---------------------------------------------------------------
+       P-VARZIG-TO-Z-INT32.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVZ2S32' USING P-VARINT W-Z-INT32 W-BYTES-USED.
+       END-P-VARZIG-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a zigzag integer from the stream as signed double word
+      * binary.
+      * ---------------------------------------------------------------
+       P-VARZIG-TO-Z-INT64.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVZ2S64' USING P-VARINT W-Z-INT64 W-BYTES-USED.
+       END-P-VARZIG-TO-Z-INT64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as signed single word
+      * signed binary.
+      * ---------------------------------------------------------------
+       P-FIXED32-TO-Z-INT32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBFI2S32' USING P-FIXED32 W-Z-INT32 W-BYTES-USED.
+       END-P-FIXED32-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as double single word
+      * signed binary.
+      * ---------------------------------------------------------------
+       P-FIXED64-TO-Z-INT64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBFI2S64' USING P-FIXED64 W-Z-INT64 W-BYTES-USED.
+       END-P-FIXED64-TO-Z-INT64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as unsigned single word
+      * unsigned binary.
+      * ---------------------------------------------------------------
+       P-FIXED32-TO-Z-UINT32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBFI2U32' USING P-FIXED32 W-Z-UINT32 W-BYTES-USED.
+       END-P-FIXED32-TO-Z-UINT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as double single word
+      * unsigned binary.
+      * ---------------------------------------------------------------
+       P-FIXED64-TO-Z-UINT64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBFI2U64' USING P-FIXED64 W-Z-UINT64 W-BYTES-USED.
+       END-P-FIXED64-TO-Z-UINT64. EXIT.
 
       * ---------------------------------------------------------------
       * Get a IEEE float from the stream as a COMP-1

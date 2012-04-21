@@ -1,5 +1,6 @@
 package com.legstar.protobuf.cobol;
 
+import com.google.protobuf.Descriptors.FieldDescriptor.Type;
 import com.legstar.cobol.model.CobolDataItem;
 
 public class ProtoCobolDataItemTest extends AbstractTest {
@@ -63,25 +64,37 @@ public class ProtoCobolDataItemTest extends AbstractTest {
         CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
         CobolDataItem childDataDataItem = new CobolDataItem(5, "CUSTOMER-NAME");
         childDataDataItem.setPicture("X");
-        cobolDataItem.getChildren().add(childDataDataItem);
+
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
+        new ProtoCobolDataItem(childDataDataItem, Type.STRING,
+                protoCobolDataItem);
         assertEquals("[]", protoCobolDataItem.getSubStructuresCobolName()
                 .toString());
     }
 
     public void testSubStructuresCobolNameOnHierarchy() {
-        CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
-        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+
+        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
+                new CobolDataItem(1, "CUSTOMER-DATA"));
+
+        ProtoCobolDataItem protoCobolDataItem1 = new ProtoCobolDataItem(
+                new CobolDataItem(5, "CHILD1"), Type.MESSAGE,
+                protoCobolDataItem);
+        protoCobolDataItem.addChild(protoCobolDataItem1);
+
         CobolDataItem childDataItem3 = new CobolDataItem(10, "CHILD3");
         childDataItem3.setPicture("X(72)");
-        childDataItem1.getChildren().add(childDataItem3);
-        cobolDataItem.getChildren().add(childDataItem1);
+        ProtoCobolDataItem protoCobolDataItem3 = new ProtoCobolDataItem(
+                childDataItem3, Type.STRING, protoCobolDataItem1);
+        protoCobolDataItem1.addChild(protoCobolDataItem3);
+
         CobolDataItem childDataItem2 = new CobolDataItem(5, "CHILD2");
         childDataItem2.setPicture("X(11)");
-        cobolDataItem.getChildren().add(childDataItem2);
-        ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
-                cobolDataItem);
+        ProtoCobolDataItem protoCobolDataItem2 = new ProtoCobolDataItem(
+                childDataItem2, Type.STRING, protoCobolDataItem1);
+        protoCobolDataItem1.addChild(protoCobolDataItem2);
+
         assertEquals("[CHILD1]", protoCobolDataItem.getSubStructuresCobolName()
                 .toString());
     }
@@ -112,11 +125,15 @@ public class ProtoCobolDataItemTest extends AbstractTest {
         cobolDataItem.setMinOccurs(0);
         cobolDataItem.setMaxOccurs(10);
         cobolDataItem.setDependingOn("SOME-COUNTER");
-        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
-        childDataItem1.setPicture("X(72)");
-        cobolDataItem.getChildren().add(childDataItem1);
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
+
+        CobolDataItem childDataItem1 = new CobolDataItem(5, "CHILD1");
+        childDataItem1.setPicture("X(72)");
+        ProtoCobolDataItem protoCobolDataItem1 = new ProtoCobolDataItem(
+                childDataItem1, Type.STRING, protoCobolDataItem);
+        protoCobolDataItem.addChild(protoCobolDataItem1);
+
         assertEquals("[W-CUSTOMER-DATA-I]", protoCobolDataItem
                 .getCobolCounters().toString());
     }

@@ -9,12 +9,15 @@ import org.apache.commons.lang.StringUtils;
 import com.google.protobuf.Descriptors.FieldDescriptor.Type;
 import com.legstar.cobol.gen.CopybookGenerator;
 import com.legstar.cobol.model.CobolDataItem;
+import com.legstar.coxb.CobolUsage.Usage;
 import com.legstar.coxb.util.NameUtil;
 import com.legstar.coxb.util.PictureUtil;
 
 /**
  * This decorates regular LegStar COBOL data item to provide additional methods
  * made available to templates.
+ * <p/>
+ * Also keeps track of the mapped protocol buffer field descriptor.
  */
 public class ProtoCobolDataItem {
 
@@ -39,68 +42,66 @@ public class ProtoCobolDataItem {
      */
     private String programNamePrefix;
 
-    /** The COBOL deta item we are decorating. */
+    /** The COBOL data item we are decorating. */
     private final CobolDataItem cobolDataItem;
+
+    /** The corresponding protocol buffer field type. */
+    private final Type pbFieldType;
 
     /**
      * Reflects the repeating parents which influence the way this data item can
      * be referred to.
      */
-    private final Stack < String > cobolCounters;
+    private final Stack < String > cobolCounters = new Stack < String >();
 
     /** Children are also decorated data items. */
-    private List < ProtoCobolDataItem > children;
+    private List < ProtoCobolDataItem > children = new ArrayList < ProtoCobolDataItem >();
 
     /**
-     * Decorate a COBOL data item.
+     * Decorate a COBOL data item for a root protocol buffer message.
      * 
      * @param cobolDataItem the decorated item
      */
     public ProtoCobolDataItem(final CobolDataItem cobolDataItem) {
-        this(cobolDataItem, new Stack < String >());
+        this(cobolDataItem, Type.MESSAGE, null);
     }
 
     /**
      * Decorate a COBOL data item.
+     * <p/>
+     * When a parent is specified, we get a copy of the parent counters stack
+     * and add ourself to it if we are an array.
      * 
      * @param cobolDataItem the decorated item
-     * @param parentCobolCounters the parent's stack of array counters
+     * @param pbFieldType the corresponding protocol buffer field type
+     * @param decoratedParent the parent of this item (assumes there is only
+     *            one)
      */
     public ProtoCobolDataItem(final CobolDataItem cobolDataItem,
-            Stack < String > parentCobolCounters) {
+            final Type pbFieldType, ProtoCobolDataItem decoratedParent) {
         this.cobolDataItem = cobolDataItem;
-        this.cobolCounters = new Stack < String >();
-        cobolCounters.addAll(parentCobolCounters);
-        if (cobolDataItem.isArray()) {
+        this.pbFieldType = pbFieldType;
+        programNamePrefix = createProgramNamePrefix();
+        if (decoratedParent != null) {
+            cobolCounters.addAll(decoratedParent.getCobolCounters());
+        }
+        if (isArray()) {
             cobolCounters.push(getCobolCounterName());
         }
-        decorateChildren(this, cobolCounters);
-        programNamePrefix = createProgramNamePrefix();
     }
 
     /**
-     * Recursively decorate children.
+     * Add a child to this item.
      * <p/>
-     * Only keeps real children in particular, don't include the variable arrays
-     * counters.
+     * There are 2 lists to keep in sync because we want both a pure COBOL
+     * hierarchy (for copybook generation) and a decorated hierarchy for
+     * protocobol artifacts generation.
      * 
-     * @param protoCobolDataItem the item being decorated
+     * @param decoratedChild
      */
-    protected void decorateChildren(ProtoCobolDataItem protoCobolDataItem,
-            Stack < String > parentCobolCounters) {
-        List < ProtoCobolDataItem > decoratedChildren = new ArrayList < ProtoCobolDataItem >();
-        if (isStructure()) {
-            for (CobolDataItem child : protoCobolDataItem.getCobolDataItem()
-                    .getChildren()) {
-                ProtoCobolDataItem decoratedChild = new ProtoCobolDataItem(
-                        child, parentCobolCounters);
-                if (decoratedChild.isOccursCountersGroup()) {
-                    continue;
-                }
-                decoratedChildren.add(decoratedChild);
-            }
-        }
-        protoCobolDataItem.setChildren(decoratedChildren);
+    public void addChild(ProtoCobolDataItem decoratedChild) {
+        getChildren().add(decoratedChild);
+        getCobolDataItem().getChildren().add(decoratedChild.getCobolDataItem());
     }
 
     /**
@@ -451,83 +452,123 @@ public class ProtoCobolDataItem {
     }
 
     /**
-     * @return true if this maps to a protobuf bool
+     * @return true if this maps a protobuf Message to a COBOL Group
      */
-    public boolean isMappedToMessage() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.MESSAGE);
+    public boolean isPMessageZGroup() {
+        return pbFieldType.equals(Type.MESSAGE) && isStructure();
     }
 
     /**
-     * @return true if this maps to a protobuf bool
+     * @return true if this maps a protobuf bool to a COBOL unsigned integer 16
      */
-    public boolean isMappedToBool() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.BOOL);
+    public boolean isPBoolZUint16() {
+        return pbFieldType.equals(Type.BOOL) && isZUint16();
     }
 
     /**
-     * @return true if this maps to a protobuf string
+     * @return true if this maps a protobuf string to a COBOL alphanum
      */
-    public boolean isMappedToString() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.STRING);
+    public boolean isPStringZAlphanum() {
+        return pbFieldType.equals(Type.STRING) && isZAlphanum();
     }
 
     /**
-     * @return true if this maps to a protobuf double
+     * @return true if this maps a protobuf double to a COBOL COMP-2
      */
-    public boolean isMappedToDouble() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.DOUBLE);
+    public boolean isPDoubleZComp2() {
+        return pbFieldType.equals(Type.DOUBLE) && isZComp2();
     }
 
     /**
-     * @return true if this maps to a protobuf enum
+     * @return true if this maps a protobuf float to a COBOL COMP-1
      */
-    public boolean isMappedToEnum() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.ENUM);
+    public boolean isPFloatZComp1() {
+        return pbFieldType.equals(Type.FLOAT) && isZComp1();
     }
 
     /**
-     * @return true if this maps to a protobuf float
+     * @return true if this maps a protobuf enum to a COBOL unsigned integer 32
      */
-    public boolean isMappedToFloat() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.FLOAT);
+    public boolean isPEnumZUInt16() {
+        return pbFieldType.equals(Type.ENUM) && isZUint16();
     }
 
     /**
-     * @return true if this maps to a protobuf int32
+     * @return true if this maps a protobuf varint to a COBOL signed integer 32
      */
-    public boolean isMappedToInt32() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.INT32);
+    public boolean isPVarintZInt32() {
+        return isVarint() && isZint32();
     }
 
     /**
-     * @return true if this maps to a protobuf int64
+     * @return true if this maps a protobuf varint to a COBOL signed integer 64
      */
-    public boolean isMappedToInt64() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.INT64);
+    public boolean isPVarintZInt64() {
+        return isVarint() && isZint64();
     }
 
     /**
-     * @return true if this maps to a protobuf uint32
+     * @return true if this maps a protobuf varint to a COBOL unsigned integer
+     *         32
      */
-    public boolean isMappedToUint32() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.UINT32);
+    public boolean isPVarintZUInt32() {
+        return isVarint() && isZUint32();
     }
 
     /**
-     * @return true if this maps to a protobuf uint64
+     * @return true if this maps a protobuf varint to a COBOL unsigned integer
+     *         64
      */
-    public boolean isMappedToUint64() {
-        return ProtoCobolMapper.pictureToType(cobolDataItem.getPicture(),
-                cobolDataItem.getUsage()).equals(Type.UINT64);
+    public boolean isPVarintZUInt64() {
+        return isVarint() && isZUint64();
+    }
+
+    /**
+     * @return true if this maps a protobuf zigzag integer to a COBOL signed
+     *         integer 32
+     */
+    public boolean isPVarzigZInt32() {
+        return isVarzig() && isZint32();
+    }
+
+    /**
+     * @return true if this maps a protobuf zigzag integer to a COBOL signed
+     *         integer 64
+     */
+    public boolean isPVarzigZInt64() {
+        return isVarzig() && isZint64();
+    }
+
+    /**
+     * @return true if this maps a protobuf fixed signed 32 bits integer to a
+     *         COBOL signed integer 32
+     */
+    public boolean isPSFixed32ZInt32() {
+        return pbFieldType.equals(Type.SFIXED32) && isZint32();
+    }
+
+    /**
+     * @return true if this maps a protobuf fixed signed 64 bits integer to a
+     *         COBOL signed integer 64
+     */
+    public boolean isPSFixed64ZInt64() {
+        return pbFieldType.equals(Type.SFIXED64) && isZint64();
+    }
+
+    /**
+     * @return true if this maps a protobuf fixed unsigned 32 bits integer to a
+     *         COBOL unsigned integer 32
+     */
+    public boolean isPFixed32ZUInt32() {
+        return pbFieldType.equals(Type.FIXED32) && isZUint32();
+    }
+
+    /**
+     * @return true if this maps a protobuf fixed unsigned 64 bits integer to a
+     *         COBOL unsigned integer 64
+     */
+    public boolean isPFixed64ZUInt64() {
+        return pbFieldType.equals(Type.FIXED64) && isZUint64();
     }
 
     /**
@@ -573,4 +614,113 @@ public class ProtoCobolDataItem {
         return cobolDataItem.getMaxOccurs();
     }
 
+    /**
+     * @return the corresponding protocol buffer field type
+     */
+    public Type getPbFieldType() {
+        return pbFieldType;
+    }
+
+    /**
+     * @return true if this is a COBOL unsigned integer 16
+     */
+    public boolean isZUint16() {
+        if (cobolDataItem.getPicture() == null) {
+            return false;
+        }
+        return cobolDataItem.getPicture().equals(
+                ProtoCobolMapper.PICTURE_UINT16);
+    }
+
+    /**
+     * @return true if this is a COBOL unsigned integer 32
+     */
+    public boolean isZUint32() {
+        if (cobolDataItem.getPicture() == null) {
+            return false;
+        }
+        return cobolDataItem.getPicture().equals(
+                ProtoCobolMapper.PICTURE_UINT32);
+    }
+
+    /**
+     * @return true if this is a COBOL unsigned integer 64
+     */
+    public boolean isZUint64() {
+        if (cobolDataItem.getPicture() == null) {
+            return false;
+        }
+        return cobolDataItem.getPicture().equals(
+                ProtoCobolMapper.PICTURE_UINT64);
+    }
+
+    /**
+     * @return true if this is a COBOL signed integer 32
+     */
+    public boolean isZint32() {
+        if (cobolDataItem.getPicture() == null) {
+            return false;
+        }
+        return cobolDataItem.getPicture().equals(
+                ProtoCobolMapper.PICTURE_SINT32);
+    }
+
+    /**
+     * @return true if this is a COBOL signed integer 64
+     */
+    public boolean isZint64() {
+        if (cobolDataItem.getPicture() == null) {
+            return false;
+        }
+        return cobolDataItem.getPicture().equals(
+                ProtoCobolMapper.PICTURE_SINT64);
+    }
+
+    /**
+     * @return true if this is a COBOL alphanumeric
+     */
+    public boolean isZAlphanum() {
+        if (cobolDataItem.getPicture() == null) {
+            return false;
+        }
+        return cobolDataItem.getPicture().startsWith("X");
+    }
+
+    /**
+     * @return true if this is a COBOL COMP-2
+     */
+    public boolean isZComp2() {
+        if (cobolDataItem.getUsage() == null) {
+            return false;
+        }
+        return cobolDataItem.getUsage().equals(Usage.DOUBLEFLOAT);
+    }
+
+    /**
+     * @return true if this is a COBOL COMP-1
+     */
+    public boolean isZComp1() {
+        if (cobolDataItem.getUsage() == null) {
+            return false;
+        }
+        return cobolDataItem.getUsage().equals(Usage.SINGLEFLOAT);
+    }
+
+    /**
+     * @return true if this is a protocol buffer variable integer
+     */
+    public boolean isVarint() {
+        return pbFieldType.equals(Type.INT32)
+                || pbFieldType.equals(Type.UINT32)
+                || pbFieldType.equals(Type.INT64)
+                || pbFieldType.equals(Type.UINT64);
+    }
+
+    /**
+     * @return true if this is a protocol buffer zigzag integer
+     */
+    public boolean isVarzig() {
+        return pbFieldType.equals(Type.SINT32)
+                || pbFieldType.equals(Type.SINT64);
+    }
 }

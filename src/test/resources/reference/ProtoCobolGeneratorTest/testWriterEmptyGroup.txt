@@ -93,6 +93,12 @@
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
 
+      *    // A protobuf fixed 32 bits integer
+       01  P-FIXED32                 PIC X(4).
+
+      *    // A protobuf fixed 64 bits integer
+       01  P-FIXED64                 PIC X(8).
+
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
 
@@ -162,6 +168,60 @@
            SET ADDRESS OF P-VARINT TO W-STREAM.
            CALL 'PBS322VI' USING W-Z-INT32 P-VARINT W-BYTES-USED.
        END-Z-INT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS322VZ' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS642VZ' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBS322FI' USING W-Z-INT32 P-FIXED32 W-BYTES-USED.
+       END-Z-INT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBS642FI' USING W-Z-INT64 P-FIXED64 W-BYTES-USED.
+       END-Z-INT64-TO-P-FIXED64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBU322FI' USING W-Z-UINT32 P-FIXED32 W-BYTES-USED.
+       END-Z-UINT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBU642FI' USING W-Z-UINT64 P-FIXED64 W-BYTES-USED.
+       END-Z-UINT64-TO-P-FIXED64. EXIT.
 
       * ---------------------------------------------------------------
       * Put a COMP-1 as a IEEE float to the output stream.

@@ -88,7 +88,7 @@
 
       *    // The input COBOL structure
        01  AllTypes.
-           03  abool PIC 9(1) BINARY.
+           03  abool PIC 9(4) BINARY.
            03  astring PIC X(32) DISPLAY.
            03  adouble COMP-2.
            03  aenum PIC 9(4) COMP-5.
@@ -114,6 +114,12 @@
 
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
+
+      *    // A protobuf fixed 32 bits integer
+       01  P-FIXED32                 PIC X(4).
+
+      *    // A protobuf fixed 64 bits integer
+       01  P-FIXED64                 PIC X(8).
 
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
@@ -144,7 +150,19 @@
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 1 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32
+                     = abool
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+      D        DISPLAY 'abool ='
+      D                 abool
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I
            END-PERFORM.
            PERFORM 
 
@@ -156,7 +174,7 @@
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE ZERO TO W-Z-UINT32
-               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
                        LENGTH OF astring
                    IF (astring(W-J:1)
                        NOT = SPACE AND LOW-VALUE)
@@ -176,15 +194,24 @@
       D        DISPLAY 'astring ='
       D                 astring
       D                ' ,AT OFFSET=' W-I
-               ADD W-BYTES-USED TO W-I
-
-           END-PERFORM.
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 3 TO W-P-KEY
+               SET FIXED-64 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-COMP-2
+                     = adouble
+               PERFORM Z-COMP-2-TO-P-DOUBLE THRU
+                   END-Z-COMP-2-TO-P-DOUBLE
+      D        DISPLAY 'adouble ='
+      D                 adouble
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
@@ -192,7 +219,7 @@
                SET VARINT TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                COMPUTE W-Z-UINT32
                      = aenum
@@ -201,14 +228,24 @@
       D        DISPLAY 'aenum ='
       D                 aenum
       D                ' ,AT OFFSET=' W-I
-               ADD W-BYTES-USED TO W-I
-           END-PERFORM.
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 5 TO W-P-KEY
+               SET FIXED-32 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-COMP-1
+                     = afloat
+               PERFORM Z-COMP-1-TO-P-FLOAT THRU
+                   END-Z-COMP-1-TO-P-FLOAT
+      D        DISPLAY 'afloat ='
+      D                 afloat
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
@@ -216,7 +253,7 @@
                SET VARINT TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                COMPUTE W-Z-INT32
                      = aint32
@@ -225,26 +262,58 @@
       D        DISPLAY 'aint32 ='
       D                 aint32
       D                ' ,AT OFFSET=' W-I
-               ADD W-BYTES-USED TO W-I
-           END-PERFORM.
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 7 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT64
+                     = aint64
+               PERFORM Z-INT64-TO-P-VARINT THRU
+                   END-Z-INT64-TO-P-VARINT
+      D        DISPLAY 'aint64 ='
+      D                 aint64
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 8 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32
+                     = auint32
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+      D        DISPLAY 'auint32 ='
+      D                 auint32
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 9 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT64
+                     = auint64
+               PERFORM Z-UINT64-TO-P-VARINT THRU
+                   END-Z-UINT64-TO-P-VARINT
+      D        DISPLAY 'auint64 ='
+      D                 auint64
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
@@ -252,59 +321,101 @@
                SET VARINT TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                COMPUTE W-Z-INT32
                      = asint32
-               PERFORM Z-INT32-TO-P-VARINT THRU
-                   END-Z-INT32-TO-P-VARINT
+               PERFORM Z-INT32-TO-P-VARZIG THRU
+                   END-Z-INT32-TO-P-VARZIG
       D        DISPLAY 'asint32 ='
       D                 asint32
       D                ' ,AT OFFSET=' W-I
-               ADD W-BYTES-USED TO W-I
-           END-PERFORM.
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 11 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT64
+                     = asint64
+               PERFORM Z-INT64-TO-P-VARZIG THRU
+                   END-Z-INT64-TO-P-VARZIG
+      D        DISPLAY 'asint64 ='
+      D                 asint64
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 12 TO W-P-KEY
+               SET FIXED-64 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT64
+                     = afixed64
+               PERFORM Z-UINT64-TO-P-FIXED64 THRU
+                   END-Z-UINT64-TO-P-FIXED64
+      D        DISPLAY 'afixed64 ='
+      D                 afixed64
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 13 TO W-P-KEY
+               SET FIXED-64 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT64
+                     = asfixed64
+               PERFORM Z-INT64-TO-P-FIXED64 THRU
+                   END-Z-INT64-TO-P-FIXED64
+      D        DISPLAY 'asfixed64 ='
+      D                 asfixed64
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 14 TO W-P-KEY
+               SET FIXED-32 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
 
-           END-PERFORM.
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32
+                     = afixed32
+               PERFORM Z-UINT32-TO-P-FIXED32 THRU
+                   END-Z-UINT32-TO-P-FIXED32
+      D        DISPLAY 'afixed32 ='
+      D                 afixed32
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
            PERFORM 
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE 15 TO W-P-KEY
-               SET VARINT TO TRUE
+               SET FIXED-32 TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                COMPUTE W-Z-INT32
                      = asfixed32
-               PERFORM Z-INT32-TO-P-VARINT THRU
-                   END-Z-INT32-TO-P-VARINT
+               PERFORM Z-INT32-TO-P-FIXED32 THRU
+                   END-Z-INT32-TO-P-FIXED32
       D        DISPLAY 'asfixed32 ='
       D                 asfixed32
       D                ' ,AT OFFSET=' W-I
-               ADD W-BYTES-USED TO W-I
-           END-PERFORM.
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
        END-WRITE-AllTypes. EXIT.
 
 
@@ -358,6 +469,60 @@
            SET ADDRESS OF P-VARINT TO W-STREAM.
            CALL 'PBS322VI' USING W-Z-INT32 P-VARINT W-BYTES-USED.
        END-Z-INT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS322VZ' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS642VZ' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBS322FI' USING W-Z-INT32 P-FIXED32 W-BYTES-USED.
+       END-Z-INT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBS642FI' USING W-Z-INT64 P-FIXED64 W-BYTES-USED.
+       END-Z-INT64-TO-P-FIXED64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBU322FI' USING W-Z-UINT32 P-FIXED32 W-BYTES-USED.
+       END-Z-UINT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBU642FI' USING W-Z-UINT64 P-FIXED64 W-BYTES-USED.
+       END-Z-UINT64-TO-P-FIXED64. EXIT.
 
       * ---------------------------------------------------------------
       * Put a COMP-1 as a IEEE float to the output stream.

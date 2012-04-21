@@ -109,6 +109,12 @@
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
 
+      *    // A protobuf fixed 32 bits integer
+       01  P-FIXED32                 PIC X(4).
+
+      *    // A protobuf fixed 64 bits integer
+       01  P-FIXED64                 PIC X(8).
+
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
 
@@ -144,7 +150,7 @@
                SET LENGTH-DELIMITED TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                PERFORM CALC-B-SIZE THRU
                    END-CALC-B-SIZE
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
@@ -155,7 +161,6 @@
 
                PERFORM WRITE-B THRU
                    END-WRITE-B
-
            END-PERFORM.
            PERFORM VARYING W-E-I FROM 1 BY 1
                    UNTIL W-E-I > E--C
@@ -165,7 +170,7 @@
                SET LENGTH-DELIMITED TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                PERFORM CALC-E-SIZE THRU
                    END-CALC-E-SIZE
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
@@ -176,7 +181,6 @@
 
                PERFORM WRITE-E THRU
                    END-WRITE-E
-
            END-PERFORM.
        END-WRITE-A. EXIT.
 
@@ -192,7 +196,7 @@
                SET LENGTH-DELIMITED TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                PERFORM CALC-C-SIZE THRU
                    END-CALC-C-SIZE
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
@@ -203,7 +207,6 @@
 
                PERFORM WRITE-C THRU
                    END-WRITE-C
-
            END-PERFORM.
        END-WRITE-B. EXIT.
 
@@ -223,7 +226,7 @@
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE ZERO TO W-Z-UINT32
-               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
                        LENGTH OF d(W-B-I, W-d-I)
                    IF (d(W-B-I, W-d-I)(W-J:1)
                        NOT = SPACE AND LOW-VALUE)
@@ -243,9 +246,7 @@
       D        DISPLAY 'd(W-B-I, W-d-I) ='
       D                 d(W-B-I, W-d-I)
       D                ' ,AT OFFSET=' W-I
-               ADD W-BYTES-USED TO W-I
-
-           END-PERFORM.
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
        END-WRITE-C. EXIT.
 
 
@@ -274,7 +275,6 @@
                    END-Z-UINT32-TO-P-VARINT
                ADD W-BYTES-USED TO W-C-L
                ADD W-Z-UINT32 TO W-C-L
-
            END-PERFORM.
 
       D    DISPLAY 'C size=' W-C-L.
@@ -294,7 +294,7 @@
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE ZERO TO W-Z-UINT32
-               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
                        LENGTH OF f(W-E-I)
                    IF (f(W-E-I)(W-J:1)
                        NOT = SPACE AND LOW-VALUE)
@@ -314,9 +314,7 @@
       D        DISPLAY 'f(W-E-I) ='
       D                 f(W-E-I)
       D                ' ,AT OFFSET=' W-I
-               ADD W-BYTES-USED TO W-I
-
-           END-PERFORM.
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
        END-WRITE-E. EXIT.
 
 
@@ -368,7 +366,6 @@
                    END-Z-UINT32-TO-P-VARINT
                ADD W-BYTES-USED TO W-E-L
                ADD W-Z-UINT32 TO W-E-L
-
            END-PERFORM.
 
       D    DISPLAY 'E size=' W-E-L.
@@ -423,6 +420,60 @@
            SET ADDRESS OF P-VARINT TO W-STREAM.
            CALL 'PBS322VI' USING W-Z-INT32 P-VARINT W-BYTES-USED.
        END-Z-INT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS322VZ' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS642VZ' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBS322FI' USING W-Z-INT32 P-FIXED32 W-BYTES-USED.
+       END-Z-INT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBS642FI' USING W-Z-INT64 P-FIXED64 W-BYTES-USED.
+       END-Z-INT64-TO-P-FIXED64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBU322FI' USING W-Z-UINT32 P-FIXED32 W-BYTES-USED.
+       END-Z-UINT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBU642FI' USING W-Z-UINT64 P-FIXED64 W-BYTES-USED.
+       END-Z-UINT64-TO-P-FIXED64. EXIT.
 
       * ---------------------------------------------------------------
       * Put a COMP-1 as a IEEE float to the output stream.

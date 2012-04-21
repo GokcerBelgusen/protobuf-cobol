@@ -100,6 +100,12 @@ $protoCobolDataItem.copybook$
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
 
+      *    // A protobuf fixed 32 bits integer
+       01  P-FIXED32                 PIC X(4).
+
+      *    // A protobuf fixed 64 bits integer
+       01  P-FIXED64                 PIC X(8).
+
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
 
@@ -171,6 +177,60 @@ $parseDataItem(protoCobolDataItem)$
            SET ADDRESS OF P-VARINT TO W-STREAM.
            CALL 'PBVI2S32' USING P-VARINT W-Z-INT32 W-BYTES-USED.
        END-P-VARINT-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a zigzag integer from the stream as signed single word
+      * binary.
+      * ---------------------------------------------------------------
+       P-VARZIG-TO-Z-INT32.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVZ2S32' USING P-VARINT W-Z-INT32 W-BYTES-USED.
+       END-P-VARZIG-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a zigzag integer from the stream as signed double word
+      * binary.
+      * ---------------------------------------------------------------
+       P-VARZIG-TO-Z-INT64.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBVZ2S64' USING P-VARINT W-Z-INT64 W-BYTES-USED.
+       END-P-VARZIG-TO-Z-INT64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as signed single word
+      * signed binary.
+      * ---------------------------------------------------------------
+       P-FIXED32-TO-Z-INT32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBFI2S32' USING P-FIXED32 W-Z-INT32 W-BYTES-USED.
+       END-P-FIXED32-TO-Z-INT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as double single word
+      * signed binary.
+      * ---------------------------------------------------------------
+       P-FIXED64-TO-Z-INT64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBFI2S64' USING P-FIXED64 W-Z-INT64 W-BYTES-USED.
+       END-P-FIXED64-TO-Z-INT64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as unsigned single word
+      * unsigned binary.
+      * ---------------------------------------------------------------
+       P-FIXED32-TO-Z-UINT32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBFI2U32' USING P-FIXED32 W-Z-UINT32 W-BYTES-USED.
+       END-P-FIXED32-TO-Z-UINT32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Get a fixed integer from the stream as double single word
+      * unsigned binary.
+      * ---------------------------------------------------------------
+       P-FIXED64-TO-Z-UINT64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBFI2U64' USING P-FIXED64 W-Z-UINT64 W-BYTES-USED.
+       END-P-FIXED64-TO-Z-UINT64. EXIT.
 
       * ---------------------------------------------------------------
       * Get a IEEE float from the stream as a COMP-1
@@ -295,6 +355,12 @@ $protoCobolDataItem.copybook$
       *    // A protobuf variable integer
        01  P-VARINT                  PIC X(10).
 
+      *    // A protobuf fixed 32 bits integer
+       01  P-FIXED32                 PIC X(4).
+
+      *    // A protobuf fixed 64 bits integer
+       01  P-FIXED64                 PIC X(8).
+
       *    // A protobuf float (IEEE 754)
        01  P-FLOAT                   PIC X(4).
 
@@ -366,6 +432,60 @@ $writeDataItem(protoCobolDataItem)$
            SET ADDRESS OF P-VARINT TO W-STREAM.
            CALL 'PBS322VI' USING W-Z-INT32 P-VARINT W-BYTES-USED.
        END-Z-INT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS322VZ' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS642VZ' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBS322FI' USING W-Z-INT32 P-FIXED32 W-BYTES-USED.
+       END-Z-INT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBS642FI' USING W-Z-INT64 P-FIXED64 W-BYTES-USED.
+       END-Z-INT64-TO-P-FIXED64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBU322FI' USING W-Z-UINT32 P-FIXED32 W-BYTES-USED.
+       END-Z-UINT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBU642FI' USING W-Z-UINT64 P-FIXED64 W-BYTES-USED.
+       END-Z-UINT64-TO-P-FIXED64. EXIT.
 
       * ---------------------------------------------------------------
       * Put a COMP-1 as a IEEE float to the output stream.
@@ -441,17 +561,23 @@ parseChild(protoCobolDataItem) ::= <<
                WHEN $i$
 $incrementCounter(protoCobolDataItem)$
 $protoCobolDataItem.directChildrenCobolCounterNames:initCobolCounterCol18(); separator="\n"$
-$if(protoCobolDataItem.mappedToBool)$
-$pBoolToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToString)$
-$pStringToZAlphanum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToEnum)$
-$pEnumToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToInt32)$
-$pVarintToZInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToInt64)$
-$pVarintToZInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToUint32)$
-$pVarintToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToUint64)$
-$pVarintToZUInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToFloat)$
-$pFloatToZComp1(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToDouble)$
-$pDoubleToZComp2(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToMessage)$
-$messageToGroup(protoCobolDataItem)$$endif$
+$if(protoCobolDataItem.pBoolZUint16)$
+$pBoolToZUInt16(protoCobolDataItem)$$elseif(protoCobolDataItem.pStringZAlphanum)$
+$pStringToZAlphanum(protoCobolDataItem)$$elseif(protoCobolDataItem.pEnumZUInt16)$
+$pEnumToZUInt16(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZInt32)$
+$pVarintToZInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZInt64)$
+$pVarintToZInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZUInt32)$
+$pVarintToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZUInt64)$
+$pVarintToZUInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarzigZInt32)$
+$pVarzigToZInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarzigZInt64)$
+$pVarzigToZInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.pSFixed32ZInt32)$
+$pSFixed32ToZInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.pSFixed64ZInt64)$
+$pSFixed64ToZInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.pFixed32ZUInt32)$
+$pFixed32ToZUInt32(protoCobolDataItem)$$elseif(protoCobolDataItem.pFixed64ZUInt64)$
+$pFixed64ToZUInt64(protoCobolDataItem)$$elseif(protoCobolDataItem.pFloatZComp1)$
+$pFloatToZComp1(protoCobolDataItem)$$elseif(protoCobolDataItem.pDoubleZComp2)$
+$pDoubleToZComp2(protoCobolDataItem)$$elseif(protoCobolDataItem.pMessageZGroup)$
+$pMessageToZGroup(protoCobolDataItem)$$endif$
 >>
 
 writeChild(protoCobolDataItem) ::= <<
@@ -460,12 +586,23 @@ writeChild(protoCobolDataItem) ::= <<
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE $i$ TO W-P-KEY
-$if(protoCobolDataItem.mappedToString)$
-$zAlphanumToPString(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToEnum)$
-$zUInt32ToPEnum(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToInt32)$
-$zInt32ToPVarint(protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToMessage)$
-$groupToMessage(protoCobolDataItem)$$endif$
-
+$if(protoCobolDataItem.pBoolZUint16)$
+$zUInt16ToPBool(protoCobolDataItem)$$elseif(protoCobolDataItem.pStringZAlphanum)$
+$zAlphanumToPString(protoCobolDataItem)$$elseif(protoCobolDataItem.pEnumZUInt16)$
+$zUInt16ToPEnum(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZInt32)$
+$zInt32ToPVarint(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZInt64)$
+$zInt64ToPVarint(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZUInt32)$
+$zUInt32ToPVarint(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZUInt64)$
+$zUInt64ToPVarint(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarzigZInt32)$
+$zInt32ToPVarzig(protoCobolDataItem)$$elseif(protoCobolDataItem.pVarzigZInt64)$
+$zInt64ToPVarzig(protoCobolDataItem)$$elseif(protoCobolDataItem.pSFixed32ZInt32)$
+$zInt32ToPSFixed32(protoCobolDataItem)$$elseif(protoCobolDataItem.pSFixed64ZInt64)$
+$zInt64ToPSFixed64(protoCobolDataItem)$$elseif(protoCobolDataItem.pFixed32ZUInt32)$
+$zUInt32ToPFixed32(protoCobolDataItem)$$elseif(protoCobolDataItem.pFixed64ZUInt64)$
+$zUInt64ToPFixed64(protoCobolDataItem)$$elseif(protoCobolDataItem.pFloatZComp1)$
+$zComp1ToPFloat(protoCobolDataItem)$$elseif(protoCobolDataItem.pDoubleZComp2)$
+$zComp2ToPDouble(protoCobolDataItem)$$elseif(protoCobolDataItem.pMessageZGroup)$
+$zGroupToPMessage(protoCobolDataItem)$$endif$
            END-PERFORM.
 >>
 
@@ -491,16 +628,28 @@ writeCalcSizeChild(parent, protoCobolDataItem) ::= <<
                    UNTIL $protoCobolDataItem.cobolCounterName$ > $if(protoCobolDataItem.hasDependingOn)$$protoCobolDataItem.dependingOn$$else$$protoCobolDataItem.maxOccurs$$endif$$endif$
 
                ADD 1 TO W-$parent.cobolName$-L
-$if(protoCobolDataItem.mappedToString)$
-$calcSizeZAlphanumToPString(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToEnum)$
-$calcSizeZUInt32ToPEnum(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToInt32)$
-$calcSizeZInt32ToPVarint(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.mappedToMessage)$
-$calcSizeGroupToMessage(parent=parent, protoCobolDataItem=protoCobolDataItem)$$endif$
+$if(protoCobolDataItem.pBoolZUint16)$
+$calcSizeZUInt16ToPBool(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pStringZAlphanum)$
+$calcSizeZAlphanumToPString(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pEnumZUInt16)$
+$calcSizeZUInt16ToPEnum(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZInt32)$
+$calcSizeZInt32ToPVarint(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZInt64)$
+$calcSizeZInt64ToPVarint(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZUInt32)$
+$calcSizeZUInt32ToPVarint(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pVarintZUInt64)$
+$calcSizeZUInt64ToPVarint(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pVarzigZInt32)$
+$calcSizeZInt32ToPVarzig(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pVarzigZInt64)$
+$calcSizeZInt64ToPVarzig(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pSFixed32ZInt32)$
+$calcSizeZInt32ToPSFixed32(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pSFixed64ZInt64)$
+$calcSizeZInt64ToPSFixed64(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pFixed32ZUInt32)$
+$calcSizeZUInt32ToPFixed32(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pFixed64ZUInt64)$
+$calcSizeZUInt64ToPFixed64(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pFloatZComp1)$
+$calcSizeZComp1ToPFloat(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pDoubleZComp2)$
+$calcSizeZComp2ToPDouble(parent=parent, protoCobolDataItem=protoCobolDataItem)$$elseif(protoCobolDataItem.pMessageZGroup)$
+$calcSizeZGroupToPMessage(parent=parent, protoCobolDataItem=protoCobolDataItem)$$endif$
 
            END-PERFORM.
 >>
 
-pBoolToZUInt32(protoCobolDataItem) ::= <<
+pBoolToZUInt16(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
                  COMPUTE $protoCobolDataItem.indexedCobolName$
@@ -508,6 +657,30 @@ pBoolToZUInt32(protoCobolDataItem) ::= <<
 $debugParse(protoCobolDataItem)$
                  ADD W-BYTES-USED TO W-I
 >>
+
+zUInt16ToPBool(protoCobolDataItem) ::= <<
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZUInt16ToPBool(parent, protoCobolDataItem) ::= <<
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-UINT32
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-$parent.cobolName$-L
+>>
+
 
 pStringToZAlphanum(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
@@ -530,7 +703,7 @@ zAlphanumToPString(protoCobolDataItem) ::= <<
 
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                MOVE ZERO TO W-Z-UINT32
-               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J > 
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
                        LENGTH OF $protoCobolDataItem.indexedCobolName$
                    IF ($protoCobolDataItem.indexedCobolName$(W-J:1)
                        NOT = SPACE AND LOW-VALUE)
@@ -567,7 +740,7 @@ calcSizeZAlphanumToPString(parent, protoCobolDataItem) ::= <<
                ADD W-Z-UINT32 TO W-$parent.cobolName$-L
 >>
 
-pEnumToZUInt32(protoCobolDataItem) ::= <<
+pEnumToZUInt16(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
                  COMPUTE $protoCobolDataItem.indexedCobolName$
@@ -576,11 +749,11 @@ $debugParse(protoCobolDataItem)$
                  ADD W-BYTES-USED TO W-I
 >>
 
-zUInt32ToPEnum(protoCobolDataItem) ::= <<
+zUInt16ToPEnum(protoCobolDataItem) ::= <<
                SET VARINT TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                COMPUTE W-Z-UINT32
                      = $protoCobolDataItem.indexedCobolName$
@@ -590,7 +763,7 @@ $debugWrite(protoCobolDataItem)$
                ADD W-BYTES-USED TO W-I
 >>
 
-calcSizeZUInt32ToPEnum(parent, protoCobolDataItem) ::= <<
+calcSizeZUInt16ToPEnum(parent, protoCobolDataItem) ::= <<
                SET W-STREAM TO ADDRESS OF W-P-VARINT
                COMPUTE W-Z-UINT32
                      = $protoCobolDataItem.indexedCobolName$
@@ -612,7 +785,7 @@ zInt32ToPVarint(protoCobolDataItem) ::= <<
                SET VARINT TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
                COMPUTE W-Z-INT32
                      = $protoCobolDataItem.indexedCobolName$
@@ -640,6 +813,30 @@ $debugParse(protoCobolDataItem)$
                  ADD W-BYTES-USED TO W-I
 >>
 
+zInt64ToPVarint(protoCobolDataItem) ::= <<
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT64
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-INT64-TO-P-VARINT THRU
+                   END-Z-INT64-TO-P-VARINT
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZInt64ToPVarint(parent, protoCobolDataItem) ::= <<
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-INT64
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-INT64-TO-P-VARINT THRU
+                   END-Z-INT64-TO-P-VARINT
+               ADD W-BYTES-USED TO W-$parent.cobolName$-L
+>>
+
+
 pVarintToZUInt32(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
@@ -647,6 +844,29 @@ pVarintToZUInt32(protoCobolDataItem) ::= <<
                        = W-Z-UINT32
 $debugParse(protoCobolDataItem)$
                  ADD W-BYTES-USED TO W-I
+>>
+
+zUInt32ToPVarint(protoCobolDataItem) ::= <<
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZUInt32ToPVarint(parent, protoCobolDataItem) ::= <<
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-UINT32
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-$parent.cobolName$-L
 >>
 
 pVarintToZUInt64(protoCobolDataItem) ::= <<
@@ -658,6 +878,209 @@ $debugParse(protoCobolDataItem)$
                  ADD W-BYTES-USED TO W-I
 >>
 
+
+zUInt64ToPVarint(protoCobolDataItem) ::= <<
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT64
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-UINT64-TO-P-VARINT THRU
+                   END-Z-UINT64-TO-P-VARINT
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZUInt64ToPVarint(parent, protoCobolDataItem) ::= <<
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-UINT64
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-UINT64-TO-P-VARINT THRU
+                   END-Z-UINT64-TO-P-VARINT
+               ADD W-BYTES-USED TO W-$parent.cobolName$-L
+>>
+
+
+pVarzigToZInt32(protoCobolDataItem) ::= <<
+                 PERFORM P-VARZIG-TO-Z-INT32 THRU
+                     END-P-VARZIG-TO-Z-INT32
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-INT32
+$debugParse(protoCobolDataItem)$
+                 ADD W-BYTES-USED TO W-I
+>>
+
+zInt32ToPVarzig(protoCobolDataItem) ::= <<
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-INT32-TO-P-VARZIG THRU
+                   END-Z-INT32-TO-P-VARZIG
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZInt32ToPVarzig(parent, protoCobolDataItem) ::= <<
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-INT32
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-INT32-TO-P-VARZIG THRU
+                   END-Z-INT32-TO-P-VARZIG
+               ADD W-BYTES-USED TO W-$parent.cobolName$-L
+>>
+
+
+pVarzigToZInt64(protoCobolDataItem) ::= <<
+                 PERFORM P-VARZIG-TO-Z-INT64 THRU
+                     END-P-VARZIG-TO-Z-INT64
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-INT64
+$debugParse(protoCobolDataItem)$
+                 ADD W-BYTES-USED TO W-I
+>>
+
+zInt64ToPVarzig(protoCobolDataItem) ::= <<
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT64
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-INT64-TO-P-VARZIG THRU
+                   END-Z-INT64-TO-P-VARZIG
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZInt64ToPVarzig(parent, protoCobolDataItem) ::= <<
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-INT64
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-INT64-TO-P-VARZIG THRU
+                   END-Z-INT64-TO-P-VARZIG
+               ADD W-BYTES-USED TO W-$parent.cobolName$-L
+>>
+
+
+
+pSFixed32ToZInt32(protoCobolDataItem) ::= <<
+                 PERFORM P-FIXED32-TO-Z-INT32 THRU
+                     END-P-FIXED32-TO-Z-INT32
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-INT32
+$debugParse(protoCobolDataItem)$
+                 ADD W-BYTES-USED TO W-I
+>>
+
+zInt32ToPSFixed32(protoCobolDataItem) ::= <<
+               SET FIXED-32 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-INT32-TO-P-FIXED32 THRU
+                   END-Z-INT32-TO-P-FIXED32
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZInt32ToPSFixed32(parent, protoCobolDataItem) ::= <<
+               ADD LENGTH OF P-FIXED32 TO W-$parent.cobolName$-L
+>>
+
+
+pSFixed64ToZInt64(protoCobolDataItem) ::= <<
+                 PERFORM P-FIXED64-TO-Z-INT64 THRU
+                     END-P-FIXED64-TO-Z-INT64
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-INT64
+$debugParse(protoCobolDataItem)$
+                 ADD W-BYTES-USED TO W-I
+>>
+
+zInt64ToPSFixed64(protoCobolDataItem) ::= <<
+               SET FIXED-64 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT64
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-INT64-TO-P-FIXED64 THRU
+                   END-Z-INT64-TO-P-FIXED64
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZInt64ToPSFixed64(parent, protoCobolDataItem) ::= <<
+               ADD LENGTH OF P-FIXED64 TO W-$parent.cobolName$-L
+>>
+
+
+pFixed32ToZUInt32(protoCobolDataItem) ::= <<
+                 PERFORM P-FIXED32-TO-Z-UINT32 THRU
+                     END-P-FIXED32-TO-Z-UINT32
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-UINT32
+$debugParse(protoCobolDataItem)$
+                 ADD W-BYTES-USED TO W-I
+>>
+
+zUInt32ToPFixed32(protoCobolDataItem) ::= <<
+               SET FIXED-32 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-UINT32-TO-P-FIXED32 THRU
+                   END-Z-UINT32-TO-P-FIXED32
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZUInt32ToPFixed32(parent, protoCobolDataItem) ::= <<
+               ADD LENGTH OF P-FIXED32 TO W-$parent.cobolName$-L
+>>
+
+
+pFixed64ToZUInt64(protoCobolDataItem) ::= <<
+                 PERFORM P-FIXED64-TO-Z-UINT64 THRU
+                     END-P-FIXED64-TO-Z-UINT64
+                 COMPUTE $protoCobolDataItem.indexedCobolName$
+                       = W-Z-UINT64
+$debugParse(protoCobolDataItem)$
+                 ADD W-BYTES-USED TO W-I
+>>
+
+zUInt64ToPFixed64(protoCobolDataItem) ::= <<
+               SET FIXED-64 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT64
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-UINT64-TO-P-FIXED64 THRU
+                   END-Z-UINT64-TO-P-FIXED64
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZUInt64ToPFixed64(parent, protoCobolDataItem) ::= <<
+               ADD LENGTH OF P-FIXED64 TO W-$parent.cobolName$-L
+>>
+
 pFloatToZComp1(protoCobolDataItem) ::= <<
                  PERFORM P-FLOAT-TO-Z-COMP-1 THRU
                      END-P-FLOAT-TO-Z-COMP-1
@@ -666,6 +1089,25 @@ pFloatToZComp1(protoCobolDataItem) ::= <<
 $debugParse(protoCobolDataItem)$
                  ADD W-BYTES-USED TO W-I
 >>
+
+zComp1ToPFloat(protoCobolDataItem) ::= <<
+               SET FIXED-32 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-COMP-1
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-COMP-1-TO-P-FLOAT THRU
+                   END-Z-COMP-1-TO-P-FLOAT
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZComp1ToPFloat(parent, protoCobolDataItem) ::= <<
+               ADD LENGTH OF P-FLOAT TO W-$parent.cobolName$-L
+>>
+
 
 pDoubleToZComp2(protoCobolDataItem) ::= <<
                  PERFORM P-DOUBLE-TO-Z-COMP-2 THRU
@@ -676,7 +1118,26 @@ $debugParse(protoCobolDataItem)$
                  ADD W-BYTES-USED TO W-I
 >>
 
-messageToGroup(protoCobolDataItem) ::= <<
+zComp2ToPDouble(protoCobolDataItem) ::= <<
+               SET FIXED-64 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-COMP-2
+                     = $protoCobolDataItem.indexedCobolName$
+               PERFORM Z-COMP-2-TO-P-DOUBLE THRU
+                   END-Z-COMP-2-TO-P-DOUBLE
+$debugWrite(protoCobolDataItem)$
+               ADD W-BYTES-USED TO W-I
+>>
+
+calcSizeZComp2ToPDouble(parent, protoCobolDataItem) ::= <<
+               ADD LENGTH OF P-DOUBLE TO W-$parent.cobolName$-L
+>>
+
+
+pMessageToZGroup(protoCobolDataItem) ::= <<
                  PERFORM P-VARINT-TO-Z-UINT32 THRU
                      END-P-VARINT-TO-Z-UINT32
                  ADD W-BYTES-USED TO W-I
@@ -686,11 +1147,11 @@ messageToGroup(protoCobolDataItem) ::= <<
                          UNTIL W-I > W-$protoCobolDataItem.cobolName$-L
 >>
 
-groupToMessage(protoCobolDataItem) ::= <<
+zGroupToPMessage(protoCobolDataItem) ::= <<
                SET LENGTH-DELIMITED TO TRUE
                PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
                ADD W-BYTES-USED TO W-I
-    
+
                PERFORM CALC-$protoCobolDataItem.cobolName$-SIZE THRU
                    END-CALC-$protoCobolDataItem.cobolName$-SIZE
                SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
@@ -704,7 +1165,7 @@ groupToMessage(protoCobolDataItem) ::= <<
 
 >>
 
-calcSizeGroupToMessage(parent, protoCobolDataItem) ::= <<
+calcSizeZGroupToPMessage(parent, protoCobolDataItem) ::= <<
                PERFORM CALC-$protoCobolDataItem.cobolName$-SIZE THRU
                    END-CALC-$protoCobolDataItem.cobolName$-SIZE
                SET W-STREAM TO ADDRESS OF W-P-VARINT

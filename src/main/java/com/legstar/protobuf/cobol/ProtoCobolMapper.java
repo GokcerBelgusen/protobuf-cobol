@@ -37,6 +37,21 @@ public class ProtoCobolMapper {
     /** COBOL level for conditions. */
     private static final int COBOL_CONDITION_LEVEL = 88;
 
+    /** Picture clause for a 16 bits unsigned integer. */
+    public static final String PICTURE_UINT16 = "9(4)";
+
+    /** Picture clause for a 32 bits unsigned integer. */
+    public static final String PICTURE_UINT32 = "9(9)";
+
+    /** Picture clause for a 32 bits signed integer. */
+    public static final String PICTURE_SINT32 = "S9(9)";
+
+    /** Picture clause for a 64 bits unsigned integer. */
+    public static final String PICTURE_UINT64 = "9(18)";
+
+    /** Picture clause for a 64 bits signed integer. */
+    public static final String PICTURE_SINT64 = "S9(18)";
+
     /**
      * The set of counters associated with variable size arrays are added to the
      * final COBOL structure under this group name
@@ -52,7 +67,7 @@ public class ProtoCobolMapper {
     /**
      * Dynamic counters COBOL picture clause.
      */
-    private static final String COUNTER_COBOL_PICTURE = "9(9)";
+    private static final String COUNTER_COBOL_PICTURE = PICTURE_UINT32;
 
     /**
      * Dynamic counters COBOL usage clause.
@@ -69,23 +84,24 @@ public class ProtoCobolMapper {
      * <p/>
      * While processing this message fields, we might encounter variable size
      * arrays for which we need to create counters which are additional COBOL
-     * numeric fields that hold the current array count.
+     * numeric fields that hold the current array count. These counters are
+     * COBOL only items, they don't map any protocol buffer field
      * <p/>
      * Arrays within arrays in COBOL translate to multidimensional arrays. We
      * use a Stack to keep track of these dimensions.
      * 
      * @param messageDescriptor the message descriptor
-     * @return the corresponding COBOL data item
+     * @return the corresponding decorated COBOL data item
      */
-    public CobolDataItem toCobol(final Descriptor messageDescriptor) {
+    public ProtoCobolDataItem toCobol(final Descriptor messageDescriptor) {
         nameResolver = new CobolNameResolver();
         CobolDataItem occursCounters = new CobolDataItem(DEFAULT_ROOT_LEVEL
                 + DEFAULT_LEVEL_INCREMENT, OCCURS_COUNTERS_GROUP_NAME);
-        Stack < String > dimensions = new Stack < String >();
-        CobolDataItem rootDataItem = toCobol(messageDescriptor,
-                DEFAULT_ROOT_LEVEL, false, occursCounters, dimensions);
+        ProtoCobolDataItem rootDataItem = toCobol(messageDescriptor,
+                DEFAULT_ROOT_LEVEL, false, occursCounters, null);
         if (occursCounters.getChildren().size() > 0) {
-            rootDataItem.getChildren().add(0, occursCounters);
+            rootDataItem.getCobolDataItem().getChildren()
+                    .add(0, occursCounters);
         }
         return rootDataItem;
     }
@@ -97,29 +113,31 @@ public class ProtoCobolMapper {
      * @param level of this message in the parent message (1 if root)
      * @param isRepeated true if this message repeats itself
      * @param occursCounters a set of counters for variable size arrays
-     * @param dimensions one entry per parent array in the hierarchy
-     * @return the corresponding COBOL data item
+     * @param decoratedParent the parent in the hierarchy or null if root
+     * @return the corresponding decorated COBOL data item
      */
-    public CobolDataItem toCobol(final Descriptor messageDescriptor,
+    public ProtoCobolDataItem toCobol(final Descriptor messageDescriptor,
             final int level, boolean isRepeated, CobolDataItem occursCounters,
-            Stack < String > dimensions) {
+            final ProtoCobolDataItem decoratedParent) {
 
         CobolDataItem cobolDataItem = new CobolDataItem(level,
                 nameToCobol(messageDescriptor.getName()));
-
         if (isRepeated) {
-            dimensions.push(messageDescriptor.getName());
+            repeatedToOccurs(messageDescriptor.getName(), JavaType.MESSAGE,
+                    cobolDataItem, occursCounters,
+                    decoratedParent.getCobolCounters());
         }
+        ProtoCobolDataItem decoratedDataItem = new ProtoCobolDataItem(
+                cobolDataItem, Type.MESSAGE, decoratedParent);
+
         for (FieldDescriptor fd : messageDescriptor.getFields()) {
-            cobolDataItem.getChildren().add(
-                    toCobol(fd, level + DEFAULT_LEVEL_INCREMENT,
-                            occursCounters, dimensions));
-        }
-        if (isRepeated) {
-            dimensions.pop();
+            ProtoCobolDataItem decoratedChild = toCobol(fd, level
+                    + DEFAULT_LEVEL_INCREMENT, occursCounters,
+                    decoratedDataItem);
+            decoratedDataItem.addChild(decoratedChild);
         }
 
-        return cobolDataItem;
+        return decoratedDataItem;
     }
 
     /**
@@ -128,19 +146,20 @@ public class ProtoCobolMapper {
      * @param fieldDescriptor the field descriptor
      * @param level the level of that field
      * @param occursCounters a set of counters for variable size arrays
-     * @param dimensions one entry per parent array in the hierarchy
+     * @param decoratedParent the parent in the hierarchy or null if root
      * @return the corresponding COBOL data item
      */
-    public CobolDataItem toCobol(final FieldDescriptor fieldDescriptor,
+    public ProtoCobolDataItem toCobol(final FieldDescriptor fieldDescriptor,
             final int level, CobolDataItem occursCounters,
-            Stack < String > dimensions) {
+            final ProtoCobolDataItem decoratedParent) {
 
-        CobolDataItem cobolDataItem = null;
+        ProtoCobolDataItem decoratedDataItem = null;
         if (isMessage(fieldDescriptor)) {
-            cobolDataItem = toCobol(fieldDescriptor.getMessageType(), level,
-                    fieldDescriptor.isRepeated(), occursCounters, dimensions);
+            decoratedDataItem = toCobol(fieldDescriptor.getMessageType(),
+                    level, fieldDescriptor.isRepeated(), occursCounters,
+                    decoratedParent);
         } else {
-            cobolDataItem = new CobolDataItem(level,
+            CobolDataItem cobolDataItem = new CobolDataItem(level,
                     nameToCobol(fieldDescriptor.getName()));
             cobolDataItem.setPicture(typeToPicture(fieldDescriptor.getName(),
                     fieldDescriptor.getType()));
@@ -150,13 +169,15 @@ public class ProtoCobolMapper {
                 cobolDataItem.getChildren().addAll(
                         enumToCobol(fieldDescriptor.getEnumType()));
             }
+            if (fieldDescriptor.isRepeated()) {
+                repeatedToOccurs(fieldDescriptor.getName(),
+                        fieldDescriptor.getJavaType(), cobolDataItem,
+                        occursCounters, decoratedParent.getCobolCounters());
+            }
+            decoratedDataItem = new ProtoCobolDataItem(cobolDataItem,
+                    fieldDescriptor.getType(), decoratedParent);
         }
-        if (fieldDescriptor.isRepeated()) {
-            repeatedToOccurs(fieldDescriptor.getName(),
-                    fieldDescriptor.getJavaType(), cobolDataItem,
-                    occursCounters, dimensions);
-        }
-        return cobolDataItem;
+        return decoratedDataItem;
     }
 
     /**
@@ -198,35 +219,35 @@ public class ProtoCobolMapper {
     public String typeToPicture(String fieldName, Type fieldType) {
         switch (fieldType) {
         case BOOL:
-            return "9(1)";
+            return PICTURE_UINT16;
         case STRING:
             return "X(" + getMaxSize(fieldName, fieldType) + ")";
         case DOUBLE:
             return null;
         case ENUM:
-            return "9(4)";
+            return PICTURE_UINT16;
         case FLOAT:
             return null;
         case INT32:
-            return "S9(9)";
+            return PICTURE_SINT32;
         case INT64:
-            return "S9(18)";
+            return PICTURE_SINT64;
         case SINT32:
-            return "S9(9)";
+            return PICTURE_SINT32;
         case SINT64:
-            return "S9(18)";
+            return PICTURE_SINT64;
         case FIXED32:
-            return "9(9)";
+            return PICTURE_UINT32;
         case FIXED64:
-            return "9(18)";
+            return PICTURE_UINT64;
         case SFIXED32:
-            return "S9(9)";
+            return PICTURE_SINT32;
         case SFIXED64:
-            return "S9(18)";
+            return PICTURE_SINT64;
         case UINT32:
-            return "9(9)";
+            return PICTURE_UINT32;
         case UINT64:
-            return "9(18)";
+            return PICTURE_UINT64;
         case MESSAGE:
             return null;
         default:
@@ -296,19 +317,19 @@ public class ProtoCobolMapper {
                 throw new UnsupportedOperationException("Unsupported usage "
                         + usage);
             }
-        } else if (picture.equals("9(1)")) {
+        } else if (picture.equals(PICTURE_UINT16)) {
             return Type.BOOL;
         } else if (picture.startsWith("X")) {
             return Type.STRING;
-        } else if (picture.equals("9(4)")) {
+        } else if (picture.equals(PICTURE_UINT16)) {
             return Type.ENUM;
-        } else if (picture.equals("S9(9)")) {
+        } else if (picture.equals(PICTURE_SINT32)) {
             return Type.INT32;
-        } else if (picture.equals("S9(18)")) {
+        } else if (picture.equals(PICTURE_SINT64)) {
             return Type.INT64;
-        } else if (picture.equals("9(9)")) {
+        } else if (picture.equals(PICTURE_UINT32)) {
             return Type.UINT32;
-        } else if (picture.equals("9(18)")) {
+        } else if (picture.equals(PICTURE_UINT64)) {
             return Type.UINT64;
         } else {
             throw new UnsupportedOperationException("Unsupported picture "
