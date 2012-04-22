@@ -6,7 +6,7 @@
 //*--------------------------------------------------------------------
 //RUNTEST  PROC
 //RUN  EXEC PGM=&PGMNAME,REGION=1024K
-//STEPLIB  DD DSN=P390.DEV.LOAD,DISP=SHR
+//STEPLIB  DD DSN=${protocob-dev-zos-pds-pfx}.${protocobMainframeVersion}.LOAD,DISP=SHR
 //SYSPRINT DD SYSOUT=*
 //            PEND
 //*--------------------------------------------------------------------
@@ -17,8 +17,6 @@
 //            EXEC RUNTEST,PGMNAME=PBCTCUST
 //*--------------------------------------------------------------------
 //            EXEC RUNTEST,PGMNAME=PBCTENUM
-//*--------------------------------------------------------------------
-//            EXEC RUNTEST,PGMNAME=PBCTSIMP
 //*--------------------------------------------------------------------
 //            EXEC RUNTEST,PGMNAME=PBCTSREQ
 //*--------------------------------------------------------------------

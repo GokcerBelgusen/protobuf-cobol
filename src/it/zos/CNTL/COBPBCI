@@ -8,9 +8,9 @@
 //COB  EXEC PGM=IGYCRCTL,REGION=1024K,
 // PARM=('DYNAM,NODLL,LIB,OBJECT,RENT,LIST,APOST,TRUNC(BIN),NOSEQ,',
 //      'OPTIMIZE',MAP)
-//SYSLIB   DD DSN=P390.DEV.COBOL,DISP=SHR
+//SYSLIB   DD DSN=${protocob-dev-zos-pds-pfx}.${protocobMainframeVersion}.COBOL,DISP=SHR
 //SYSPRINT DD SYSOUT=*
-//SYSIN    DD DSN=P390.DEV.COBOL(&PGMNAME),DISP=SHR
+//SYSIN    DD DSN=${protocob-dev-zos-pds-pfx}.${protocobMainframeVersion}.COBOL(&PGMNAME),DISP=SHR
 //SYSLIN   DD DSN=&&LOADSET,DISP=(MOD,PASS),
 //         UNIT=SYSDA,SPACE=(80,(250,100))
 //SYSUT1   DD UNIT=SYSDA,SPACE=(460,(350,100))
@@ -22,15 +22,86 @@
 //SYSUT7   DD UNIT=SYSDA,SPACE=(460,(350,100))
 //LKED   EXEC PGM=IEWL,REGION=1024K,
 //       PARM='LIST,MAP,XREF,AMODE(31),RMODE(ANY)'
-//SYSLIB   DD DSN=P390.DEV.LOAD,DISP=SHR
+//SYSLIB   DD DSN=${protocob-dev-zos-pds-pfx}.${protocobMainframeVersion}.LOAD,DISP=SHR
 //         DD DSN=CEE.SCEELKED,DISP=SHR    <=LE
-//SYSLMOD  DD DSN=P390.DEV.LOAD,DISP=SHR
+//SYSLMOD  DD DSN=${protocob-dev-zos-pds-pfx}.${protocobMainframeVersion}.LOAD,DISP=SHR
 //SYSUT1   DD UNIT=SYSDA,DCB=BLKSIZE=1024,
 //       SPACE=(1024,(200,20))
 //SYSPRINT DD SYSOUT=*
 //SYSLIN   DD DSN=&&LOADSET,DISP=(OLD,DELETE)
 //         DD DDNAME=SYSIN
 //            PEND
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=ADDRBOOP
+//LKED.SYSIN DD *
+  NAME ADDRBOOP(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=ADDRBOOW
+//LKED.SYSIN DD *
+  NAME ADDRBOOW(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=ALLTYPEP
+//LKED.SYSIN DD *
+  NAME ALLTYPEP(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=ALLTYPEW
+//LKED.SYSIN DD *
+  NAME ALLTYPEW(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=SEARRESP
+//LKED.SYSIN DD *
+  NAME SEARRESP(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=SEARRESW
+//LKED.SYSIN DD *
+  NAME SEARRESW(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=AP
+//LKED.SYSIN DD *
+  NAME AP(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=AW
+//LKED.SYSIN DD *
+  NAME AW(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=ENUMREQP
+//LKED.SYSIN DD *
+  NAME ENUMREQP(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=ENUMREQW
+//LKED.SYSIN DD *
+  NAME ENUMREQW(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=CUSTDATP
+//LKED.SYSIN DD *
+  NAME CUSTDATP(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=CUSTDATW
+//LKED.SYSIN DD *
+  NAME CUSTDATW(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=SEARREQP
+//LKED.SYSIN DD *
+  NAME SEARREQP(R)
+/*
+//*--------------------------------------------------------------------
+//            EXEC COMPLINK,PGMNAME=SEARREQW
+//LKED.SYSIN DD *
+  NAME SEARREQW(R)
+/*
+//*--------------------------------------------------------------------
 //*--------------------------------------------------------------------
 //            EXEC COMPLINK,PGMNAME=PBCTARRA
 //LKED.SYSIN DD *
@@ -50,11 +121,6 @@
 //            EXEC COMPLINK,PGMNAME=PBCTENUM
 //LKED.SYSIN DD *
   NAME PBCTENUM(R)
-/*
-//*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTSIMP
-//LKED.SYSIN DD *
-  NAME PBCTSIMP(R)
 /*
 //*--------------------------------------------------------------------
 //            EXEC COMPLINK,PGMNAME=PBCTSREQ

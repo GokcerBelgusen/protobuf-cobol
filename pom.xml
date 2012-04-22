@@ -1,22 +1,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>com.legsem.legstar</groupId>
     <artifactId>protobuf-cobol</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    
+
     <name>protobuf-cobol</name>
     <url>http://maven.apache.org</url>
-    
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <legstarCoreVersion>1.5.7</legstarCoreVersion>
+        <protocobMainframeVersion>V0R1M0</protocobMainframeVersion>
     </properties>
 
     <dependencies>
-    
+
         <!-- LegStar binding API -->
         <dependency>
             <groupId>com.legsem.legstar</groupId>
@@ -41,7 +42,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-      
+
         <!-- LegStar COBOL copybook generator -->
         <dependency>
             <groupId>com.legsem.legstar</groupId>
@@ -58,14 +59,14 @@
                 </exclusion>
             </exclusions>
         </dependency>
-      
+
         <!-- Google/Apache protocol buffer for Java -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>2.4.1</version>
         </dependency>
-      
+
         <!-- Apache Logging API -->
         <dependency>
             <groupId>commons-logging</groupId>
@@ -86,21 +87,21 @@
                 </exclusion>
             </exclusions>
         </dependency>
-      
+
         <!-- Apache commons lang -->
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
             <version>2.6</version>
         </dependency>
-      
+
         <!-- Apache commons IO -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.1</version>
         </dependency>
-      
+
         <!-- JUnit -->
         <dependency>
             <groupId>junit</groupId>
@@ -108,29 +109,56 @@
             <version>3.8.1</version>
             <scope>test</scope>
         </dependency>
-    
+
     </dependencies>
 
     <build>
-  
+
+        <pluginManagement>
+
+            <plugins>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>2.3.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>1.7</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.7</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.legsem.legstar</groupId>
+                    <artifactId>zosupload-maven-plugin</artifactId>
+                    <version>0.0.4</version>
+                </plugin>
+
+            </plugins>
+
+        </pluginManagement>
+
         <plugins>
-    
+
             <!-- Protocol buffer for java requires Java 6. -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
-    
+
             <!-- Put the generated java test classes on the test classpath. -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.7</version>
                 <executions>
                     <execution>
                         <id>add-test-source-folder</id>
@@ -146,9 +174,9 @@
                     </execution>
                 </executions>
             </plugin>
-    
+
         </plugins>
-  
+
     </build>
 
     <profiles>
@@ -165,7 +193,6 @@
                     <!-- Protoc compile test samples (protoc.exe must be on the path). -->
                     <plugin>
                         <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.7</version>
                         <executions>
                             <execution>
                                 <id>generate-test-sources</id>
@@ -204,7 +231,6 @@
                     <!-- Protoc compile test samples (protoc.exe must be on the path). TODO test -->
                     <plugin>
                         <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.7</version>
                         <executions>
                             <execution>
                                 <id>generate-test-sources</id>
@@ -231,14 +257,135 @@
 
         <profile>
             <!-- A configured mainframe is needed for these goals. -->
-            <id>legstar-development</id>
+            <id>with-mainframe</id>
             <build>
                 <plugins>
+
+                    <!-- Copy mainframe artifacts to temporary folders for easy upload.
+                         Also filter JCL to replace variables with target mainframe parameters.
+                      -->
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+
+                            <!-- zOS main artifacts -->
+                            <execution>
+                                <id>copy-main-zos-artifacts</id>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="target/upload/main/zos" />
+                                        <copy todir="target/upload/main/zos">
+                                            <fileset dir="src/main/zos"/>
+                                            <filterset begintoken="${" endtoken="}">
+                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}"/>
+                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}"/>
+                                            </filterset>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+
+                            <!-- zOS unit test artifacts -->
+                            <execution>
+                                <id>copy-test-zos-artifacts</id>
+                                <phase>generate-test-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="target/upload/test/zos" />
+                                        <copy todir="target/upload/test/zos">
+                                            <fileset dir="src/test/zos"/>
+                                            <filterset begintoken="${" endtoken="}">
+                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}"/>
+                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}"/>
+                                            </filterset>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+
+                            <!-- zOS integration test artifacts -->
+                            <execution>
+                                <id>copy-it-zos-artifacts</id>
+                                <phase>pre-integration-test</phase>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="target/upload/it/zos" />
+                                        <copy todir="target/upload/it/zos">
+                                            <fileset dir="src/it/zos"/>
+                                            <filterset begintoken="${" endtoken="}">
+                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}"/>
+                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}"/>
+                                            </filterset>
+                                        </copy>
+                                        <copy todir="target/upload/it/zos/COBOL">
+                                            <fileset dir="target/generated-test-sources/cobol/testAddressBookProtos">
+                                                <include name="ADDRBOOP.cbl"/>
+                                                <include name="ADDRBOOW.cbl"/>
+                                            </fileset>
+                                            <globmapper from="*.cbl" to="*"/>
+                                        </copy>
+                                        <copy todir="target/upload/it/zos/COBOL">
+                                            <fileset dir="target/generated-test-sources/cobol/testAllTypes">
+                                                <include name="ALLTYPEP.cbl"/>
+                                                <include name="ALLTYPEW.cbl"/>
+                                            </fileset>
+                                            <globmapper from="*.cbl" to="*"/>
+                                        </copy>
+                                        <copy todir="target/upload/it/zos/COBOL">
+                                            <fileset dir="target/generated-test-sources/cobol/testCollectionsProtos">
+                                                <include name="SEARRESP.cbl"/>
+                                                <include name="SEARRESW.cbl"/>
+                                            </fileset>
+                                            <globmapper from="*.cbl" to="*"/>
+                                        </copy>
+                                        <copy todir="target/upload/it/zos/COBOL">
+                                            <fileset dir="target/generated-test-sources/cobol/testComplexArrays">
+                                                <include name="AP.cbl"/>
+                                                <include name="AW.cbl"/>
+                                            </fileset>
+                                            <globmapper from="*.cbl" to="*"/>
+                                        </copy>
+                                        <copy todir="target/upload/it/zos/COBOL">
+                                            <fileset dir="target/generated-test-sources/cobol/testEnumSample">
+                                                <include name="ENUMREQP.cbl"/>
+                                                <include name="ENUMREQW.cbl"/>
+                                            </fileset>
+                                            <globmapper from="*.cbl" to="*"/>
+                                        </copy>
+                                        <copy todir="target/upload/it/zos/COBOL">
+                                            <fileset dir="target/generated-test-sources/cobol/testHierarchyProtos">
+                                                <include name="CUSTDATP.cbl"/>
+                                                <include name="CUSTDATW.cbl"/>
+                                            </fileset>
+                                            <globmapper from="*.cbl" to="*"/>
+                                        </copy>
+                                        <copy todir="target/upload/it/zos/COBOL">
+                                            <fileset dir="target/generated-test-sources/cobol/testSearchRequestProtos">
+                                                <include name="SEARREQP.cbl"/>
+                                                <include name="SEARREQW.cbl"/>
+                                            </fileset>
+                                            <globmapper from="*.cbl" to="*"/>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+
+                        </executions>
+                    </plugin>
 
                     <plugin>
                         <groupId>com.legsem.legstar</groupId>
                         <artifactId>zosupload-maven-plugin</artifactId>
-                        <version>0.0.4</version>
                         <executions>
 
                             <!-- Upload and compile the COBOL library. -->
@@ -249,11 +396,11 @@
                                     <goal>upload</goal>
                                 </goals>
                                 <configuration>
-                                    <hostName>${legstar-dev-zos-host}</hostName>
-                                    <hostUserId>${legstar-dev-zos-userid}</hostUserId>
-                                    <hostPassword>${legstar-dev-zos-password}</hostPassword>
-                                    <inputFolder>src/main/zos</inputFolder>
-                                    <remoteFilesPrefix>P390.DEV</remoteFilesPrefix>
+                                    <hostName>${protocob-dev-zos-host}</hostName>
+                                    <hostUserId>${protocob-dev-zos-userid}</hostUserId>
+                                    <hostPassword>${protocob-dev-zos-password}</hostPassword>
+                                    <remoteFilesPrefix>${protocob-dev-zos-pds-pfx}.${protocobMainframeVersion}</remoteFilesPrefix>
+                                    <inputFolder>target/upload/main/zos</inputFolder>
                                 </configuration>
                             </execution>
 
@@ -265,14 +412,34 @@
                                     <goal>upload</goal>
                                 </goals>
                                 <configuration>
-                                    <hostName>${legstar-dev-zos-host}</hostName>
-                                    <hostUserId>${legstar-dev-zos-userid}</hostUserId>
-                                    <hostPassword>${legstar-dev-zos-password}</hostPassword>
-                                    <inputFolder>src/test/zos</inputFolder>
-                                    <remoteFilesPrefix>P390.DEV</remoteFilesPrefix>
+                                    <hostName>${protocob-dev-zos-host}</hostName>
+                                    <hostUserId>${protocob-dev-zos-userid}</hostUserId>
+                                    <hostPassword>${protocob-dev-zos-password}</hostPassword>
+                                    <remoteFilesPrefix>${protocob-dev-zos-pds-pfx}.${protocobMainframeVersion}</remoteFilesPrefix>
+                                    <inputFolder>target/upload/test/zos</inputFolder>
                                     <jclFileNames>
                                         <jclFileName>COBPBCT</jclFileName>
                                         <jclFileName>RUNPBCT</jclFileName>
+                                    </jclFileNames>
+                                </configuration>
+                            </execution>
+
+                            <!-- Upload, compile and run the integration test COBOL programs. -->
+                            <execution>
+                                <id>compile-zos-it-programs</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>upload</goal>
+                                </goals>
+                                <configuration>
+                                    <hostName>${protocob-dev-zos-host}</hostName>
+                                    <hostUserId>${protocob-dev-zos-userid}</hostUserId>
+                                    <hostPassword>${protocob-dev-zos-password}</hostPassword>
+                                    <remoteFilesPrefix>${protocob-dev-zos-pds-pfx}.${protocobMainframeVersion}</remoteFilesPrefix>
+                                    <inputFolder>target/upload/it/zos</inputFolder>
+                                    <jclFileNames>
+                                        <jclFileName>COBPBCI</jclFileName>
+                                        <jclFileName>RUNPBCI</jclFileName>
                                     </jclFileNames>
                                 </configuration>
                             </execution>
