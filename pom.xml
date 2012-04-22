@@ -14,6 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <legstarCoreVersion>1.5.7</legstarCoreVersion>
         <protocobMainframeVersion>V0R1M0</protocobMainframeVersion>
+        <buildDate>${maven.build.timestamp}</buildDate>
     </properties>
 
     <dependencies>
@@ -102,6 +103,13 @@
             <version>2.1</version>
         </dependency>
 
+        <!-- Apache commons client -->    
+        <dependency>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+            <version>1.2</version>
+        </dependency>
+    
         <!-- JUnit -->
         <dependency>
             <groupId>junit</groupId>
@@ -113,6 +121,23 @@
     </dependencies>
 
     <build>
+
+        <!-- Filter version properties file -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/version.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>**/version.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
 
         <pluginManagement>
 
@@ -137,6 +162,11 @@
                     <groupId>com.legsem.legstar</groupId>
                     <artifactId>zosupload-maven-plugin</artifactId>
                     <version>0.0.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>1.6</version>
                 </plugin>
 
             </plugins>
@@ -171,6 +201,29 @@
                         <goals>
                             <goal>add-test-source</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Builds the executable jar -->
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                   <execution>
+                        <id>bundle-exe-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>exe</shadedClassifierName>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.legstar.protobuf.cobol.ProtoCobolMain</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
