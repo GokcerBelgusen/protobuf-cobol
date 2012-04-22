@@ -1,7 +1,7 @@
 //*--------------------------------------------------------------------
-//*- COMPILES UNIT TEST CASES
+//*- COMPILES INTEGRATION TEST CASES
 //*--------------------------------------------------------------------
-//P390COBT   JOB  (ACCT#),'FADY',
+//P390COBI   JOB  (ACCT#),'FADY',
 //           MSGCLASS=X,NOTIFY=&SYSUID,PRTY=14,REGION=0M
 //*--------------------------------------------------------------------
 //COMPLINK  PROC
@@ -32,63 +32,45 @@
 //         DD DDNAME=SYSIN
 //            PEND
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTDBLE
+//            EXEC COMPLINK,PGMNAME=PBCTARRA
 //LKED.SYSIN DD *
-  NAME PBCTDBLE(R)
+  NAME PBCTARRA(R)
 /*
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTFLOA
+//            EXEC COMPLINK,PGMNAME=PBCTATYP
 //LKED.SYSIN DD *
-  NAME PBCTFLOA(R)
+  NAME PBCTATYP(R)
 /*
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTSF32
+//            EXEC COMPLINK,PGMNAME=PBCTCUST
 //LKED.SYSIN DD *
-  NAME PBCTSF32(R)
+  NAME PBCTCUST(R)
 /*
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTSF64
+//            EXEC COMPLINK,PGMNAME=PBCTENUM
 //LKED.SYSIN DD *
-  NAME PBCTSF64(R)
+  NAME PBCTENUM(R)
 /*
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTSV32
+//            EXEC COMPLINK,PGMNAME=PBCTSIMP
 //LKED.SYSIN DD *
-  NAME PBCTSV32(R)
+  NAME PBCTSIMP(R)
 /*
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTSV64
+//            EXEC COMPLINK,PGMNAME=PBCTSREQ
 //LKED.SYSIN DD *
-  NAME PBCTSV64(R)
+  NAME PBCTSREQ(R)
 /*
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTSZ32
+//            EXEC COMPLINK,PGMNAME=PBCTSRES
 //LKED.SYSIN DD *
-  NAME PBCTSZ32(R)
+  NAME PBCTSRES(R)
 /*
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTSZ64
+//            EXEC COMPLINK,PGMNAME=PBCTTUTO
 //LKED.SYSIN DD *
-  NAME PBCTSZ64(R)
+  NAME PBCTTUTO(R)
 /*
 //*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTUF32
-//LKED.SYSIN DD *
-  NAME PBCTUF32(R)
-/*
-//*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTUF64
-//LKED.SYSIN DD *
-  NAME PBCTUF64(R)
-/*
-//*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTUV32
-//LKED.SYSIN DD *
-  NAME PBCTUV32(R)
-/*
-//*--------------------------------------------------------------------
-//            EXEC COMPLINK,PGMNAME=PBCTUV64
-//LKED.SYSIN DD *
-  NAME PBCTUV64(R)
-/*
-//*--------------------------------------------------------------------
+
+

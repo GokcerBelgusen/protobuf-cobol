@@ -19,6 +19,7 @@
 
        01  W-EXPECTED-IEEE-DOUBLE             PIC X(8).
        01  W-EXPECTED-ZOS-DOUBLE              USAGE COMP-2.
+       01  W-ERROR-ZOS-DOUBLE                 USAGE COMP-2.
 
        01  W-DOUBLE-ARRAY-LEN                 PIC 9(4) COMP-5 VALUE 8.
        01  W-DOUBLE-HEX-STRING                PIC X(16).
@@ -110,11 +111,6 @@
            MOVE 0.0 to W-ZOS-DOUBLE.
            PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
 
-           DISPLAY "TO-IEEEDOUBLE ======= -0.0 =============="
-           MOVE X'8000000000000000' TO W-EXPECTED-IEEE-DOUBLE.
-           MOVE -0.0 to W-ZOS-DOUBLE.
-           PERFORM TEST-PB2PDBLE THRU END-TEST-PB2PDBLE.
-
            DISPLAY "TO-IEEEDOUBLE ======= 3.40282347E38 =============="
            MOVE X'3DFF91E0FFFFEF47' TO W-EXPECTED-IEEE-DOUBLE.
            MOVE 3.40282347E38 to W-ZOS-DOUBLE.
@@ -171,10 +167,25 @@
        TEST-PB2ZDBLE.
            CALL 'PB2ZDBLE' USING W-IEEE-DOUBLE-LE W-ZOS-DOUBLE
                  W-BYTES-USED.
-           IF W-ZOS-DOUBLE NOT = W-EXPECTED-ZOS-DOUBLE
+      *    
+      * There can be loss of precision, set tolerance for difference
+      * after the 14th digit
+      *
+           IF W-EXPECTED-ZOS-DOUBLE = 0
+               COMPUTE W-ERROR-ZOS-DOUBLE = W-ZOS-DOUBLE
+           ELSE
+               COMPUTE W-ERROR-ZOS-DOUBLE =
+                       (W-EXPECTED-ZOS-DOUBLE - W-ZOS-DOUBLE)
+                       / W-EXPECTED-ZOS-DOUBLE
+           END-IF
+           IF W-ERROR-ZOS-DOUBLE < 0
+              COMPUTE W-ERROR-ZOS-DOUBLE = -1 * W-ERROR-ZOS-DOUBLE
+           END-IF
+           IF W-ERROR-ZOS-DOUBLE > 0.1E-14
               DISPLAY 'ERROR: ZOS-DOUBLE'
               DISPLAY '    RESULT  : ' W-ZOS-DOUBLE
               DISPLAY '    EXPECTED: ' W-EXPECTED-ZOS-DOUBLE
+              DISPLAY '    ERROR   : ' W-ERROR-ZOS-DOUBLE
               MOVE 8 TO W-RETURN-CODE
            ELSE
               DISPLAY 'OK'
@@ -184,7 +195,7 @@
        TEST-PB2PDBLE.
            CALL 'PB2PDBLE' USING W-ZOS-DOUBLE W-IEEE-DOUBLE-LE
                  W-BYTES-USED.
-           IF W-IEEE-DOUBLE-LE NOT = W-EXPECTED-IEEE-DOUBLE
+           IF W-EXPECTED-IEEE-DOUBLE NOT = W-IEEE-DOUBLE-LE
               DISPLAY 'ERROR: IEEE-DOUBLE'
               CALL 'PBBA2HEX' USING W-DOUBLE-ARRAY-LEN
                               W-IEEE-DOUBLE-LE

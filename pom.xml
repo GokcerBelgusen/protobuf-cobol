@@ -257,7 +257,7 @@
                                 </configuration>
                             </execution>
 
-                            <!-- Upload and compile the test programs. -->
+                            <!-- Upload, compile and run the unit test COBOL programs. -->
                             <execution>
                                 <id>compile-zos-test-programs</id>
                                 <phase>test-compile</phase>
@@ -270,6 +270,10 @@
                                     <hostPassword>${legstar-dev-zos-password}</hostPassword>
                                     <inputFolder>src/test/zos</inputFolder>
                                     <remoteFilesPrefix>P390.DEV</remoteFilesPrefix>
+                                    <jclFileNames>
+                                        <jclFileName>COBPBCT</jclFileName>
+                                        <jclFileName>RUNPBCT</jclFileName>
+                                    </jclFileNames>
                                 </configuration>
                             </execution>
 

@@ -1,6 +1,9 @@
-//P390FXMD   JOB  (ACCT#),'FADY',
+//*--------------------------------------------------------------------
+//*- COMPILES PROTOCOB LIBRARY
+//*--------------------------------------------------------------------
+//P390COBL   JOB  (ACCT#),'FADY',
 //           MSGCLASS=X,NOTIFY=&SYSUID,PRTY=14,REGION=0M
-//*********************************************************************
+//*--------------------------------------------------------------------
 //COB  EXEC PGM=IGYCRCTL,REGION=1024K,
 // PARM=('NODYNAM,LIB,OBJECT,RENT,APOST,LIST,TRUNC(BIN),NOSEQ,',
 //      'OPTIMIZE',MAP)
@@ -16,7 +19,7 @@
 //SYSUT5   DD UNIT=SYSDA,SPACE=(460,(350,100))
 //SYSUT6   DD UNIT=SYSDA,SPACE=(460,(350,100))
 //SYSUT7   DD UNIT=SYSDA,SPACE=(460,(350,100))
-//*********************************************************************
+//*
 //LKED   EXEC PGM=IEWL,REGION=1024K,
 //       PARM='LIST,MAP,XREF,AMODE(31),RMODE(ANY)'
 //SYSLIB   DD DSN=P390.DEV.LOAD,DISP=SHR
