@@ -1,0 +1,58 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+
+    <id>zip</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <fileSets>
+        <!-- Copy configuration files -->
+        <fileSet>
+            <directory>src/main/resources/conf</directory>
+            <outputDirectory>conf</outputDirectory>
+            <includes>
+                <include>log4j.properties</include>
+            </includes>
+        </fileSet>
+        <!-- Copy samples proto files -->
+        <fileSet>
+            <directory>${project.build.directory}/proto</directory>
+            <outputDirectory>proto</outputDirectory>
+            <includes>
+                <include>addressbook.proto</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <!-- Copy jar with dependencies -->
+        <file>
+            <source>${project.build.directory}/protocob.jar</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+        <!-- Copy command files to run utility -->
+        <file>
+            <source>run.bat</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>true</filtered>
+        </file>
+        <file>
+            <source>run.sh</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>true</filtered>
+        </file>
+    </files>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <unpack>false</unpack>
+            <scope>runtime</scope>
+        </dependencySet>
+    </dependencySets>
+
+</assembly>

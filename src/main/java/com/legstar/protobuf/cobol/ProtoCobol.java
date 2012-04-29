@@ -24,7 +24,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,10 +34,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.filefilter.NameFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,6 +44,7 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 import com.legstar.cobol.gen.CopybookGenerator;
 import com.legstar.cobol.model.CobolDataItem;
 import com.legstar.protobuf.cobol.ProtoCobolMapper.HasMaxSize;
+import com.legstar.protobuf.cobol.ProtoCobolUtils.ProtoFileJavaProperties;
 
 /**
  * Translates protocol buffer protos files to COBOL artifacts.
@@ -191,6 +188,8 @@ public class ProtoCobol {
                 }
 
             }
+            logger.info("ProtoCobol succeeded");
+
         } catch (Exception e) {
             exceptions
                     .add(new ProtoCobolException("COBOL generation failed", e));
@@ -309,14 +308,21 @@ public class ProtoCobol {
      */
     public FileDescriptor toFileDescriptor(File protoFile, File protoPath,
             int timeout) throws ProtoCobolException {
-        File javaOut = new File(FileUtils.getTempDirectory(), "ProtoCobol"
-                + System.currentTimeMillis());
-        javaOut.mkdirs();
-        File javaSourceFile = runProtoJava(protoFile,
-                (protoPath == null) ? protoFile.getParentFile() : protoPath,
-                javaOut, timeout);
-        Class < ? > clazz = runJavaCompiler(javaOut, javaSourceFile);
-        return toFileDescriptor(clazz);
+        try {
+            File javaOut = new File(FileUtils.getTempDirectory(), "ProtoCobol"
+                    + System.currentTimeMillis());
+            javaOut.mkdirs();
+            File javaSourceFile = runProtoJava(
+                    protoFile,
+                    (protoPath == null) ? protoFile.getParentFile() : protoPath,
+                    javaOut, timeout);
+            Class < ? > clazz = runJavaCompiler(javaOut, javaSourceFile);
+            FileDescriptor fileDescriptor = toFileDescriptor(clazz);
+            FileUtils.forceDelete(javaOut);
+            return fileDescriptor;
+        } catch (IOException e) {
+            throw new ProtoCobolException(e);
+        }
     }
 
     /**
@@ -374,24 +380,16 @@ public class ProtoCobol {
     protected File locateJavaSourceFile(File javaOut)
             throws ProtoCobolException {
 
-        String javaClassName = StringUtils.capitalize(FilenameUtils
-                .getBaseName(protoFile.getName())) + ".java";
-        logger.info("Looking for " + javaClassName + " in "
-                + javaOut.getAbsolutePath());
-
-        Collection < File > files = FileUtils.listFiles(javaOut,
-                new NameFileFilter(javaClassName), TrueFileFilter.INSTANCE);
-        if (files.size() == 0) {
-            throw new ProtoCobolException(
-                    "Unable to locate the generated java source "
-                            + javaClassName + " in "
-                            + javaOut.getAbsolutePath());
+        try {
+            ProtoFileJavaProperties javaProperties = ProtoCobolUtils
+                    .getJavaProperties(protoFile);
+            return new File(javaOut,
+                    ProtoCobolUtils.packageToLocation(javaProperties
+                            .getJavaPackageName())
+                            + javaProperties.getJavaClassName());
+        } catch (IOException e) {
+            throw new ProtoCobolException(e);
         }
-        if (files.size() > 1) {
-            logger.warn("There are more than one file named " + javaClassName
-                    + " in " + javaOut.getAbsolutePath());
-        }
-        return files.iterator().next();
     }
 
     /**
@@ -409,6 +407,10 @@ public class ProtoCobol {
         logger.info("About to compile " + javaSourceFile.getAbsolutePath());
 
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
+        if (javaCompiler == null) {
+            throw new ProtoCobolException(
+                    "You need to have the JDK tools.jar on the classpath");
+        }
         StandardJavaFileManager manager = javaCompiler.getStandardFileManager(
                 null, null, null);
         Iterable < ? extends JavaFileObject > units = manager

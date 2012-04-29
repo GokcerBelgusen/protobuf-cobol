@@ -165,8 +165,8 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>1.6</version>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>2.3</version>
                 </plugin>
 
             </plugins>
@@ -205,24 +205,73 @@
                 </executions>
             </plugin>
 
-            <!-- Builds the executable jar -->
+            <!-- Copy the artifacts to include in assembly and test the assembly. -->
             <plugin>
-                <artifactId>maven-shade-plugin</artifactId>
+                <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
-                   <execution>
-                        <id>bundle-exe-jar</id>
-                        <phase>package</phase>
+                    <execution>
+                        <id>copy-deliverables</id>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <target>
+                                <mkdir dir="target/proto" />
+                                <copy todir="target/proto">
+                                    <fileset dir="src/test/resources/proto"/>
+                                </copy>
+                            </target>
+                        </configuration>
                         <goals>
-                            <goal>shade</goal>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-distribution</id>
+                        <phase>verify</phase>
+                        <configuration>
+                            <tasks>
+                                <ant antfile="${basedir}/src/test/ant/test-distribution.xml" />
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Builds the distributable zip which will contain regular jar and a jar with dependencies -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-jar-with-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>single</goal>
                         </goals>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>exe</shadedClassifierName>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.legstar.protobuf.cobol.ProtoCobolMain</mainClass>
-                                </transformer>
-                            </transformers>
+                            <finalName>protocob</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <attach>false</attach>
+                            <descriptors>
+                                <descriptor>assembly-dep.xml</descriptor>
+                            </descriptors>
+                            <archiverConfig>
+                                <duplicateBehavior>skip</duplicateBehavior>
+                            </archiverConfig>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
                         </configuration>
                     </execution>
                 </executions>

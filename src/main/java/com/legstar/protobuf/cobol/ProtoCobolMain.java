@@ -33,8 +33,7 @@ public class ProtoCobolMain {
     private static final String VERSION_FILE_NAME = "/version.properties";
 
     /** The default COBOL output folder. */
-    private static final File DEFAULT_PROTOCOB_OUTPUT_FOLDER = new File(
-            System.getProperty("user.home") + "/protocob");
+    private static final File DEFAULT_PROTOCOB_OUTPUT_FOLDER = new File("cobol");
 
     /** Logger. */
     private final Log _log = LogFactory.getLog(getClass());
@@ -140,7 +139,7 @@ public class ProtoCobolMain {
         if (line.hasOption("inputProtoFile")) {
             inputProtoFile = new File(
                     (line.getOptionValue("inputProtoFile").trim()));
-            if (inputProtoFile.canRead()) {
+            if (!inputProtoFile.canRead()) {
                 System.out
                         .println("Input file "
                                 + inputProtoFile

@@ -1,0 +1,35 @@
+<!-- =================================================================================
+     This script tests the distribution file. It unzips the distro to a temporary
+     location.
+ -->
+<project basedir="../../.." default="installDistro" name="testDistro">
+
+    <!-- ===========================================================  -->
+    <!-- Setup environment
+    -->
+    <target name="init">
+        <xmlproperty file="${basedir}/pom.xml"/>
+        
+        <property environment="env"/>
+        <!-- Temporary location  -->
+        <property name="test.dir" value="${basedir}/target/test-distro" />
+        <!-- Distribution name  -->
+        <property name="dist.name" value="protobuf-cobol-${project.version}" />
+        <!-- Distribution zip file  -->
+        <property name="dist.zip" value="${dist.name}.zip" />
+        <!-- Distribution file location   -->
+        <property name="dist.dir" value="${basedir}/target" />
+        <!-- Distribution zip file   -->
+        <property name="zip.file" value="${dist.dir}/${dist.zip}" />
+    
+    </target>
+
+    <!-- ===========================================================  -->
+    <!-- Unzip distro to temporary location
+    -->
+    <target name="installDistro" depends="init">
+        <unzip src="${zip.file}" dest="${test.dir}"/>
+    </target>
+    
+
+</project>
