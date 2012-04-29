@@ -340,10 +340,16 @@
                                 <configuration>
                                     <target>
                                         <mkdir dir="target/generated-test-sources" />
-                                        <exec executable="protoc.exe">
+                                        <exec executable="protoc">
                                             <arg value="--java_out=target/generated-test-sources" />
                                             <arg value="--proto_path=src/test/resources/proto" />
-                                            <arg value="src/test/resources/proto/*.proto" />
+                                            <arg value="src/test/resources/proto/addressbook.proto" />
+                                            <arg value="src/test/resources/proto/alltypes.proto" />
+                                            <arg value="src/test/resources/proto/collections.proto" />
+                                            <arg value="src/test/resources/proto/complexarrays.proto" />
+                                            <arg value="src/test/resources/proto/enumsample.proto" />
+                                            <arg value="src/test/resources/proto/hierarchy.proto" />
+                                            <arg value="src/test/resources/proto/simple.proto" />
                                         </exec>
                                     </target>
                                 </configuration>
