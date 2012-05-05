@@ -94,9 +94,6 @@ public abstract class AbstractTest extends TestCase {
 
     /**
      * Check a result against a reference.
-     * <p/>
-     * We neutralize the line separators for the purpose of comparison otherwise
-     * results vary depending on the OS.
      * 
      * @param result the result obtained
      * @param fileName the corresponding file name generated (null if none)
@@ -118,8 +115,7 @@ public abstract class AbstractTest extends TestCase {
             } else {
                 String expected = FileUtils.readFileToString(referenceFile,
                         "UTF-8");
-                assertEquals(expected.replaceAll("[\\r\\n]+", ""),
-                        result.replaceAll("[\\r\\n]+", ""));
+                assertEquals(expected, result);
             }
         } catch (IOException e) {
             logger.error("Test " + debugName + " failed", e);

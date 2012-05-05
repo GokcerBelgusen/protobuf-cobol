@@ -2,20 +2,93 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>5</version>
+    </parent>
+
     <groupId>com.legsem.legstar</groupId>
     <artifactId>protobuf-cobol</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>protobuf-cobol</name>
-    <url>http://maven.apache.org</url>
+    <description>Protocol Buffers for COBOL</description>
+    <url>http://code.google.com/p/protobuf-cobol</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <legstarCoreVersion>1.5.7</legstarCoreVersion>
         <protocobMainframeVersion>V0R1M0</protocobMainframeVersion>
+        <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
         <buildDate>${maven.build.timestamp}</buildDate>
     </properties>
+
+    <issueManagement>
+        <system>Google Code Issue Tracking</system>
+        <url>http://code.google.com/p/protobuf-cobol/issues/list</url>
+    </issueManagement>
+
+    <scm>
+        <connection>scm:svn:http://protobuf-cobol.googlecode.com/svn/trunk/</connection>
+        <developerConnection>scm:svn:https://protobuf-cobol.googlecode.com/svn/trunk/</developerConnection>
+        <url>http://protobuf-cobol.googlecode.com/svn/trunk/</url>
+    </scm>
+
+    <distributionManagement>
+
+        <site>
+            <id>protobuf-cobol.googlecode.com</id>
+            <name>protobuf-cobol</name>
+            <url>svn:https://protobuf-cobol.googlecode.com/svn/site/${project.version}</url>
+        </site>
+
+    </distributionManagement>
+
+    <mailingLists>
+        <mailingList>
+            <name>LegStar users mailing list</name>
+            <subscribe>http://groups.google.com/group/legstar-user/subscribe</subscribe>
+            <unsubscribe>http://groups.google.com/group/legstar-user/subscribe</unsubscribe>
+            <post>legstar-user@googlegroups.com</post>
+            <archive>http://groups.google.com/group/legstar-user/topics</archive>
+        </mailingList>
+        <mailingList>
+            <name>LegStar dev mailing list</name>
+            <subscribe>http://groups.google.com/group/legstar-dev/subscribe</subscribe>
+            <unsubscribe>http://groups.google.com/group/legstar-dev/subscribe</unsubscribe>
+            <post>legstar-dev@googlegroups.com</post>
+            <archive>http://groups.google.com/group/legstar-dev/topics</archive>
+        </mailingList>
+    </mailingLists>
+
+    <developers>
+        <developer>
+            <id>fady</id>
+            <name>Fady Moussallam</name>
+            <email>fady@NOSPAMlegsem.com</email>
+            <organization>Legsem.com</organization>
+            <roles>
+                <role>Project Manager</role>
+                <role>Architect</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License</name>
+            <url>http://www.gnu.org/licenses/lgpl.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>LegSem EURL</name>
+        <url>http://www.legsem.com/</url>
+    </organization>
 
     <dependencies>
 
@@ -138,6 +211,14 @@
                 </excludes>
             </resource>
         </resources>
+
+        <extensions>
+            <extension>
+                <groupId>com.google.code.maven-svn-wagon</groupId>
+                <artifactId>maven-svn-wagon</artifactId>
+                <version>1.4</version>
+            </extension>
+        </extensions>
 
         <pluginManagement>
 
