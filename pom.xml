@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -10,7 +9,7 @@
 
     <groupId>com.legsem.legstar</groupId>
     <artifactId>protobuf-cobol</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <packaging>jar</packaging>
 
     <name>protobuf-cobol</name>
@@ -31,9 +30,9 @@
     </issueManagement>
 
     <scm>
-        <connection>scm:svn:http://protobuf-cobol.googlecode.com/svn/trunk/</connection>
-        <developerConnection>scm:svn:https://protobuf-cobol.googlecode.com/svn/trunk/</developerConnection>
-        <url>http://protobuf-cobol.googlecode.com/svn/trunk/</url>
+        <connection>scm:svn:http://protobuf-cobol.googlecode.com/svn/tags/protobuf-cobol-0.1</connection>
+        <developerConnection>scm:svn:https://protobuf-cobol.googlecode.com/svn/tags/protobuf-cobol-0.1</developerConnection>
+        <url>http://protobuf-cobol.googlecode.com/svn/tags/protobuf-cobol-0.1</url>
     </scm>
 
     <distributionManagement>
@@ -297,7 +296,7 @@
                             <target>
                                 <mkdir dir="target/proto" />
                                 <copy todir="target/proto">
-                                    <fileset dir="src/test/resources/proto"/>
+                                    <fileset dir="src/test/resources/proto" />
                                 </copy>
                             </target>
                         </configuration>
@@ -465,10 +464,10 @@
                                     <target>
                                         <mkdir dir="target/upload/main/zos" />
                                         <copy todir="target/upload/main/zos">
-                                            <fileset dir="src/main/zos"/>
+                                            <fileset dir="src/main/zos" />
                                             <filterset begintoken="${" endtoken="}">
-                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}"/>
-                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}"/>
+                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}" />
+                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}" />
                                             </filterset>
                                         </copy>
                                     </target>
@@ -486,10 +485,10 @@
                                     <target>
                                         <mkdir dir="target/upload/test/zos" />
                                         <copy todir="target/upload/test/zos">
-                                            <fileset dir="src/test/zos"/>
+                                            <fileset dir="src/test/zos" />
                                             <filterset begintoken="${" endtoken="}">
-                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}"/>
-                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}"/>
+                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}" />
+                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}" />
                                             </filterset>
                                         </copy>
                                     </target>
@@ -507,60 +506,60 @@
                                     <target>
                                         <mkdir dir="target/upload/it/zos" />
                                         <copy todir="target/upload/it/zos">
-                                            <fileset dir="src/it/zos"/>
+                                            <fileset dir="src/it/zos" />
                                             <filterset begintoken="${" endtoken="}">
-                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}"/>
-                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}"/>
+                                                <filter token="protocob-dev-zos-pds-pfx" value="${protocob-dev-zos-pds-pfx}" />
+                                                <filter token="protocobMainframeVersion" value="${protocobMainframeVersion}" />
                                             </filterset>
                                         </copy>
                                         <copy todir="target/upload/it/zos/COBOL">
                                             <fileset dir="target/generated-test-sources/cobol/testAddressBookProtos">
-                                                <include name="ADDRBOOP.cbl"/>
-                                                <include name="ADDRBOOW.cbl"/>
+                                                <include name="ADDRBOOP.cbl" />
+                                                <include name="ADDRBOOW.cbl" />
                                             </fileset>
-                                            <globmapper from="*.cbl" to="*"/>
+                                            <globmapper from="*.cbl" to="*" />
                                         </copy>
                                         <copy todir="target/upload/it/zos/COBOL">
                                             <fileset dir="target/generated-test-sources/cobol/testAllTypes">
-                                                <include name="ALLTYPEP.cbl"/>
-                                                <include name="ALLTYPEW.cbl"/>
+                                                <include name="ALLTYPEP.cbl" />
+                                                <include name="ALLTYPEW.cbl" />
                                             </fileset>
-                                            <globmapper from="*.cbl" to="*"/>
+                                            <globmapper from="*.cbl" to="*" />
                                         </copy>
                                         <copy todir="target/upload/it/zos/COBOL">
                                             <fileset dir="target/generated-test-sources/cobol/testCollectionsProtos">
-                                                <include name="SEARRESP.cbl"/>
-                                                <include name="SEARRESW.cbl"/>
+                                                <include name="SEARRESP.cbl" />
+                                                <include name="SEARRESW.cbl" />
                                             </fileset>
-                                            <globmapper from="*.cbl" to="*"/>
+                                            <globmapper from="*.cbl" to="*" />
                                         </copy>
                                         <copy todir="target/upload/it/zos/COBOL">
                                             <fileset dir="target/generated-test-sources/cobol/testComplexArrays">
-                                                <include name="AP.cbl"/>
-                                                <include name="AW.cbl"/>
+                                                <include name="AP.cbl" />
+                                                <include name="AW.cbl" />
                                             </fileset>
-                                            <globmapper from="*.cbl" to="*"/>
+                                            <globmapper from="*.cbl" to="*" />
                                         </copy>
                                         <copy todir="target/upload/it/zos/COBOL">
                                             <fileset dir="target/generated-test-sources/cobol/testEnumSample">
-                                                <include name="ENUMREQP.cbl"/>
-                                                <include name="ENUMREQW.cbl"/>
+                                                <include name="ENUMREQP.cbl" />
+                                                <include name="ENUMREQW.cbl" />
                                             </fileset>
-                                            <globmapper from="*.cbl" to="*"/>
+                                            <globmapper from="*.cbl" to="*" />
                                         </copy>
                                         <copy todir="target/upload/it/zos/COBOL">
                                             <fileset dir="target/generated-test-sources/cobol/testHierarchyProtos">
-                                                <include name="CUSTDATP.cbl"/>
-                                                <include name="CUSTDATW.cbl"/>
+                                                <include name="CUSTDATP.cbl" />
+                                                <include name="CUSTDATW.cbl" />
                                             </fileset>
-                                            <globmapper from="*.cbl" to="*"/>
+                                            <globmapper from="*.cbl" to="*" />
                                         </copy>
                                         <copy todir="target/upload/it/zos/COBOL">
                                             <fileset dir="target/generated-test-sources/cobol/testSearchRequestProtos">
-                                                <include name="SEARREQP.cbl"/>
-                                                <include name="SEARREQW.cbl"/>
+                                                <include name="SEARREQP.cbl" />
+                                                <include name="SEARREQW.cbl" />
                                             </fileset>
-                                            <globmapper from="*.cbl" to="*"/>
+                                            <globmapper from="*.cbl" to="*" />
                                         </copy>
                                     </target>
                                 </configuration>
