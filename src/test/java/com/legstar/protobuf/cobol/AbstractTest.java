@@ -1,3 +1,13 @@
+/*******************************************************************************
+ * Copyright (c) 2012 LegSem EURL.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v3
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl.html
+ * 
+ * Contributors:
+ *     LegSem EURL - initial API and implementation
+ ******************************************************************************/
 package com.legstar.protobuf.cobol;
 
 import java.io.File;
@@ -84,6 +94,9 @@ public abstract class AbstractTest extends TestCase {
 
     /**
      * Check a result against a reference.
+     * <p/>
+     * We neutralize the line separators for the purpose of comparison otherwise
+     * results vary depending on the OS.
      * 
      * @param result the result obtained
      * @param fileName the corresponding file name generated (null if none)
@@ -105,7 +118,8 @@ public abstract class AbstractTest extends TestCase {
             } else {
                 String expected = FileUtils.readFileToString(referenceFile,
                         "UTF-8");
-                assertEquals(expected, result);
+                assertEquals(expected.replaceAll("[\\r\\n]+", ""),
+                        result.replaceAll("[\\r\\n]+", ""));
             }
         } catch (IOException e) {
             logger.error("Test " + debugName + " failed", e);
