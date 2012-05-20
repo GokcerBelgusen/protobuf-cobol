@@ -27,7 +27,7 @@ set JVM_ARGS=
 rem Update the log4j configuration to set debug mode
 set JVM_ARGS=%JVM_ARGS% -Dlog4j.configuration=file:conf/log4j.properties
 
-java %JVM_ARGS% -cp %JAVA_HOME%/lib/tools.jar;protocob.jar com.legstar.protobuf.cobol.ProtoCobolMain %PROTOCOB_CMD_LINE_ARGS%
+java %JVM_ARGS% -cp "%JAVA_HOME%/lib/tools.jar";protocob.jar com.legstar.protobuf.cobol.ProtoCobolMain %PROTOCOB_CMD_LINE_ARGS%
 goto end
 
 :exit
