@@ -97,8 +97,8 @@
            03  B OCCURS 0 TO 10 DEPENDING ON B--C.
              05  C.
                07  d OCCURS 10 PIC X(32) DISPLAY.
-             03  E OCCURS 0 TO 10 DEPENDING ON E--C.
-               05  f PIC X(32) DISPLAY.
+           03  E OCCURS 0 TO 10 DEPENDING ON E--C.
+             05  f PIC X(32) DISPLAY.
 
 
       *    // A protobuf variable integer

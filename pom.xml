@@ -18,7 +18,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <legstarCoreVersion>1.5.7</legstarCoreVersion>
+        <legstarCoreVersion>1.5.8</legstarCoreVersion>
         <protocobMainframeVersion>V0R1M0</protocobMainframeVersion>
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
         <buildDate>${maven.build.timestamp}</buildDate>

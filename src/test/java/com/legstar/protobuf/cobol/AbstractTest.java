@@ -115,7 +115,9 @@ public abstract class AbstractTest extends TestCase {
             } else {
                 String expected = FileUtils.readFileToString(referenceFile,
                         "UTF-8");
-                assertEquals(expected, result);
+                // neutralize platform specific line separator for comparisons
+                assertEquals(expected.replaceAll("[\\r\\n]", ""),
+                        result.replaceAll("[\\r\\n]", ""));
             }
         } catch (IOException e) {
             logger.error("Test " + debugName + " failed", e);
