@@ -13,6 +13,7 @@ package com.legstar.protobuf.cobol;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -32,6 +33,9 @@ public abstract class AbstractTest extends TestCase {
 
     /** Extension added to reference files. */
     public static final String REF_FILE_EXT = "txt";
+
+    /** Reference files and test results are encoded with this. */
+    public static final String FILES_ENCODING = "UTF-8";
 
     private static Log logger = LogFactory.getLog(AbstractTest.class);
 
@@ -85,11 +89,13 @@ public abstract class AbstractTest extends TestCase {
 
     /**
      * Check a result against a reference.
+     * <p/>
+     * Neutralize platform specific line separator (produced by StringTemplate)
      * 
      * @param result the result obtained
      */
     protected void check(final String result) {
-        check(result, null);
+        check(result.replace("\r\n", "\n"), null);
     }
 
     /**
@@ -111,13 +117,11 @@ public abstract class AbstractTest extends TestCase {
                             + REF_FILE_EXT);
 
             if (isCreateReferences()) {
-                FileUtils.writeStringToFile(referenceFile, result, "UTF-8");
+                FileUtils.writeStringToFile(referenceFile, result,
+                        FILES_ENCODING);
             } else {
-                String expected = FileUtils.readFileToString(referenceFile,
-                        "UTF-8");
-                // neutralize platform specific line separator for comparisons
-                assertEquals(expected.replaceAll("[\\r\\n]", ""),
-                        result.replaceAll("[\\r\\n]", ""));
+                String expected = fileToString(referenceFile);
+                assertEquals(expected, result);
             }
         } catch (IOException e) {
             logger.error("Test " + debugName + " failed", e);
@@ -134,9 +138,39 @@ public abstract class AbstractTest extends TestCase {
      * @throws IOException if reading the file fails
      */
     public void checkFile(String fileName) throws IOException {
-        String result = FileUtils.readFileToString(new File(getOutputFolder(),
-                fileName));
-        check(result, fileName);
+        check(fileToString(fileName), fileName);
+    }
+
+    /**
+     * Turns the content of a file into a string with platform neutral line
+     * separator.
+     * 
+     * @param fileName the file name
+     * @return a string with lines separated by "\n"
+     * @throws IOException if file cannot be read
+     */
+    public String fileToString(String fileName) throws IOException {
+        return fileToString(new File(getOutputFolder(), fileName));
+    }
+
+    /**
+     * Turns the content of a file into a string with platform neutral line
+     * separator.
+     * 
+     * @param file the file
+     * @return a string with lines separated by "\n"
+     * @throws IOException if file cannot be read
+     */
+    public String fileToString(File file) throws IOException {
+        List < String > lines = FileUtils.readLines(file, FILES_ENCODING);
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            if (sb.length() > 0) {
+                sb.append("\n");
+            }
+            sb.append(line);
+        }
+        return sb.toString();
     }
 
     /**

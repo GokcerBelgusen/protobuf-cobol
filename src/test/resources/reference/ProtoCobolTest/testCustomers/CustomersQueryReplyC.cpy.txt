@@ -1,0 +1,18 @@
+      * ----------------------------------------------------------------
+      * Generated copybook for CustomersQueryReply
+      * ----------------------------------------------------------------
+       01  CustomersQueryReply.
+           03  OCCURS-COUNTERS--C.
+             05  Customer--C PIC 9(9) COMP-5.
+           03  Customer OCCURS 0 TO 1000 DEPENDING ON Customer--C.
+             05  customer-id PIC S9(9) COMP-5.
+             05  PersonalData.
+               07  customer-name PIC X(20) DISPLAY.
+               07  customer-address PIC X(20) DISPLAY.
+               07  customer-phone PIC X(8) DISPLAY.
+             05  TransactionDate.
+               07  transaction-year PIC S9(9) COMP-5.
+               07  transaction-month PIC S9(9) COMP-5.
+               07  transaction-day PIC S9(9) COMP-5.
+             05  last-transaction-amount COMP-2.
+             05  last-transaction-comment PIC X(9) DISPLAY.

@@ -650,7 +650,9 @@ public class ProtoCobol {
      * @return this instance for chaining
      */
     public ProtoCobol addSizeProvider(HasMaxSize provider) {
-        cobolMapper.addSizeProvider(provider);
+        if (provider != null) {
+            cobolMapper.addSizeProvider(provider);
+        }
         return this;
     }
 

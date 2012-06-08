@@ -1,0 +1,734 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CUSQUREW.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * Subprogram that writes a protobuf byte stream from  a cobol   *
+      * structure content.                                            *
+      *                                                               *
+      * This is generated code produced by protobuf-cobol.            *
+      * It uses the PB4CBLIB protobuf-cobol library.                  *
+      *                                                               *
+      * Limits:                                                       *
+      *    256 fields per message                                     *
+      *    16777215 message byte length                               *
+      *                                                               *
+      *****************************************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+       DATA DIVISION.
+      *****************************************************************
+      *        W O R K I N G    S T O R A G E    S E C T I O N        *
+      *****************************************************************
+       WORKING-STORAGE SECTION.
+
+      *    // z/OS code page
+       77  ZOS-CODEPAGE             PIC 9(4) COMP VALUE 1047.
+
+      *    // Protobuf field key and type
+       01  W-P-KEYTYPE.
+           05  W-P-KEY               PIC 9(8) COMP-5.
+           05  W-P-TYPE              PIC 9(4) COMP-5.
+               88 VARINT             VALUE 0.
+               88 FIXED-64           VALUE 1.
+               88 LENGTH-DELIMITED   VALUE 2.
+               88 FIXED-32           VALUE 5.
+               88 VALID-WIRE-TYPE    VALUE 0, 1, 2, 5.
+
+      *    // Tracks the current location in protobuf byte stream
+       01  W-I                       PIC 9(8) COMP-5.
+
+      *    // A pointer to the current protobuf byte stream location
+       01  W-STREAM                  POINTER.
+
+      *    // A double word binary to hold unsigned long integers
+       01  W-Z-UINT64                PIC 9(18) COMP-5.
+
+      *    // A single word binary to hold unsigned integers
+       01  W-Z-UINT32                PIC 9(8) COMP-5.
+
+      *    // A double word binary to hold signed long integers
+       01  W-Z-INT64                 PIC S9(18) COMP-5.
+
+      *    // A single word binary to hold signed integers
+       01  W-Z-INT32                 PIC S9(8) COMP-5.
+
+      *    // A simple floating point numeric
+       01  W-Z-COMP-1                COMP-1.
+
+      *    // A double floating point numeric
+       01  W-Z-COMP-2                COMP-2.
+
+      *    // Library calls return how many stream bytes were consumed
+       01  W-BYTES-USED              PIC 9(8) COMP-5.
+
+      *    // Sub-messages length
+       01  W-Customer-L     PIC 9(8) COMP-5.
+       01  W-PersonalData-L     PIC 9(8) COMP-5.
+       01  W-TransactionDate-L     PIC 9(8) COMP-5.
+
+      *    // Array indexes
+       01  W-Customer-I     PIC 9(8) COMP-5.
+
+      *    // Conversion buffer for Strings
+       01  W-UTF16-BUFFER            PIC N(32).
+
+      *    // Temporary storage for variable integers
+       01  W-P-VARINT                PIC X(10).
+
+      *    // Counters
+       01  W-J                       PIC 9(8) COMP-5.
+
+      *****************************************************************
+      *        L I N K A G E    S E C T I O N                         *
+      *****************************************************************
+       LINKAGE SECTION.
+
+      *    // The protobuf input byte stream
+       01  PROTOBUF-BYTES            PIC X(16777215).
+
+      *    // The protobuf input byte stream length
+       01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.
+
+      *    // The input COBOL structure
+       01  CustomersQueryReply.
+           03  OCCURS-COUNTERS--C.
+             05  Customer--C PIC 9(9) COMP-5.
+           03  Customer OCCURS 0 TO 1000 DEPENDING ON Customer--C.
+             05  customer-id PIC S9(9) COMP-5.
+             05  PersonalData.
+               07  customer-name PIC X(20) DISPLAY.
+               07  customer-address PIC X(20) DISPLAY.
+               07  customer-phone PIC X(8) DISPLAY.
+             05  TransactionDate.
+               07  transaction-year PIC S9(9) COMP-5.
+               07  transaction-month PIC S9(9) COMP-5.
+               07  transaction-day PIC S9(9) COMP-5.
+             05  last-transaction-amount COMP-2.
+             05  last-transaction-comment PIC X(9) DISPLAY.
+
+
+      *    // A protobuf variable integer
+       01  P-VARINT                  PIC X(10).
+
+      *    // A protobuf fixed 32 bits integer
+       01  P-FIXED32                 PIC X(4).
+
+      *    // A protobuf fixed 64 bits integer
+       01  P-FIXED64                 PIC X(8).
+
+      *    // A protobuf float (IEEE 754)
+       01  P-FLOAT                   PIC X(4).
+
+      *    // A protobuf double (IEEE 754)
+       01  P-DOUBLE                  PIC X(8).
+
+      *****************************************************************
+      *    P R O C E D U R E  D I V I S I O N   S E C T I O N         *
+      *****************************************************************
+       PROCEDURE DIVISION USING
+               CustomersQueryReply,
+               PROTOBUF-BYTES,
+               PROTOBUF-BYTES-LEN.
+      *    // Write the root protobuf message
+           MOVE ZERO TO W-Customer-I.
+           MOVE 1 TO W-I.
+           PERFORM WRITE-CustomersQueryReply THRU
+               END-WRITE-CustomersQueryReply.
+           COMPUTE PROTOBUF-BYTES-LEN = W-I - 1.
+           GOBACK.
+
+      * ---------------------------------------------------------------
+      * Write the CustomersQueryReply message field
+      * ---------------------------------------------------------------
+       WRITE-CustomersQueryReply.
+      D    DISPLAY 'WRITE-CustomersQueryReply OFFSET=' W-I.
+           PERFORM VARYING W-Customer-I FROM 1 BY 1
+                   UNTIL W-Customer-I > Customer--C
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 1 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               PERFORM CALC-Customer-SIZE THRU
+                   END-CALC-Customer-SIZE
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32 = W-Customer-L
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               PERFORM WRITE-Customer THRU
+                   END-WRITE-Customer
+           END-PERFORM.
+       END-WRITE-CustomersQueryReply. EXIT.
+
+      * ---------------------------------------------------------------
+      * Write the Customer message field
+      * ---------------------------------------------------------------
+       WRITE-Customer.
+      D    DISPLAY 'WRITE-Customer OFFSET=' W-I.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 1 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = customer-id(W-Customer-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+      D        DISPLAY 'customer-id(W-Customer-I) ='
+      D                 customer-id(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 2 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               PERFORM CALC-PersonalData-SIZE THRU
+                   END-CALC-PersonalData-SIZE
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32 = W-PersonalData-L
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               PERFORM WRITE-PersonalData THRU
+                   END-WRITE-PersonalData
+           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 3 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               PERFORM CALC-TransactionDate-SIZE THRU
+                   END-CALC-TransactionDate-SIZE
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-UINT32 = W-TransactionDate-L
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               PERFORM WRITE-TransactionDate THRU
+                   END-WRITE-TransactionDate
+           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 4 TO W-P-KEY
+               SET FIXED-64 TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-COMP-2
+                     = last-transaction-amount(W-Customer-I)
+               PERFORM Z-COMP-2-TO-P-DOUBLE THRU
+                   END-Z-COMP-2-TO-P-DOUBLE
+      D        DISPLAY 'last-transaction-amount(W-Customer-I) ='
+      D                 last-transaction-amount(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 5 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF last-transaction-comment(W-Customer-I)
+                   IF (last-transaction-comment(W-Customer-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               MOVE FUNCTION
+                   NATIONAL-OF(last-transaction-comment(W-Customer-I),
+                               ZOS-CODEPAGE) TO W-UTF16-BUFFER
+               MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01208)
+                   TO PROTOBUF-BYTES(W-I:W-Z-UINT32)
+               COMPUTE W-BYTES-USED = W-Z-UINT32
+      D        DISPLAY 'last-transaction-comment(W-Customer-I) ='
+      D                 last-transaction-comment(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+       END-WRITE-Customer. EXIT.
+
+      * ---------------------------------------------------------------
+      * Write the PersonalData message field
+      * ---------------------------------------------------------------
+       WRITE-PersonalData.
+      D    DISPLAY 'WRITE-PersonalData OFFSET=' W-I.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 1 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF customer-name(W-Customer-I)
+                   IF (customer-name(W-Customer-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               MOVE FUNCTION
+                   NATIONAL-OF(customer-name(W-Customer-I),
+                               ZOS-CODEPAGE) TO W-UTF16-BUFFER
+               MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01208)
+                   TO PROTOBUF-BYTES(W-I:W-Z-UINT32)
+               COMPUTE W-BYTES-USED = W-Z-UINT32
+      D        DISPLAY 'customer-name(W-Customer-I) ='
+      D                 customer-name(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 2 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF customer-address(W-Customer-I)
+                   IF (customer-address(W-Customer-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               MOVE FUNCTION
+                   NATIONAL-OF(customer-address(W-Customer-I),
+                               ZOS-CODEPAGE) TO W-UTF16-BUFFER
+               MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01208)
+                   TO PROTOBUF-BYTES(W-I:W-Z-UINT32)
+               COMPUTE W-BYTES-USED = W-Z-UINT32
+      D        DISPLAY 'customer-address(W-Customer-I) ='
+      D                 customer-address(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 3 TO W-P-KEY
+               SET LENGTH-DELIMITED TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF customer-phone(W-Customer-I)
+                   IF (customer-phone(W-Customer-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-I
+
+               MOVE FUNCTION
+                   NATIONAL-OF(customer-phone(W-Customer-I),
+                               ZOS-CODEPAGE) TO W-UTF16-BUFFER
+               MOVE FUNCTION DISPLAY-OF(W-UTF16-BUFFER, 01208)
+                   TO PROTOBUF-BYTES(W-I:W-Z-UINT32)
+               COMPUTE W-BYTES-USED = W-Z-UINT32
+      D        DISPLAY 'customer-phone(W-Customer-I) ='
+      D                 customer-phone(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+       END-WRITE-PersonalData. EXIT.
+
+
+      * ---------------------------------------------------------------
+      * Write the TransactionDate message field
+      * ---------------------------------------------------------------
+       WRITE-TransactionDate.
+      D    DISPLAY 'WRITE-TransactionDate OFFSET=' W-I.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 1 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = transaction-year(W-Customer-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+      D        DISPLAY 'transaction-year(W-Customer-I) ='
+      D                 transaction-year(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 2 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = transaction-month(W-Customer-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+      D        DISPLAY 'transaction-month(W-Customer-I) ='
+      D                 transaction-month(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+           PERFORM 
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               MOVE 3 TO W-P-KEY
+               SET VARINT TO TRUE
+               PERFORM PUT-P-KEYTYPE THRU END-PUT-P-KEYTYPE
+               ADD W-BYTES-USED TO W-I
+
+               SET W-STREAM TO ADDRESS OF PROTOBUF-BYTES(W-I:)
+               COMPUTE W-Z-INT32
+                     = transaction-day(W-Customer-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+      D        DISPLAY 'transaction-day(W-Customer-I) ='
+      D                 transaction-day(W-Customer-I)
+      D                ' ,AT OFFSET=' W-I
+               ADD W-BYTES-USED TO W-I           END-PERFORM.
+       END-WRITE-TransactionDate. EXIT.
+
+
+
+      * ---------------------------------------------------------------
+      * Calculates the PersonalData message size
+      * ---------------------------------------------------------------
+       CALC-PersonalData-SIZE.
+      D    DISPLAY 'CALC-PersonalData-SIZE OFFSET=' W-I.
+           MOVE ZERO TO W-PersonalData-L.
+
+           PERFORM 
+
+               ADD 1 TO W-PersonalData-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF customer-name(W-Customer-I)
+                   IF (customer-name(W-Customer-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-PersonalData-L
+               ADD W-Z-UINT32 TO W-PersonalData-L
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-PersonalData-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF customer-address(W-Customer-I)
+                   IF (customer-address(W-Customer-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-PersonalData-L
+               ADD W-Z-UINT32 TO W-PersonalData-L
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-PersonalData-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF customer-phone(W-Customer-I)
+                   IF (customer-phone(W-Customer-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-PersonalData-L
+               ADD W-Z-UINT32 TO W-PersonalData-L
+           END-PERFORM.
+
+      D    DISPLAY 'PersonalData size=' W-PersonalData-L.
+       END-CALC-PersonalData-SIZE. EXIT.
+      * ---------------------------------------------------------------
+      * Calculates the TransactionDate message size
+      * ---------------------------------------------------------------
+       CALC-TransactionDate-SIZE.
+      D    DISPLAY 'CALC-TransactionDate-SIZE OFFSET=' W-I.
+           MOVE ZERO TO W-TransactionDate-L.
+
+           PERFORM 
+
+               ADD 1 TO W-TransactionDate-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-INT32
+                     = transaction-year(W-Customer-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-TransactionDate-L
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-TransactionDate-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-INT32
+                     = transaction-month(W-Customer-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-TransactionDate-L
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-TransactionDate-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-INT32
+                     = transaction-day(W-Customer-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-TransactionDate-L
+           END-PERFORM.
+
+      D    DISPLAY 'TransactionDate size=' W-TransactionDate-L.
+       END-CALC-TransactionDate-SIZE. EXIT.
+
+      * ---------------------------------------------------------------
+      * Calculates the Customer message size
+      * ---------------------------------------------------------------
+       CALC-Customer-SIZE.
+      D    DISPLAY 'CALC-Customer-SIZE OFFSET=' W-I.
+           MOVE ZERO TO W-Customer-L.
+
+           PERFORM 
+
+               ADD 1 TO W-Customer-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-INT32
+                     = customer-id(W-Customer-I)
+               PERFORM Z-INT32-TO-P-VARINT THRU
+                   END-Z-INT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-Customer-L
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-Customer-L
+               PERFORM CALC-PersonalData-SIZE THRU
+                   END-CALC-PersonalData-SIZE
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-UINT32 =
+                   W-PersonalData-L
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-Customer-L
+               ADD W-PersonalData-L TO W-Customer-L
+
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-Customer-L
+               PERFORM CALC-TransactionDate-SIZE THRU
+                   END-CALC-TransactionDate-SIZE
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               COMPUTE W-Z-UINT32 =
+                   W-TransactionDate-L
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-Customer-L
+               ADD W-TransactionDate-L TO W-Customer-L
+
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-Customer-L
+               ADD LENGTH OF P-DOUBLE TO W-Customer-L
+           END-PERFORM.
+           PERFORM 
+
+               ADD 1 TO W-Customer-L
+               SET W-STREAM TO ADDRESS OF W-P-VARINT
+               MOVE ZERO TO W-Z-UINT32
+               PERFORM VARYING W-J FROM 1 BY 1 UNTIL W-J >
+                       LENGTH OF last-transaction-comment(W-Customer-I)
+                   IF (last-transaction-comment(W-Customer-I)(W-J:1)
+                       NOT = SPACE AND LOW-VALUE)
+                       MOVE W-J TO W-Z-UINT32
+                   END-IF
+               END-PERFORM
+               PERFORM Z-UINT32-TO-P-VARINT THRU
+                   END-Z-UINT32-TO-P-VARINT
+               ADD W-BYTES-USED TO W-Customer-L
+               ADD W-Z-UINT32 TO W-Customer-L
+           END-PERFORM.
+
+      D    DISPLAY 'Customer size=' W-Customer-L.
+       END-CALC-Customer-SIZE. EXIT.
+
+
+      * ---------------------------------------------------------------
+      * Write a field key (identifier) and type to the stream.
+      *
+      * Field and Type are both encoded in a single variable integer.
+      *
+      * Field type is 3 lower bits of header varint, higher bits are
+      * the field key (identifier)
+      * ---------------------------------------------------------------
+       PUT-P-KEYTYPE.
+           COMPUTE W-Z-UINT64 = W-P-TYPE + (8 * W-P-KEY).
+           PERFORM Z-UINT64-TO-P-VARINT THRU END-Z-UINT64-TO-P-VARINT.
+       END-PUT-P-KEYTYPE. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned double word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT64-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBU642VI' USING W-Z-UINT64 P-VARINT W-BYTES-USED.
+       END-Z-UINT64-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned single word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT32-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBU322VI' USING W-Z-UINT32 P-VARINT W-BYTES-USED.
+       END-Z-UINT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS642VI' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a variable integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-VARINT.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS322VI' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARINT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS322VZ' USING W-Z-INT32 P-VARINT W-BYTES-USED.
+       END-Z-INT32-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a variable zigzag to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-VARZIG.
+           SET ADDRESS OF P-VARINT TO W-STREAM.
+           CALL 'PBS642VZ' USING W-Z-INT64 P-VARINT W-BYTES-USED.
+       END-Z-INT64-TO-P-VARZIG. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBS322FI' USING W-Z-INT32 P-FIXED32 W-BYTES-USED.
+       END-Z-INT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a signed double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-INT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBS642FI' USING W-Z-INT64 P-FIXED64 W-BYTES-USED.
+       END-Z-INT64-TO-P-FIXED64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned single word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT32-TO-P-FIXED32.
+           SET ADDRESS OF P-FIXED32 TO W-STREAM.
+           CALL 'PBU322FI' USING W-Z-UINT32 P-FIXED32 W-BYTES-USED.
+       END-Z-UINT32-TO-P-FIXED32. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put an unsigned double word binary as a fixed integer to the
+      * output stream.
+      * ---------------------------------------------------------------
+       Z-UINT64-TO-P-FIXED64.
+           SET ADDRESS OF P-FIXED64 TO W-STREAM.
+           CALL 'PBU642FI' USING W-Z-UINT64 P-FIXED64 W-BYTES-USED.
+       END-Z-UINT64-TO-P-FIXED64. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a COMP-1 as a IEEE float to the output stream.
+      * ---------------------------------------------------------------
+       Z-COMP-1-TO-P-FLOAT.
+           SET ADDRESS OF P-FLOAT TO W-STREAM.
+           CALL 'PB2PFLOA' USING W-Z-COMP-1 P-FLOAT W-BYTES-USED.
+       END-Z-COMP-1-TO-P-FLOAT. EXIT.
+
+      * ---------------------------------------------------------------
+      * Put a COMP-2 as a IEEE double to the output stream.
+      * ---------------------------------------------------------------
+       Z-COMP-2-TO-P-DOUBLE.
+           SET ADDRESS OF P-DOUBLE TO W-STREAM.
+           CALL 'PB2PDBLE' USING W-Z-COMP-2 P-DOUBLE W-BYTES-USED.
+       END-Z-COMP-2-TO-P-DOUBLE. EXIT.
+
+       END PROGRAM CUSQUREW.
