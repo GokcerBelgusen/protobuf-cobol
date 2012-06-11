@@ -148,7 +148,9 @@ public class ProtoCobolTest extends AbstractTest {
         HasMaxSize maxSizeProvider = new HasMaxSize() {
 
             public Integer getMaxSize(String fieldName, Type fieldType) {
-                if (fieldName.equals("customer_name")) {
+                if (fieldName.equals("customer_name_pattern")) {
+                    return 20;
+                } else if (fieldName.equals("customer_name")) {
                     return 20;
                 } else if (fieldName.equals("customer_address")) {
                     return 20;

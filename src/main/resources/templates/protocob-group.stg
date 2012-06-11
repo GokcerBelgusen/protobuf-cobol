@@ -17,7 +17,7 @@ toProtocobParser(protoCobolDataItem) ::= <<
       *                                                               *
       * Limits:                                                       *
       *    256 fields per message                                     *
-      *    16777215 message byte length                               *
+      *    65536 message byte length                                  *
       *                                                               *
       *****************************************************************
 
@@ -89,7 +89,7 @@ $if(protoCobolDataItem.hasAlphanumItems)$
        LINKAGE SECTION.
 
       *    // The protobuf input byte stream
-       01  PROTOBUF-BYTES            PIC X(16777215).
+       01  PROTOBUF-BYTES            PIC X(65536).
 
       *    // The protobuf input byte stream length
        01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.
@@ -268,7 +268,7 @@ toProtocobWriter(protoCobolDataItem) ::= <<
       *                                                               *
       * Limits:                                                       *
       *    256 fields per message                                     *
-      *    16777215 message byte length                               *
+      *    65536 message byte length                                  *
       *                                                               *
       *****************************************************************
 
@@ -344,7 +344,7 @@ $protoCobolDataItem.allCobolCounterNames:declareCobolCounter(); separator="\n"$$
        LINKAGE SECTION.
 
       *    // The protobuf input byte stream
-       01  PROTOBUF-BYTES            PIC X(16777215).
+       01  PROTOBUF-BYTES            PIC X(65536).
 
       *    // The protobuf input byte stream length
        01  PROTOBUF-BYTES-LEN        PIC 9(8) COMP-5.

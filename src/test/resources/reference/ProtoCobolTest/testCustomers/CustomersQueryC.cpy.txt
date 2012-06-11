@@ -2,5 +2,5 @@
       * Generated copybook for CustomersQuery
       * ----------------------------------------------------------------
        01  CustomersQuery.
-           03  customer-name-pattern PIC X(32) DISPLAY.
+           03  customer-name-pattern PIC X(20) DISPLAY.
            03  max-replies PIC S9(9) COMP-5.
