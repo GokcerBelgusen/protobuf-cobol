@@ -1,0 +1,398 @@
+       PROCESS XOPTS(SP APOST)
+       PROCESS NOSEQ LIB OPTIMIZE(FULL)
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. T1FILEAQ.
+      *****************************************************************
+      * OVERVIEW                                                      *
+      * --------                                                      *
+      * A WEB AWARE PROGRAM THAT ADAPT PROTOCOL BUFFER MESSAGES FOR   *
+      * A COMMAREA-DRIVEN PROGRAM CALLED LSFILEAQ.                    *
+      *                                                               *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *---------------------------------------------------------------*
+      *  Constants                                                    *
+      *---------------------------------------------------------------*
+       77  PROGRAM-MAX-COMMAREA-LEN     PIC 9(9) COMP-5 VALUE 32767.
+       77  PROGRAM-NAME                 PIC X(8) VALUE 'LSFILEAQ'.
+       77  NO-REQUEST-REPLY             PIC X(160) VALUE
+           '<html><body><h1>Welcome from T1FILEAQ</h1><p>This program
+      -    'expects a POST with a protocol buffer serialized request.
+      -    '</p></body></html>'.
+       77  CLNTCODEPAGE                 PIC X(10) VALUE 'iso-8859-1'.
+       77  CONTENT-TYPE-LABEL           PIC X(12) VALUE 'Content-Type'.
+       77  CONTENT-TYPE-VALUE           PIC X(22) VALUE
+           'application/x-protobuf'.
+
+      *---------------------------------------------------------------*
+      *  Work variables                                               *
+      *---------------------------------------------------------------*
+       01  ERROR-MESSAGE                PIC X(78) VALUE SPACES.
+           88 NO-ERROR-MESSAGE VALUE SPACES.
+       01  W-I                          PIC 9(8) COMP-5.
+       01  W-HWORD                      PIC 9(4) COMP-5.
+
+      *---------------------------------------------------------------*
+      *  WEB API CALL PARAMETERS                                      *
+      *---------------------------------------------------------------*
+       01  WEB-API-PARMS.
+           05 HTTPMETHOD                PIC X(24).
+           05 HTTPMETHODLEN             PIC 9(9) COMP-5 VALUE 24.
+           05 HTTPVERSION               PIC X(24).
+           05 HTTPVERSIONLEN            PIC 9(9) COMP-5 VALUE 24.
+           05 HTTPPATH                  PIC X(256).
+           05 HTTPPATHLEN               PIC 9(9) COMP-5 VALUE 256.
+           05 QUERYSTRING               PIC X(256).
+           05 QUERYSTRINGLEN            PIC 9(9) COMP-5 VALUE 256.
+           05 REQUESTTYPE               PIC 9(9) COMP-5.
+           05 DOCTOKEN                  PIC X(16).
+           05 DOCSIZE                   PIC 9(9) COMP-5.
+
+      *---------------------------------------------------------------*
+      *  CICS API CALL PARAMETERS                                     *
+      *---------------------------------------------------------------*
+       01  CICSRESP                     PIC S9(8) COMP-5.
+       01  CICSRESP2                    PIC S9(8) COMP-5.
+
+      *---------------------------------------------------------------*
+      *  PROTOCOL BUFFERS PARAMETERS                                  *
+      *---------------------------------------------------------------*
+       01  PROTOBUF-INPUT-LEN           PIC 9(9) COMP-5.
+       01  PROTOBUF-OUTPUT-LEN          PIC 9(9) COMP-5.
+       01  PROTOBUF-OUTPUT-MSG          PIC X(65536).
+
+      *---------------------------------------------------------------*
+      *  Protocob structure for input protocol buffer message         *
+      *---------------------------------------------------------------*
+       01  CustomersQuery.
+           03  customer-name-pattern    PIC X(20) DISPLAY.
+           03  max-replies PIC S9(9) COMP-5.
+
+      *---------------------------------------------------------------*
+      *  Protocob structure for output protocol buffer message        *
+      *---------------------------------------------------------------*
+       01  CustomersQueryReply.
+           03  OCCURS-COUNTERS--C.
+             05  Customer--C PIC 9(9) COMP-5.
+           03  Customer OCCURS 0 TO 1000 DEPENDING ON Customer--C.
+             05  customer-id PIC S9(9) COMP-5.
+             05  PersonalData.
+               07  customer-name PIC X(20) DISPLAY.
+               07  customer-address PIC X(20) DISPLAY.
+               07  customer-phone PIC X(8) DISPLAY.
+             05  TransactionDate.
+               07  transaction-year PIC S9(9) COMP-5.
+               07  transaction-month PIC S9(9) COMP-5.
+               07  transaction-day PIC S9(9) COMP-5.
+             05  last-transaction-amount COMP-2.
+             05  last-transaction-comment PIC X(9) DISPLAY.
+
+       LINKAGE SECTION.
+
+      *---------------------------------------------------------------*
+      *  PROTOCOL BUFFERS MESSAGES                                    *
+      *---------------------------------------------------------------*
+       01  PROTOBUF-INPUT-MSG           PIC X(65536).
+
+      *---------------------------------------------------------------*
+      *  COMMAREA FOR LINKED PROGRAM LSFILEAQ                         *
+      *---------------------------------------------------------------*
+       01 PROGRAM-COMMAREA.
+           05 QUERY-DATA.
+              10 CUSTOMER-NAME               PIC X(20).
+              10 MAX-REPLIES                 PIC S9(4) COMP.
+                  88 UNLIMITED VALUE -1.
+           05 REPLY-DATA.
+              10 REPLY-COUNT                 PIC 9(8) COMP-3.
+              10 CUSTOMER OCCURS 1 TO 100 DEPENDING ON REPLY-COUNT.
+                  15 CUSTOMER-ID             PIC 9(6).
+                  15 PERSONAL-DATA.
+                     20 CUSTOMER-NAME        PIC X(20).
+                     20 CUSTOMER-ADDRESS     PIC X(20).
+                     20 CUSTOMER-PHONE       PIC X(8).
+                  15 LAST-TRANS-DATE         PIC X(8).
+                  15 FILLER REDEFINES LAST-TRANS-DATE.
+                     20 LAST-TRANS-DAY       PIC X(2).
+                     20 FILLER               PIC X.
+                     20 LAST-TRANS-MONTH     PIC X(2).
+                     20 FILLER               PIC X.
+                     20 LAST-TRANS-YEAR      PIC X(2).
+                  15 LAST-TRANS-AMOUNT       PIC $9999.99.
+                  15 LAST-TRANS-COMMENT      PIC X(9).
+
+       PROCEDURE DIVISION.
+
+           DISPLAY
+               'T1FILEAQ STARTING ==============================='.
+
+           PERFORM INIT THRU END-INIT.
+           PERFORM CHECK-REQUEST THRU END-CHECK-REQUEST.
+           PERFORM PB-TO-COMMAREA THRU END-PB-TO-COMMAREA.
+           PERFORM EXECUTE-PROGRAM THRU END-EXECUTE-PROGRAM.
+           PERFORM COMMAREA-TO-PB THRU END-COMMAREA-TO-PB.
+           PERFORM SEND-REPLY THRU END-SEND-REPLY.
+
+           PERFORM EXIT-PROGRAM THRU END-EXIT-PROGRAM.
+
+           GOBACK.
+
+      *---------------------------------------------------------------*
+      *  Acquire enough storage for LSFILEAQ commarea                 *
+      *---------------------------------------------------------------*
+       INIT.
+      D    DISPLAY 'T1FILEAQ INIT'.
+
+           EXEC CICS GETMAIN
+                SET     (ADDRESS OF PROGRAM-COMMAREA)
+                FLENGTH (PROGRAM-MAX-COMMAREA-LEN)
+                RESP    (CICSRESP)
+                RESP2   (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               MOVE 'GETMAIN FAILED' TO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+       END-INIT. EXIT.
+
+      *---------------------------------------------------------------*
+      *  Check that we have a valid web request                       *
+      *---------------------------------------------------------------*
+       CHECK-REQUEST.
+      D    DISPLAY 'T1FILEAQ CHECK-REQUEST'.
+
+           EXEC CICS WEB EXTRACT
+                     HTTPMETHOD         (HTTPMETHOD)
+                     METHODLENGTH       (HTTPMETHODLEN)
+                     HTTPVERSION        (HTTPVERSION)
+                     VERSIONLEN         (HTTPVERSIONLEN)
+                     PATH               (HTTPPATH)
+                     PATHLENGTH         (HTTPPATHLEN)
+                     QUERYSTRING        (QUERYSTRING)
+                     QUERYSTRLEN        (QUERYSTRINGLEN)
+                     REQUESTTYPE        (REQUESTTYPE)
+                     RESP               (CICSRESP)
+                     RESP2              (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               MOVE 'WEB EXTRACT FAILED' TO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+           EXEC CICS WEB RECEIVE
+                     SET                (ADDRESS OF PROTOBUF-INPUT-MSG)
+                     LENGTH             (PROTOBUF-INPUT-LEN)
+                     RESP               (CICSRESP)
+                     RESP2              (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               MOVE 'WEB RECEIVE FAILED' TO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+           IF (PROTOBUF-INPUT-LEN = 0)
+              PERFORM SEND-NO-REQUEST-REPLY THRU
+                  END-SEND-NO-REQUEST-REPLY
+              PERFORM EXIT-PROGRAM THRU END-EXIT-PROGRAM
+           END-IF.
+
+       END-CHECK-REQUEST. EXIT.
+
+      *---------------------------------------------------------------*
+      *  Convert protocol buffers input message to commarea           *
+      *---------------------------------------------------------------*
+       PB-TO-COMMAREA.
+      D    DISPLAY 'T1FILEAQ PB-TO-COMMAREA'.
+
+           CALL 'CUSTQUEP' USING PROTOBUF-INPUT-MSG
+                                 PROTOBUF-INPUT-LEN
+                                 CustomersQuery.
+
+           MOVE customer-name-pattern OF CustomersQuery
+             TO CUSTOMER-NAME OF QUERY-DATA.
+           COMPUTE MAX-REPLIES OF QUERY-DATA
+                 = max-replies OF CustomersQuery.
+
+       END-PB-TO-COMMAREA.   EXIT.
+
+      *---------------------------------------------------------------*
+      *  Execute the business logic                                   *
+      *---------------------------------------------------------------*
+       EXECUTE-PROGRAM.
+      D    DISPLAY 'T1FILEAQ EXECUTE-PROGRAM ' PROGRAM-NAME.
+
+           COMPUTE W-HWORD = PROGRAM-MAX-COMMAREA-LEN
+           EXEC CICS LINK
+                     PROGRAM            (PROGRAM-NAME)
+                     COMMAREA           (PROGRAM-COMMAREA)
+                     LENGTH             (W-HWORD)
+                     RESP               (CICSRESP)
+                     RESP2              (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               STRING 'LINK TO PROGRAM ' PROGRAM-NAME ' FAILED'
+                      DELIMITED BY SIZE INTO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+       END-EXECUTE-PROGRAM.   EXIT.
+
+      *---------------------------------------------------------------*
+      *  Convert commarea to protocol buffers output message          *
+      *---------------------------------------------------------------*
+       COMMAREA-TO-PB.
+      D    DISPLAY 'T1FILEAQ COMMAREA-TO-PB'.
+
+           MOVE REPLY-COUNT TO Customer--C.
+           PERFORM VARYING W-I FROM 1 BY 1
+                   UNTIL W-I > REPLY-COUNT
+
+               MOVE CUSTOMER-ID OF REPLY-DATA(W-I)
+                 TO customer-id OF CustomersQueryReply(W-I)
+               MOVE CUSTOMER-NAME OF REPLY-DATA(W-I)
+                 TO customer-name OF CustomersQueryReply(W-I)
+               MOVE CUSTOMER-ADDRESS OF REPLY-DATA(W-I)
+                 TO customer-address OF CustomersQueryReply(W-I)
+               MOVE CUSTOMER-PHONE OF REPLY-DATA(W-I)
+                 TO customer-phone OF CustomersQueryReply(W-I)
+               MOVE LAST-TRANS-YEAR OF REPLY-DATA(W-I)
+                 TO transaction-year OF CustomersQueryReply(W-I)
+               MOVE LAST-TRANS-MONTH OF REPLY-DATA(W-I)
+                 TO transaction-month OF CustomersQueryReply(W-I)
+               MOVE LAST-TRANS-DAY OF REPLY-DATA(W-I)
+                 TO transaction-day OF CustomersQueryReply(W-I)
+               MOVE LAST-TRANS-AMOUNT OF REPLY-DATA(W-I)
+                 TO last-transaction-amount
+                    OF CustomersQueryReply(W-I)
+               MOVE LAST-TRANS-COMMENT OF REPLY-DATA(W-I)
+                 TO last-transaction-comment
+                    OF CustomersQueryReply(W-I)
+
+           END-PERFORM.
+
+           CALL 'CUSQUREW' USING CustomersQueryReply
+                                 PROTOBUF-OUTPUT-MSG
+                                 PROTOBUF-OUTPUT-LEN.
+
+       END-COMMAREA-TO-PB.   EXIT.
+
+      *---------------------------------------------------------------*
+      *  Send protocol buffers reply                                  *
+      *---------------------------------------------------------------*
+       SEND-REPLY.
+      D    DISPLAY 'T1FILEAQ SEND-REPLY'.
+
+           EXEC CICS DOCUMENT CREATE
+                              DOCTOKEN  (DOCTOKEN)
+                              BINARY    (PROTOBUF-OUTPUT-MSG)
+                              LENGTH    (PROTOBUF-OUTPUT-LEN)
+                              DOCSIZE   (DOCSIZE)
+                              RESP      (CICSRESP)
+                              RESP2     (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               MOVE 'DOCUMENT CREATE FAILED' TO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+           EXEC CICS WEB WRITE
+                         HTTPHEADER     (CONTENT-TYPE-LABEL)
+                         NAMELENGTH     (LENGTH OF CONTENT-TYPE-LABEL)
+                         VALUE          (CONTENT-TYPE-VALUE)
+                         VALUELENGTH    (LENGTH OF CONTENT-TYPE-VALUE)
+                         RESP           (CICSRESP)
+                         RESP2          (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               MOVE 'SETTING CONTENT TYPE FAILED' TO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+           EXEC CICS WEB SEND
+                         DOCTOKEN       (DOCTOKEN)
+                         RESP           (CICSRESP)
+                         RESP2          (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               MOVE 'WEB SEND FAILED' TO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+       END-SEND-REPLY. EXIT.
+
+      *---------------------------------------------------------------*
+      *  Send an HTML reply if request contains no data               *
+      *---------------------------------------------------------------*
+       SEND-NO-REQUEST-REPLY.
+      D    DISPLAY 'T1FILEAQ SEND-NO-REQUEST-REPLY'.
+
+           EXEC CICS DOCUMENT CREATE
+                              DOCTOKEN  (DOCTOKEN)
+                              TEXT      (NO-REQUEST-REPLY)
+                              LENGTH    (LENGTH OF NO-REQUEST-REPLY)
+                              DOCSIZE   (DOCSIZE)
+                              RESP      (CICSRESP)
+                              RESP2     (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               MOVE 'DOCUMENT CREATE FAILED' TO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+           EXEC CICS WEB SEND
+                         DOCTOKEN       (DOCTOKEN)
+                         SERVERCONV     (DFHVALUE(SRVCONVERT))
+                         RESP           (CICSRESP)
+                         RESP2          (CICSRESP2)
+           END-EXEC.
+           IF CICSRESP NOT = DFHRESP(NORMAL)
+               MOVE 'WEB SEND FAILED' TO ERROR-MESSAGE
+               PERFORM ABORT-PROGRAM THRU END-ABORT-PROGRAM
+           END-IF.
+
+       END-SEND-NO-REQUEST-REPLY.   EXIT.
+
+      *---------------------------------------------------------------*
+      *  Exit and return to CICS                                      *
+      *---------------------------------------------------------------*
+       EXIT-PROGRAM.
+      D    DISPLAY 'T1FILEAQ EXIT-PROGRAM'.
+
+           DISPLAY 'T1FILEAQ STOPPING ==============================='.
+           EXEC CICS RETURN END-EXEC.
+
+       END-EXIT-PROGRAM.   EXIT.
+
+      *---------------------------------------------------------------*
+      *  Something went wrong. Report error and exit.                 *
+      *---------------------------------------------------------------*
+       ABORT-PROGRAM.
+      D    DISPLAY 'T1FILEAQ ABORT-PROGRAM'.
+
+           PERFORM DISPLAY-ERROR-MESSAGE THRU
+               END-DISPLAY-ERROR-MESSAGE.
+
+           PERFORM EXIT-PROGRAM THRU
+               END-EXIT-PROGRAM.
+
+       END-ABORT-PROGRAM.   EXIT.
+
+      *---------------------------------------------------------------*
+      *  Display error message                                        *
+      *---------------------------------------------------------------*
+       DISPLAY-ERROR-MESSAGE.
+      D    DISPLAY 'T1FILEAQ DISPLAY-ERROR-MESSAGE'.
+
+           DISPLAY '************************************************'.
+           DISPLAY '* ', ERROR-MESSAGE.
+           DISPLAY '* COMPLETION CODE : ', CICSRESP.
+           DISPLAY '* REASON CODE     : ', CICSRESP2.
+           DISPLAY '************************************************'.
+
+       END-DISPLAY-ERROR-MESSAGE.   EXIT.
+
+       END PROGRAM T1FILEAQ.
