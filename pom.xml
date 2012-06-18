@@ -9,7 +9,7 @@
 
     <groupId>com.legsem.legstar</groupId>
     <artifactId>protobuf-cobol</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <packaging>jar</packaging>
 
     <name>protobuf-cobol</name>
@@ -30,9 +30,9 @@
     </issueManagement>
 
     <scm>
-        <connection>scm:svn:http://protobuf-cobol.googlecode.com/svn/trunk/</connection>
-        <developerConnection>scm:svn:https://protobuf-cobol.googlecode.com/svn/trunk/</developerConnection>
-        <url>http://protobuf-cobol.googlecode.com/svn/trunk/</url>
+        <connection>scm:svn:http://protobuf-cobol.googlecode.com/svn/tags/protobuf-cobol-0.2</connection>
+        <developerConnection>scm:svn:https://protobuf-cobol.googlecode.com/svn/tags/protobuf-cobol-0.2</developerConnection>
+        <url>http://protobuf-cobol.googlecode.com/svn/tags/protobuf-cobol-0.2</url>
     </scm>
 
     <distributionManagement>
