@@ -64,35 +64,46 @@ public class ProtoCobolGenerator {
     /**
      * Generates a COBOL protocol buffer parser as a string.
      * 
+     * @param protoCobolConfig the generation parameters set
      * @param protoCobolDataItem the COBOL data item
      * @return the COBOL protocol buffer parser content
      */
-    public static String generateParser(ProtoCobolDataItem protoCobolDataItem) {
-        return generate(protoCobolDataItem, PARSER_TEMPLATE_NAME);
+    public static String generateParser(
+            final ProtoCobolConfig protoCobolConfig,
+            final ProtoCobolDataItem protoCobolDataItem) {
+        return generate(protoCobolConfig, protoCobolDataItem,
+                PARSER_TEMPLATE_NAME);
     }
 
     /**
      * Generates a COBOL protocol buffer writer as a string.
      * 
+     * @param protoCobolConfig the generation parameters set
      * @param protoCobolDataItem the COBOL data item
      * @return the COBOL protocol buffer writer content
      */
-    public static String generateWriter(ProtoCobolDataItem protoCobolDataItem) {
-        return generate(protoCobolDataItem, WRITER_TEMPLATE_NAME);
+    public static String generateWriter(
+            final ProtoCobolConfig protoCobolConfig,
+            final ProtoCobolDataItem protoCobolDataItem) {
+        return generate(protoCobolConfig, protoCobolDataItem,
+                WRITER_TEMPLATE_NAME);
     }
 
     /**
      * Generates a COBOL artifact as a string.
      * 
+     * @param protoCobolConfig the generation parameters set
      * @param protoCobolDataItem the COBOL data item
      * @param templateName the template name
      * @return the COBOL artifact content
      */
-    public static String generate(ProtoCobolDataItem protoCobolDataItem,
+    public static String generate(final ProtoCobolConfig protoCobolConfig,
+            final ProtoCobolDataItem protoCobolDataItem,
             final String templateName) {
         StringTemplate template = getTemplate(PROTOCOB_TEMPLATE_GROUP_NAME,
                 templateName);
         template.setAttribute("protoCobolDataItem", protoCobolDataItem);
+        template.setAttribute("protoCobolConfig", protoCobolConfig);
         return template.toString();
     }
 

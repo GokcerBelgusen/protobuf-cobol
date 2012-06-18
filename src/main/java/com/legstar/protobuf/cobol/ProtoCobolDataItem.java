@@ -733,4 +733,5 @@ public class ProtoCobolDataItem {
         return pbFieldType.equals(Type.SINT32)
                 || pbFieldType.equals(Type.SINT64);
     }
+
 }

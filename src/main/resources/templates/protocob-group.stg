@@ -3,7 +3,7 @@ group protocob-group : cobol-group;
 /**
  * Template to convert a COBOL data item to a protocol buffer parser.
  */
-toProtocobParser(protoCobolDataItem) ::= <<
+toProtocobParser(protoCobolConfig, protoCobolDataItem) ::= <<
        IDENTIFICATION DIVISION.
        PROGRAM-ID. $protoCobolDataItem.parserProgramName$.
       *****************************************************************
@@ -23,7 +23,7 @@ toProtocobParser(protoCobolDataItem) ::= <<
 
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
-       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+      *SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
        DATA DIVISION.
       *****************************************************************
       *        W O R K I N G    S T O R A G E    S E C T I O N        *
@@ -31,7 +31,7 @@ toProtocobParser(protoCobolDataItem) ::= <<
        WORKING-STORAGE SECTION.
 
       *    // z/OS code page
-       77  ZOS-CODEPAGE              PIC 9(4) COMP VALUE 1047.
+       77  ZOS-CODEPAGE              PIC 9(4) COMP VALUE $protoCobolConfig.cobolCodePage$.
 
       *    // Protobuf field key and type
        01  W-P-KEYTYPE.
@@ -254,7 +254,7 @@ $parseDataItem(protoCobolDataItem)$
 /**
  * Template to convert a COBOL data item to a protocol buffer writer.
  */
-toProtocobWriter(protoCobolDataItem) ::= <<
+toProtocobWriter(protoCobolConfig, protoCobolDataItem) ::= <<
        IDENTIFICATION DIVISION.
        PROGRAM-ID. $protoCobolDataItem.writerProgramName$.
       *****************************************************************
@@ -274,7 +274,7 @@ toProtocobWriter(protoCobolDataItem) ::= <<
 
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
-       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+      *SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
        DATA DIVISION.
       *****************************************************************
       *        W O R K I N G    S T O R A G E    S E C T I O N        *
@@ -282,7 +282,7 @@ toProtocobWriter(protoCobolDataItem) ::= <<
        WORKING-STORAGE SECTION.
 
       *    // z/OS code page
-       77  ZOS-CODEPAGE             PIC 9(4) COMP VALUE 1047.
+       77  ZOS-CODEPAGE             PIC 9(4) COMP VALUE $protoCobolConfig.cobolCodePage$.
 
       *    // Protobuf field key and type
        01  W-P-KEYTYPE.

@@ -51,6 +51,9 @@ public class ProtoCobolMain {
     /** Input protocol buffers file. */
     private File inputProtoFile;
 
+    /** Code page to use for COBOL (CCSID number). */
+    private Integer cobolCodePage;
+
     /** COBOL artifacts will be generated in this folder. */
     private File outputFolder;
 
@@ -107,6 +110,11 @@ public class ProtoCobolMain {
         Option targetCobolFolder = new Option("o", "outputFolder", true,
                 "Output COBOL folder");
         options.addOption(targetCobolFolder);
+
+        Option cobolCodePage = new Option("c", "cobolCodePage", true,
+                "COBOL code page");
+        cobolCodePage.setType(Number.class);
+        options.addOption(cobolCodePage);
 
         return options;
     }
@@ -167,6 +175,10 @@ public class ProtoCobolMain {
             outputFolder = new File(
                     (line.getOptionValue("outputFolder").trim()));
         }
+        if (line.hasOption("cobolCodePage")) {
+            cobolCodePage = ((Number) line
+                    .getParsedOptionValue("cobolCodePage")).intValue();
+        }
 
         return true;
     }
@@ -177,6 +189,9 @@ public class ProtoCobolMain {
     protected void setDefaults() {
         if (outputFolder == null) {
             outputFolder = DEFAULT_PROTOCOB_OUTPUT_FOLDER;
+        }
+        if (cobolCodePage == null) {
+            cobolCodePage = ProtoCobolConfig.DEFAULT_COBOL_CODE_PAGE;
         }
 
     }
@@ -201,7 +216,8 @@ public class ProtoCobolMain {
     protected void execute() throws IOException, ProtoCobolException {
 
         new ProtoCobol().setOutputDir(outputFolder)
-                .setProtoFile(inputProtoFile).run();
+                .setProtoFile(inputProtoFile).setCobolCodePage(cobolCodePage)
+                .run();
 
     }
 

@@ -17,7 +17,7 @@
 
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
-       SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
+      *SOURCE-COMPUTER. IBM-390 WITH DEBUGGING MODE.
        DATA DIVISION.
       *****************************************************************
       *        W O R K I N G    S T O R A G E    S E C T I O N        *

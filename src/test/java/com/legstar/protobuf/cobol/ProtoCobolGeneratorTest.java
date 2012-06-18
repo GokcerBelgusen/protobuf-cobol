@@ -27,7 +27,8 @@ public class ProtoCobolGeneratorTest extends AbstractTest {
         CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
-        check(ProtoCobolGenerator.generateParser(protoCobolDataItem));
+        check(ProtoCobolGenerator.generateParser(new ProtoCobolConfig(),
+                protoCobolDataItem));
     }
 
     public void testParserHierarchy() {
@@ -52,7 +53,8 @@ public class ProtoCobolGeneratorTest extends AbstractTest {
                 childDataItem3, Type.STRING, protoCobolDataItem1);
         protoCobolDataItem1.addChild(protoCobolDataItem3);
 
-        check(ProtoCobolGenerator.generateParser(protoCobolDataItem));
+        check(ProtoCobolGenerator.generateParser(new ProtoCobolConfig(),
+                protoCobolDataItem));
     }
 
     public void testParserArrays() {
@@ -79,7 +81,8 @@ public class ProtoCobolGeneratorTest extends AbstractTest {
                 cobolDataItem3, Type.UINT32, protoCobolDataItem1);
         protoCobolDataItem1.addChild(protoCobolDataItem3);
 
-        check(ProtoCobolGenerator.generateParser(protoCobolDataItem));
+        check(ProtoCobolGenerator.generateParser(new ProtoCobolConfig(),
+                protoCobolDataItem));
     }
 
     public void testParserIndexedFieldsWithDependingOns() {
@@ -109,7 +112,8 @@ public class ProtoCobolGeneratorTest extends AbstractTest {
                 cobolDataItem3, Type.MESSAGE, protoCobolDataItem);
         protoCobolDataItem.addChild(protoCobolDataItem3);
 
-        check(ProtoCobolGenerator.generateParser(protoCobolDataItem));
+        check(ProtoCobolGenerator.generateParser(new ProtoCobolConfig(),
+                protoCobolDataItem));
     }
 
     public void testParserMixedElementaryTypes() {
@@ -223,14 +227,16 @@ public class ProtoCobolGeneratorTest extends AbstractTest {
                 childDataItemSfixed64, Type.SFIXED64, protoCobolDataItem);
         protoCobolDataItem.addChild(protoCobolDataItem15);
 
-        check(ProtoCobolGenerator.generateParser(protoCobolDataItem));
+        check(ProtoCobolGenerator.generateParser(new ProtoCobolConfig(),
+                protoCobolDataItem));
     }
 
     public void testWriterEmptyGroup() {
         CobolDataItem cobolDataItem = new CobolDataItem(1, "CUSTOMER-DATA");
         ProtoCobolDataItem protoCobolDataItem = new ProtoCobolDataItem(
                 cobolDataItem);
-        check(ProtoCobolGenerator.generateWriter(protoCobolDataItem));
+        check(ProtoCobolGenerator.generateWriter(new ProtoCobolConfig(),
+                protoCobolDataItem));
     }
 
 }

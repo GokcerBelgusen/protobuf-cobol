@@ -111,6 +111,9 @@ public class ProtoCobol {
     private File protoPath;
     private int timeout = DEFAULT_TIMEOUT;
 
+    /** The generation parameters set. */
+    private ProtoCobolConfig protoCobolConfig = new ProtoCobolConfig();
+
     /** The protobuf to COBOL mapping logic. */
     private ProtoCobolMapper cobolMapper = new ProtoCobolMapper();
 
@@ -177,8 +180,8 @@ public class ProtoCobol {
                     logger.debug(copybookContent);
                 }
 
-                String parserContent = ProtoCobolGenerator
-                        .generateParser(protoCobolDataItem);
+                String parserContent = ProtoCobolGenerator.generateParser(
+                        protoCobolConfig, protoCobolDataItem);
                 File parserFile = writeParserFile(protoCobolDataItem,
                         parserContent);
                 if (logger.isDebugEnabled()) {
@@ -187,8 +190,8 @@ public class ProtoCobol {
                     logger.debug(parserContent);
                 }
 
-                String writerContent = ProtoCobolGenerator
-                        .generateWriter(protoCobolDataItem);
+                String writerContent = ProtoCobolGenerator.generateWriter(
+                        protoCobolConfig, protoCobolDataItem);
                 File writerFile = writeWriterFile(protoCobolDataItem,
                         writerContent);
                 if (logger.isDebugEnabled()) {
@@ -656,4 +659,13 @@ public class ProtoCobol {
         return this;
     }
 
+    /**
+     * COBOL character code page (CCSID number) to be used for conversions.
+     * 
+     * @param cobolCodePage the code page (CCSID number) to set
+     */
+    public ProtoCobol setCobolCodePage(int cobolCodePage) {
+        protoCobolConfig.setCobolCodePage(cobolCodePage);
+        return this;
+    }
 }
