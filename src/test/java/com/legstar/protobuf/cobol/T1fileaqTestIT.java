@@ -9,6 +9,8 @@ import junit.framework.TestCase;
 
 import org.apache.commons.io.IOUtils;
 
+import com.legstar.coxb.host.HostData;
+
 /**
  * Integration test for sample CICS T1FILEAQ service.
  * 
@@ -18,7 +20,11 @@ public class T1fileaqTestIT extends TestCase {
     private static final String SERVER_URL = "http://mainframe:4081/CICS/CWBA/T1FILEAQ";
 
     public void testExecuteLsfileaq() throws Exception {
-        byte[] bytesReply = postJson(getSampleRequestContent());
+        byte[] bytesRequest = getSampleRequestContent();
+        assertEquals(6, bytesRequest.length);
+        assertEquals("0a02532a1005", HostData.toHexString(bytesRequest));
+        byte[] bytesReply = postJson(bytesRequest);
+        assertEquals(397, bytesReply.length);
         com.example.customers.CustomersProtos.CustomersQueryReply customersQueryReply = com.example.customers.CustomersProtos.CustomersQueryReply
                 .parseFrom(bytesReply);
         assertEquals(5, customersQueryReply.getCustomersCount());
